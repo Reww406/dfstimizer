@@ -17,16 +17,17 @@ pub struct Player {
     pub ownership: f32,
 }
 
-pub struct LineupBuilder {
-    pub qb: Option<Player>,
-    pub rb1: Option<Player>,
-    pub rb2: Option<Player>,
-    pub wr1: Option<Player>,
-    pub wr2: Option<Player>,
-    pub wr3: Option<Player>,
-    pub te: Option<Player>,
-    pub flex: Option<Player>,
-    pub def: Option<Player>,
+#[derive(Clone)]
+pub struct LineupBuilder<'a> {
+    pub qb: Option<&'a Player>,
+    pub rb1: Option<&'a Player>,
+    pub rb2: Option<&'a Player>,
+    pub wr1: Option<&'a Player>,
+    pub wr2: Option<&'a Player>,
+    pub wr3: Option<&'a Player>,
+    pub te: Option<&'a Player>,
+    pub flex: Option<&'a Player>,
+    pub def: Option<&'a Player>,
     pub total_price: i32,
 }
 

@@ -53,5 +53,19 @@ pub fn load_in_csv_buff_test(path: &str) -> Vec<Player> {
             record[7].parse::<f32>().unwrap_or_default(),
         ))
     }
+    players.push(Player::new(
+        String::from("Buffalo Bills"),
+        4000,
+        10.1,
+        String::from("def"),
+        14.0,
+    ));
+    players.push(Player::new(
+        String::from("New York Jets"),
+        4300,
+        12.1,
+        String::from("def"),
+        32.0,
+    ));
     players
 }

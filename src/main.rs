@@ -12,21 +12,17 @@ use dfstimizer::optimizer::*;
 // high ownerhsip, 0 salary and points should be the lowest
 
 fn main() -> Result<(), Error> {
+    // 4 * 4080 * 56 * 2 * 8
     let players: Vec<Player> = load_in_csv_buff_test("with_ownership.csv");
-    println!(
-        "{}",
-        players
-            .iter()
-            .filter(|x| x.pos.to_lowercase() == "qb")
-            .count()
-    );
-    println!(
-        "{}",
-        players
-            .iter()
-            .filter(|x| x.pos.to_lowercase() == "wr")
-            .count()
-    );
+    // println!("{:?}", players);
+    // println!(
+    //     "{}",
+    //     players
+    //         .iter()
+    //         .filter(|x| x.pos.to_lowercase() == "te")
+    //         .count()
+    // );
+
     let lineups: Vec<LineupBuilder> = build_all_possible_lineups(players);
     println!("{}", lineups.len());
     Ok(())

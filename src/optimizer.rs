@@ -1,84 +1,113 @@
 use crate::models::*;
 
+// Try doing one QB at a time? or start off with WR and do one at a time
+// try to avoid cloning with references to player instead
+// can try using avro or similar format to save memory
+// can create vectors with init capacity aswell
 pub fn build_all_possible_lineups(players: Vec<Player>) -> Vec<LineupBuilder> {
     let mut lineups: Vec<LineupBuilder> = Vec::new();
     players
         .iter()
-        .filter(|player| player.pos.to_lowercase() == "qb")
-        .for_each(|qb| {
+        .filter(|player: &&Player| player.pos.to_lowercase() == "qb")
+        .for_each(|qb: &Player| {
             let lineup_builder: LineupBuilder = LineupBuilder::new();
             lineups.push(lineup_builder.set_qb(qb.clone()))
         });
-    add_wr_to_qb_lineups(players, lineups)
+    let wrs_lineups: Vec<LineupBuilder> = add_wrs_to_lineups(&players, lineups);
+    let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&players, wrs_lineups);
+    let te_linesups: Vec<LineupBuilder> = add_te_to_lineups(&players, rbs_lineups);
+    // let def_lineups: Vec<LineupBuilder> = add_def_to_lineups(&players, te_linesups);
+    te_linesups
 }
 
-// Home maybe use .as_ref for creating line ups then we can clone on build..?
-// Could just fitler on salary later throw away everything that is over after building all line ups
-pub fn add_wr_to_qb_lineups(
-    players: Vec<Player>,
+// Needs to barrow players so it can be passed to the rest of the functions
+pub fn add_wrs_to_lineups(
+    players: &Vec<Player>,
     lineups: Vec<LineupBuilder>,
 ) -> Vec<LineupBuilder> {
-    let mut lineup_with_wr1: Vec<LineupBuilder> = Vec::new();
-    // First Iteration
+    // The two vectors should be dereferenced once the function ends
+    let mut lineups_with_wr1: Vec<LineupBuilder> = Vec::new();
     for lineup in lineups {
         players
             .iter()
-            .filter(|player| player.pos.to_lowercase() == "wr")
-            .for_each(|wr| {
-                if (lineup.total_price + wr.price as i32) < SALARY_CAP {
-                    lineup_with_wr1.push(
-                        LineupBuilder::new()
-                            // Duplicating variables
-                            .set_qb(lineup.qb.clone().unwrap())
-                            .set_wr1(wr.clone()),
-                    );
-                }
-            });
+            .filter(|player: &&Player| player.pos.to_lowercase() == "wr")
+            .for_each(|wr: &Player| lineups_with_wr1.push(lineup.clone().set_wr1(wr.clone())));
     }
-    let mut lineup_with_wr2: Vec<LineupBuilder> = Vec::new();
-    for lineup in lineup_with_wr1 {
+
+    let mut lineups_with_wr2: Vec<LineupBuilder> = Vec::new();
+    for lineup in lineups_with_wr1 {
         players
             .iter()
             .filter(|p: &&Player| p.pos.to_lowercase() == "wr")
             .filter(|wr2: &&Player| wr2.name != lineup.wr1.as_ref().unwrap().name)
-            .filter(|wr2: &&Player| (wr2.price as i32 + lineup.total_price) < SALARY_CAP)
-            .for_each(|wr2| {
-                lineup_with_wr2.push(
-                    LineupBuilder::new()
-                        .set_qb(lineup.qb.clone().unwrap())
-                        .set_wr1(lineup.wr1.clone().unwrap())
-                        .set_wr2(wr2.clone()),
-                )
-            });
+            .for_each(|wr2: &Player| lineups_with_wr2.push(lineup.clone().set_wr2(wr2.clone())));
     }
+
     let mut lineup_with_wr3: Vec<LineupBuilder> = Vec::new();
-    for lineup in lineup_with_wr2 {
+    for lineup in lineups_with_wr2 {
         players
             .iter()
             .filter(|p: &&Player| p.pos.to_lowercase() == "wr")
-            .filter(|wr3: &&Player| {
-                wr3.name != lineup.wr2.as_ref().unwrap().name
-                    && wr3.name != lineup.wr1.as_ref().unwrap().name
-            })
-            .filter(|wr3: &&Player| (wr3.price as i32 + lineup.total_price) < SALARY_CAP)
-            .for_each(|wr3| {
-                lineup_with_wr3.push(
-                    LineupBuilder::new()
-                        .set_qb(lineup.qb.clone().unwrap())
-                        .set_wr1(lineup.wr1.clone().unwrap())
-                        .set_wr2(lineup.wr2.clone().unwrap())
-                        .set_wr3(wr3.clone()),
-                )
-            });
+            .filter(|wr3: &&Player| wr3.name != lineup.wr1.as_ref().unwrap().name)
+            .filter(|wr3: &&Player| wr3.name != lineup.wr2.as_ref().unwrap().name)
+            .for_each(|wr3: &Player| lineup_with_wr3.push(lineup.clone().set_wr3(wr3.clone())));
     }
     lineup_with_wr3
 }
 
+pub fn add_rbs_to_lineups(
+    players: &Vec<Player>,
+    lineups: Vec<LineupBuilder>,
+) -> Vec<LineupBuilder> {
+    let mut lineups_with_rb1: Vec<LineupBuilder> = Vec::new();
+    for lineup in lineups {
+        players
+            .iter()
+            .filter(|p: &&Player| p.pos.to_lowercase() == "rb")
+            .for_each(|rb: &Player| lineups_with_rb1.push(lineup.clone().set_rb1(rb.clone())));
+    }
+
+    let mut lineups_with_rb2: Vec<LineupBuilder> = Vec::new();
+    for lineup in lineups_with_rb1 {
+        players
+            .iter()
+            .filter(|p: &&Player| p.pos.to_lowercase() == "rb")
+            .filter(|p: &&Player| p.name != lineup.rb1.as_ref().unwrap().name)
+            .for_each(|rb2: &Player| lineups_with_rb2.push(lineup.clone().set_rb2(rb2.clone())))
+    }
+    lineups_with_rb2
+}
+
+pub fn add_te_to_lineups(players: &Vec<Player>, lineups: Vec<LineupBuilder>) -> Vec<LineupBuilder> {
+    let mut lineups_with_te: Vec<LineupBuilder> = Vec::new();
+    for lineup in lineups {
+        players
+            .iter()
+            .filter(|p: &&Player| p.pos.to_lowercase() == "te")
+            .for_each(|te: &Player| lineups_with_te.push(lineup.clone().set_te(te.clone())))
+    }
+    lineups_with_te
+}
+
+pub fn add_def_to_lineups(
+    players: &Vec<Player>,
+    lineups: Vec<LineupBuilder>,
+) -> Vec<LineupBuilder> {
+    let mut lineups_with_def: Vec<LineupBuilder> = Vec::new();
+    for lineup in lineups {
+        players
+            .iter()
+            .filter(|p: &&Player| p.pos.to_lowercase() == "def")
+            .for_each(|def: &Player| lineups_with_def.push(lineup.clone().set_def(def.clone())));
+    }
+    lineups_with_def
+}
+
 // Tested
 pub fn calculate_linup_score(lineup: Lineup) -> f32 {
-    let salary_spent_score = lineup.get_salary_spent_score();
-    let point_score = lineup.get_points_score();
-    let ownership_score = lineup.get_ownership_score();
+    let salary_spent_score: f32 = lineup.get_salary_spent_score();
+    let point_score: f32 = lineup.get_points_score();
+    let ownership_score: f32 = lineup.get_ownership_score();
     ownership_score + point_score + salary_spent_score
 }
 
@@ -115,7 +144,7 @@ mod tests {
 
     #[test]
     fn test_max_score() {
-        let lineup = create_test_lineup(MIN_AVG_OWNERSHIP, MAX_POINTS, 6666);
+        let lineup: Lineup = create_test_lineup(MIN_AVG_OWNERSHIP, MAX_POINTS, 6666);
         assert_eq!(calculate_linup_score(lineup), 1.9999)
     }
 
