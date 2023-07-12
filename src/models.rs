@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::mean;
+use crate::{mean, optimizer::calculate_lineup_score};
 
 pub const SALARY_CAP: i32 = 60000;
 pub const MAX_AVG_OWNERHSIP: f32 = 60.0;
@@ -31,7 +31,7 @@ pub struct LineupBuilder<'a> {
     pub total_price: i32,
 }
 
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, Clone)]
 pub struct Lineup {
     pub qb: Player,
     pub rb1: Player,
@@ -43,15 +43,48 @@ pub struct Lineup {
     pub flex: Player,
     pub def: Player,
     pub total_price: i32,
+    pub score: f32,
 }
 
-impl Lineup {
+// Builder Helper function
+fn return_if_field_exits<'a>(field: Option<&'a Player>, set_to: &'a Player) -> &'a Player {
+    if field.is_some() {
+        panic!("Tried to set {} when one already exits", set_to.pos);
+    }
+    set_to
+}
+
+// TODO Would love to find a way to make this more DRY
+impl<'a> LineupBuilder<'a> {
+    pub fn new() -> Self {
+        LineupBuilder {
+            qb: None,
+            rb1: None,
+            rb2: None,
+            wr1: None,
+            wr2: None,
+            wr3: None,
+            te: None,
+            flex: None,
+            def: None,
+            total_price: 0,
+        }
+    }
+
     pub fn array_of_players(&self) -> [&Player; 9] {
         [
-            &self.qb, &self.rb1, &self.rb2, &self.wr1, &self.wr2, &self.wr3, &self.te, &self.flex,
-            &self.def,
+            &self.qb.expect("Line up missing qb"),
+            &self.rb1.expect("Line up missing rb1"),
+            &self.rb2.expect("Line up missing rb2"),
+            &self.wr1.expect("Line up missing wr1"),
+            &self.wr2.expect("Line up missing wr2"),
+            &self.wr3.expect("Line up missing wr3"),
+            &self.te.expect("Line up missing te"),
+            &self.flex.expect("Line up missing flex"),
+            &self.def.expect("Line up missing def"),
         ]
     }
+
     pub fn get_salary_spent_score(&self) -> f32 {
         let spent = self.total_amount_spent() as f32;
         (spent - 0.0) / (SALARY_CAP as f32 - 0.0)
@@ -86,91 +119,75 @@ impl Lineup {
             .collect();
         mean(&points).unwrap()
     }
-}
-
-// Builder Helper function
-fn return_if_field_exits(field: Option<Player>, set_to: Player) -> Player {
-    if field.is_some() {
-        panic!("Tried to set {} when one already exits", set_to.pos);
-    }
-    set_to
-}
-
-// TODO Would love to find a way to make this more DRY
-impl LineupBuilder {
-    pub fn new() -> Self {
-        LineupBuilder {
-            qb: None,
-            rb1: None,
-            rb2: None,
-            wr1: None,
-            wr2: None,
-            wr3: None,
-            te: None,
-            flex: None,
-            def: None,
-            total_price: 0,
-        }
-    }
-
     // Should check for going over slary cap be here?
-    pub fn set_qb(mut self, qb: Player) -> LineupBuilder {
-        self.qb = Some(return_if_field_exits(self.qb, qb.clone()));
+    pub fn set_qb(mut self, qb: &'a Player) -> LineupBuilder<'a> {
+        // let curr_qb: Option<&Player> = self.qb.clone();
+        self.qb = Some(return_if_field_exits(self.qb, qb));
         self.total_price += qb.price as i32;
         self
     }
-    pub fn set_rb1(mut self, rb1: Player) -> LineupBuilder {
-        self.rb1 = Some(return_if_field_exits(self.rb1, rb1.clone()));
+
+    pub fn set_rb1(mut self, rb1: &'a Player) -> LineupBuilder<'a> {
+        self.rb1 = Some(return_if_field_exits(self.rb1, rb1));
         self.total_price += rb1.price as i32;
         self
     }
-    pub fn set_rb2(mut self, rb2: Player) -> LineupBuilder {
-        self.rb2 = Some(return_if_field_exits(self.rb2, rb2.clone()));
+
+    pub fn set_rb2(mut self, rb2: &'a Player) -> LineupBuilder<'a> {
+        self.rb2 = Some(return_if_field_exits(self.rb2, rb2));
         self.total_price += rb2.price as i32;
         self
     }
-    pub fn set_wr1(mut self, wr1: Player) -> LineupBuilder {
-        self.wr1 = Some(return_if_field_exits(self.wr1, wr1.clone()));
+
+    pub fn set_wr1(mut self, wr1: &'a Player) -> LineupBuilder<'a> {
+        self.wr1 = Some(return_if_field_exits(self.wr1, wr1));
         self.total_price += wr1.price as i32;
         self
     }
-    pub fn set_wr2(mut self, wr2: Player) -> LineupBuilder {
-        self.wr2 = Some(return_if_field_exits(self.wr2, wr2.clone()));
+
+    pub fn set_wr2(mut self, wr2: &'a Player) -> LineupBuilder<'a> {
+        self.wr2 = Some(return_if_field_exits(self.wr2, wr2));
         self.total_price += wr2.price as i32;
         self
     }
-    pub fn set_wr3(mut self, wr3: Player) -> LineupBuilder {
-        self.wr3 = Some(return_if_field_exits(self.wr3, wr3.clone()));
+
+    pub fn set_wr3(mut self, wr3: &'a Player) -> LineupBuilder<'a> {
+        self.wr3 = Some(return_if_field_exits(self.wr3, wr3));
         self.total_price += wr3.price as i32;
         self
     }
-    pub fn set_te(mut self, te: Player) -> LineupBuilder {
-        self.te = Some(return_if_field_exits(self.te, te.clone()));
+
+    pub fn set_te(mut self, te: &'a Player) -> LineupBuilder<'a> {
+        self.te = Some(return_if_field_exits(self.te, te));
         self.total_price += te.price as i32;
         self
     }
-    pub fn set_flex(mut self, flex: Player) -> LineupBuilder {
-        self.flex = Some(return_if_field_exits(self.flex, flex.clone()));
+
+    pub fn set_flex(mut self, flex: &'a Player) -> LineupBuilder<'a> {
+        self.flex = Some(return_if_field_exits(self.flex, flex));
         self.total_price += flex.price as i32;
         self
     }
-    pub fn set_def(mut self, def: Player) -> LineupBuilder {
-        self.def = Some(return_if_field_exits(self.def, def.clone()));
+
+    pub fn set_def(mut self, def: &'a Player) -> LineupBuilder<'a> {
+        self.def = Some(return_if_field_exits(self.def, def));
         self.total_price += def.price as i32;
         self
     }
+
     pub fn build(self) -> Lineup {
         Lineup {
-            qb: self.qb.unwrap(),
-            rb1: self.rb1.unwrap(),
-            rb2: self.rb2.unwrap(),
-            wr1: self.wr1.unwrap(),
-            wr2: self.wr2.unwrap(),
-            wr3: self.wr3.unwrap(),
-            te: self.te.unwrap(),
-            flex: self.flex.unwrap(),
-            def: self.def.unwrap(),
+            qb: self.qb.unwrap().clone(),
+            rb1: self.rb1.unwrap().clone(),
+            rb2: self.rb2.unwrap().clone(),
+            wr1: self.wr1.unwrap().clone(),
+            wr2: self.wr2.unwrap().clone(),
+            wr3: self.wr3.unwrap().clone(),
+            te: self.te.unwrap().clone(),
+            flex: self.flex.unwrap().clone(),
+            def: self.def.unwrap().clone(),
             total_price: self.total_price,
+            score: calculate_lineup_score(&self),
         }
     }
 }

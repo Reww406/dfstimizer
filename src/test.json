@@ -1,0 +1,39 @@
+[Player { name: "Josh Allen", price: 7900, points: 28.18, pos: "QB", ownership: 10.538483
+    }, Player { name: "Stefon Diggs", price: 6600, points: 12.6, pos: "WR", ownership: 21.083576
+    }, Player { name: "Cole Beasley", price: 5400, points: 7.8, pos: "WR", ownership: 24.698824
+    }, Player { name: "Jamison Crowder", price: 6000, points: 21.0, pos: "WR", ownership: 27.28688
+    }, Player { name: "Sam Darnold", price: 6800, points: 12.2, pos: "QB", ownership: 33.303555
+    }, Player { name: "Devin Singletary", price: 6300, points: 7.8, pos: "RB", ownership: 25.536806
+    }, Player { name: "Gabriel Davis", price: 4500, points: 2.6, pos: "WR", ownership: 6.4879537
+    }, Player { name: "Breshad Perriman", price: 5700, points: 3.2, pos: "WR", ownership: 35.032528
+    }, Player { name: "Zack Moss", price: 4800, points: 10.2, pos: "RB", ownership: 37.384403
+    }, Player { name: "Frank Gore", price: 4800, points: 2.4, pos: "RB", ownership: 22.135258
+    }, Player { name: "Isaiah McKenzie", price: 4600, points: 3.2, pos: "WR", ownership: 17.698544
+    }, Player { name: "Braxton Berrios", price: 4500, points: 0.0, pos: "WR", ownership: 40.094643
+    }, Player { name: "John Brown", price: 6100, points: 16.0, pos: "WR", ownership: 33.93696
+    }, Player { name: "Chris Herndon", price: 4700, points: 4.7, pos: "TE", ownership: 14.841497
+    }, Player { name: "Dawson Knox", price: 4700, points: 3.6, pos: "TE", ownership: 17.219616
+    }, Player { name: "Ty Johnson", price: 4500, points: 0.0, pos: "RB", ownership: 6.996375
+    }, Player { name: "Denzel Mims", price: 4900, points: 0.0, pos: "WR", ownership: 6.4374866
+    }, Player { name: "Joe Flacco", price: 6000, points: 0.0, pos: "QB", ownership: 39.834274
+    }, Player { name: "La'Mical Perine", price: 4500, points: 0.0, pos: "RB", ownership: 3.4279823
+    }, Player { name: "Tyler Kroft", price: 4300, points: 0.0, pos: "TE", ownership: 39.252846
+    }, Player { name: "Josh Adams", price: 4500, points: 9.2, pos: "RB", ownership: 19.17885
+    }, Player { name: "Jeff Smith", price: 4500, points: 0.0, pos: "WR", ownership: 18.386246
+    }, Player { name: "Chris Hogan", price: 4600, points: 0.5, pos: "WR", ownership: 35.53341
+    }, Player { name: "Lee Smith", price: 4200, points: 0.0, pos: "TE", ownership: 46.08264
+    }, Player { name: "Ryan Griffin", price: 4300, points: 0.0, pos: "TE", ownership: 25.729084
+    }, Player { name: "T.J. Yeldon", price: 4600, points: 0.0, pos: "RB", ownership: 25.965643
+    }, Player { name: "Matt Barkley", price: 6000, points: 0.0, pos: "QB", ownership: 37.853603
+    }, Player { name: "Reggie Gilliam", price: 4500, points: 0.0, pos: "TE", ownership: 33.416878
+    }, Player { name: "Jake Kumerow", price: 4600, points: 0.0, pos: "WR", ownership: 8.030886
+    }, Player { name: "Josh Malone", price: 4500, points: 0.0, pos: "WR", ownership: 5.5722055
+    }, Player { name: "Lawrence Cager", price: 0, points: 0.0, pos: "WR", ownership: 4.084235
+    }, Player { name: "Andre Roberts", price: 4500, points: 0.0, pos: "WR", ownership: 20.356613
+    }, Player { name: "Daniel Brown", price: 4000, points: 0.0, pos: "TE", ownership: 10.3648
+    }, Player { name: "Jaleel Scott", price: 4600, points: 0.0, pos: "WR", ownership: 48.729397
+    }, Player { name: "Vyncint Smith", price: 4500, points: 0.0, pos: "WR", ownership: 19.166111
+    }, Player { name: "Trevon Wesco", price: 4000, points: 0.0, pos: "TE", ownership: 1.1378944
+    }, Player { name: "Taiwan Jones", price: 4500, points: 0.0, pos: "RB", ownership: 27.862299
+    }
+]

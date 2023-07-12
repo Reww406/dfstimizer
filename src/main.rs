@@ -23,7 +23,10 @@ fn main() -> Result<(), Error> {
     //         .count()
     // );
 
-    let lineups: Vec<LineupBuilder> = build_all_possible_lineups(players);
-    println!("{}", lineups.len());
+    let lineups: Vec<Lineup> = build_all_possible_lineups(&players);
+    for lineup in lineups {
+        println!("{:?}", lineup.score);
+    }
+    //TODO add score to lineup
     Ok(())
 }
