@@ -11,6 +11,11 @@ pub const MIN_POINTS: f32 = 10.0;
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Player {
     pub name: String,
+    pub team: String,
+    pub opp: String,
+    pub points_dollar: f32,
+    // Hight the better
+    pub pos_rank: Option<i16>,
     pub price: i16,
     pub points: f32,
     pub pos: String,
@@ -27,7 +32,7 @@ pub struct LineupBuilder<'a> {
     pub wr3: Option<&'a Player>,
     pub te: Option<&'a Player>,
     pub flex: Option<&'a Player>,
-    pub def: Option<&'a Player>,
+    pub dst: Option<&'a Player>,
     pub total_price: i32,
 }
 
@@ -66,7 +71,7 @@ impl<'a> LineupBuilder<'a> {
             wr3: None,
             te: None,
             flex: None,
-            def: None,
+            dst: None,
             total_price: 0,
         }
     }
@@ -81,7 +86,7 @@ impl<'a> LineupBuilder<'a> {
             &self.wr3.expect("Line up missing wr3"),
             &self.te.expect("Line up missing te"),
             &self.flex.expect("Line up missing flex"),
-            &self.def.expect("Line up missing def"),
+            &self.dst.expect("Line up missing def"),
         ]
     }
 
@@ -119,6 +124,7 @@ impl<'a> LineupBuilder<'a> {
             .collect();
         mean(&points).unwrap()
     }
+
     // Should check for going over slary cap be here?
     pub fn set_qb(mut self, qb: &'a Player) -> LineupBuilder<'a> {
         // let curr_qb: Option<&Player> = self.qb.clone();
@@ -170,7 +176,7 @@ impl<'a> LineupBuilder<'a> {
     }
 
     pub fn set_def(mut self, def: &'a Player) -> LineupBuilder<'a> {
-        self.def = Some(return_if_field_exits(self.def, def));
+        self.dst = Some(return_if_field_exits(self.dst, def));
         self.total_price += def.price as i32;
         self
     }
@@ -185,21 +191,40 @@ impl<'a> LineupBuilder<'a> {
             wr3: self.wr3.unwrap().clone(),
             te: self.te.unwrap().clone(),
             flex: self.flex.unwrap().clone(),
-            def: self.def.unwrap().clone(),
+            def: self.dst.unwrap().clone(),
             total_price: self.total_price,
             score: calculate_lineup_score(&self),
         }
     }
 }
 
+// Rank 0, Name 1, Team 2, Position 3, Week 4, Opp 5, Opp Rank 6, Opp Pos Rank 7, Proj Points Fanduel 8,
+// Points per dollar 9, Project Ownership 10, Operator (Fanduel) 11, Operator Salary 12
 impl Player {
-    pub fn new(name: String, price: i16, points: f32, pos: String, ownership: f32) -> Self {
+    pub fn new_from_fd(record: csv::StringRecord) -> Self {
         Player {
-            name,
-            price,
-            points,
-            pos,
-            ownership,
+            name: record[1].to_string(),
+            team: record[2].to_string(),
+            opp: record[5].to_string(),
+            // TODO what is causing this to fail
+            points_dollar: record[9].parse::<f32>().unwrap_or_default(),
+            pos_rank: if record[7].to_string() == "null" {
+                None
+            } else {
+                Some(record[7].parse::<i16>().expect("Failed to get pos_rank"))
+            },
+            price: record[12].parse::<i16>().expect("Failed to get price"),
+            points: record[8].parse::<f32>().unwrap_or_default(),
+            pos: record[3].to_string(),
+            ownership: record[10].parse::<f32>().expect("Failed to get ownership"),
         }
     }
 }
+
+// TODO Test new_from_fd
+// TODO Test total_amount_spent
+// TODO Test averge_ownership
+// TODO Test averge_projected_points
+// TODO Test points score
+// TODO Test salary score
+// TODO Test ownership score

@@ -1,12 +1,9 @@
-use std::{collections::btree_map::Iter, ops::Deref};
-
 use crate::models::*;
 
 const GOOD_SALARY_USAGE: i32 = 45000;
-// Try doing one QB at a time? or start off with WR and do one at a time
-// try to avoid cloning with references to player instead
-// can try using avro or similar format to save memory
-// can create vectors with init capacity aswell
+
+// TODO try to refactor, hopefully can take up less of a foot print
+// TODO Optimizer and Linup Builder maybe should be split into seperate classes
 pub fn build_all_possible_lineups(players: &Vec<Player>) -> Vec<Lineup> {
     let mut lineups: Vec<LineupBuilder> = Vec::new();
     players
@@ -19,12 +16,10 @@ pub fn build_all_possible_lineups(players: &Vec<Player>) -> Vec<Lineup> {
     let wrs_lineups: Vec<LineupBuilder> = add_wrs_to_lineups(&players, lineups);
     let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&players, wrs_lineups);
     let te_linesups: Vec<LineupBuilder> = add_te_to_lineups(&players, rbs_lineups);
-    let def_lineups: Vec<LineupBuilder> = add_def_to_lineups(&players, te_linesups);
-    let filterd_lineups = filter_low_salary_cap(def_lineups, 40000);
+    let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&players, te_linesups);
+    let filterd_lineups = filter_low_salary_cap(dst_lineups, 48000);
     let flex_lineups: Vec<Lineup> = add_flex_find_top_num(&players, filterd_lineups, 300);
     flex_lineups
-    // let empty: Vec<Lineup> = Vec::new();
-    // empty
 }
 
 pub fn filter_low_salary_cap(
@@ -156,7 +151,6 @@ pub fn add_flex_find_top_num<'a>(
             .filter(|p: &&Player| flex_pos.contains(&p.pos.to_lowercase()))
             .filter(|p: &&Player| !running_backs.contains(&&p.name.to_lowercase()))
             .filter(|p: &&Player| !wide_recievers.contains(&&p.name.to_lowercase()))
-            // .filter(|p: &&Player| p.name.to_lowercase() != lineup.qb.unwrap().name)
             .filter(|p: &&Player| (p.price as i32 + lineup.total_price) < SALARY_CAP)
             .filter(|p: &&Player| (p.price as i32 + lineup.total_price) > GOOD_SALARY_USAGE)
             .for_each(|flex: &Player| {
@@ -185,7 +179,6 @@ pub fn add_flex_find_top_num<'a>(
                             break;
                         }
                     }
-                } else {
                 }
             });
     }
@@ -193,7 +186,7 @@ pub fn add_flex_find_top_num<'a>(
     best_lineups
 }
 
-pub fn add_def_to_lineups<'a>(
+pub fn add_dst_to_lineups<'a>(
     players: &'a Vec<Player>,
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
@@ -202,7 +195,7 @@ pub fn add_def_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|p: &&Player| p.pos.to_lowercase() == "def")
+            .filter(|p: &&Player| p.pos.to_lowercase() == "dst")
             .for_each(|def: &Player| {
                 lineups_with_def.push(lineup.clone().set_def(def));
                 iterations += 1;
@@ -212,13 +205,14 @@ pub fn add_def_to_lineups<'a>(
     lineups_with_def
 }
 
-// Tested
 pub fn calculate_lineup_score(lineup: &LineupBuilder) -> f32 {
     let salary_spent_score: f32 = lineup.get_salary_spent_score();
     let point_score: f32 = lineup.get_points_score();
     let ownership_score: f32 = lineup.get_ownership_score();
     ownership_score + point_score + salary_spent_score
 }
+
+// TODO Test build lineup
 
 #[cfg(test)]
 mod tests {
@@ -228,6 +222,10 @@ mod tests {
         let mut players: Vec<Player> = Vec::with_capacity(9);
         for _ in 0..9 {
             players.push(Player {
+                opp: String::from("PIT"),
+                points_dollar: 12.0,
+                pos_rank: Some(2),
+                team: String::from("TEN"),
                 name: String::from("John bob"),
                 ownership: ownership,
                 points: points,
@@ -237,7 +235,7 @@ mod tests {
         }
 
         let lineup: LineupBuilder = LineupBuilder {
-            def: Some(&players[0]),
+            dst: Some(&players[0]),
             qb: Some(&players[1]),
             rb1: Some(&players[2]),
             rb2: Some(&players[3]),
