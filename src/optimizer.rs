@@ -2,7 +2,7 @@ use crate::models::*;
 
 const GOOD_SALARY_USAGE: i32 = 45000;
 
-// TODO try to refactor, hopefully can take up less of a foot print
+// TODO try to refactor, hopefully can take up less space
 // TODO Optimizer and Linup Builder maybe should be split into seperate classes
 pub fn build_all_possible_lineups(players: &Vec<Player>) -> Vec<Lineup> {
     let mut lineups: Vec<LineupBuilder> = Vec::new();
@@ -212,7 +212,7 @@ pub fn calculate_lineup_score(lineup: &LineupBuilder) -> f32 {
     ownership_score + point_score + salary_spent_score
 }
 
-// TODO Test build lineup
+// TODO Test build lineup should be sorted and under salary cap.
 
 #[cfg(test)]
 mod tests {

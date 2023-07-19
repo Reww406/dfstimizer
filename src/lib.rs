@@ -30,7 +30,22 @@ pub fn load_in_fd_csv(path: &str, teams: &[String]) -> Vec<Player> {
     }
     players
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    // Helper function for creating line ups
 
+    #[test]
+    fn test_team_fitler() {
+        let players: Vec<Player> = load_in_fd_csv("fanduel.csv", &[String::from("PIT")]);
+        for player in players {
+            assert_eq!(player.team, "PIT");
+        }
+    }
 
-// TODO Test team filtering
-// TODO Test mean function
+    #[test]
+    fn test_mean() {
+        let mean = mean(&[1.0, 2.0, 3.0, 4.0, 5.0]);
+        assert_eq!(mean, Some(3.0));
+    }
+}

@@ -14,7 +14,7 @@ pub struct Player {
     pub team: String,
     pub opp: String,
     pub points_dollar: f32,
-    // Hight the better
+    // Higher the better
     pub pos_rank: Option<i16>,
     pub price: i16,
     pub points: f32,
@@ -125,9 +125,7 @@ impl<'a> LineupBuilder<'a> {
         mean(&points).unwrap()
     }
 
-    // Should check for going over slary cap be here?
     pub fn set_qb(mut self, qb: &'a Player) -> LineupBuilder<'a> {
-        // let curr_qb: Option<&Player> = self.qb.clone();
         self.qb = Some(return_if_field_exits(self.qb, qb));
         self.total_price += qb.price as i32;
         self
@@ -220,11 +218,107 @@ impl Player {
         }
     }
 }
-
-// TODO Test new_from_fd
-// TODO Test total_amount_spent
-// TODO Test averge_ownership
-// TODO Test averge_projected_points
 // TODO Test points score
 // TODO Test salary score
 // TODO Test ownership score
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use csv::StringRecord;
+    fn create_test_player(points: f32, price: i16, ownership: f32) -> Player {
+        Player {
+            name: String::from("test"),
+            team: String::from("test"),
+            opp: String::from("test"),
+            points_dollar: 1.0,
+            pos_rank: Some(1),
+            price: price,
+            points: points,
+            pos: String::from("RB"),
+            ownership: ownership,
+        }
+    }
+    #[test]
+    fn test_new_from_fd() {
+        let test_record: StringRecord = StringRecord::from(vec![
+            "1",               //0
+            "Jonathan Taylor", //1
+            "IND",             //2
+            "RB",              //3
+            "1",               //4
+            "HOU",             //5
+            "29",              //6
+            "28",              //7
+            "19.57",           //8
+            "1.92",            //9
+            "16",              //10
+            "FanDuel",         //11
+            "10200",           //12
+        ]);
+        let player: Player = Player::new_from_fd(test_record.clone());
+        assert_eq!(player.name, test_record[1].to_string());
+        assert_eq!(player.opp, test_record[5].to_string());
+        assert_eq!(player.ownership, test_record[10].parse::<f32>().unwrap());
+        assert_eq!(player.points, test_record[8].parse::<f32>().unwrap());
+        assert_eq!(player.points_dollar, test_record[9].parse::<f32>().unwrap());
+        assert_eq!(player.pos, test_record[3].to_string());
+        assert_eq!(
+            player.pos_rank,
+            Some(test_record[7].parse::<i16>().unwrap())
+        );
+        assert_eq!(player.price, test_record[12].parse::<i16>().unwrap());
+        assert_eq!(player.team, test_record[2].to_string())
+    }
+
+    #[test]
+    fn test_calculate_total_salary() {
+        let test_player: Player = create_test_player(1.0, 1, 1.0);
+        let test_lineup: LineupBuilder<'_> = LineupBuilder {
+            qb: Some(&test_player),
+            rb1: Some(&test_player),
+            rb2: Some(&test_player),
+            wr1: Some(&test_player),
+            wr2: Some(&test_player),
+            wr3: Some(&test_player),
+            te: Some(&test_player),
+            flex: Some(&test_player),
+            dst: Some(&test_player),
+            total_price: 2,
+        };
+        assert_eq!(test_lineup.total_amount_spent(), 9);
+    }
+
+    #[test]
+    fn test_lineup_builder_set_functions() {
+        let test_player: Player = create_test_player(1.0, 1, 1.0);
+        let empty_lineup = LineupBuilder::new();
+        let qb_lineup = empty_lineup.set_qb(&test_player);
+        let rb_lineup = qb_lineup.set_rb2(&test_player);
+        assert_eq!(rb_lineup.total_price, 2)
+    }
+    #[test]
+    fn test_lineup_averge_functions() {
+        let mut p: Vec<Option<Player>> = Vec::new();
+        for _ in 0..4 {
+            p.push(Some(create_test_player(2.0, 1, 4.0)));
+        }
+        for _ in 0..5 {
+            p.push(Some(create_test_player(12.0, 1, 8.0)));
+        }
+        let line_up: LineupBuilder = LineupBuilder {
+            qb: p[0].as_ref(),
+            rb1: p[1].as_ref(),
+            rb2: p[2].as_ref(),
+            wr1: p[3].as_ref(),
+            wr2: p[4].as_ref(),
+            wr3: p[5].as_ref(),
+            te: p[6].as_ref(),
+            flex: p[7].as_ref(),
+            dst: p[8].as_ref(),
+            total_price: 10,
+        };
+        assert_eq!(line_up.averge_ownership(), 6.2222223);
+        assert_eq!(line_up.averge_projected_points(), 7.5555556);
+    }
+}
