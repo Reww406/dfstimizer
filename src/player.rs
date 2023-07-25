@@ -1,38 +1,72 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Player {
+// TODO add max/min variance, high sacks for def,
+// TODO throws to end zone
+// TODO avg attempts, rec targets need to be pulled from stats
+pub struct RbProj {
     pub name: String,
     pub team: String,
     pub opp: String,
-    pub points_dollar: f32,
-    // Higher the better
-    pub pos_rank: Option<i16>,
-    pub price: i16,
-    pub points: f32,
-    pub pos: String,
-    pub ownership: f32,
+    pub points: String,
+    pub avg_att: i16,
+    pub td: i32,
+    pub yds: f32,
+    pub salary: i32,
+    pub own_per: f32,
 }
 
-// Rank 0, Name 1, Team 2, Position 3, Week 4, Opp 5, Opp Rank 6, Opp Pos Rank 7, Proj Points Fanduel 8,
-// Points per dollar 9, Project Ownership 10, Operator (Fanduel) 11, Operator Salary 12
-impl Player {
-    pub fn new_from_fd(record: csv::StringRecord) -> Self {
-        Player {
+pub struct QbProj {
+    pub name: String,
+    pub team: String,
+    pub opp: String,
+    pub points: f32,
+    pub com: f32,
+    pub int: f32,
+    pub passing_yds: f32,
+    pub passing_tds: f32,
+    pub rushing_yds: f32,
+    pub salary: i32,
+    pub own_per: f32,
+}
+
+pub struct RecProj {
+    pub name: String,
+    pub team: String,
+    pub opp: String,
+    pub points: String,
+    pub avg_rec: i16,
+    pub avg_tgts: i16,
+    pub td: i32,
+    pub yds: f32,
+    pub salary: i32,
+    pub own_per: f32,
+}
+
+pub struct DefProj {}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct PlayerOwn {
+    // We will generate our own once we load data into sqlite
+    pub id: i16,
+    pub name: String,
+    pub team: String,
+    pub pos: String,
+    pub opp: String,
+    pub salary: i32,
+    pub own_per: f32,
+}
+
+// Id 0, player 1, team 2, opp 3, pos 4, salary 5, own 6
+impl PlayerOwn {
+    pub fn new(record: csv::StringRecord) -> Self {
+        PlayerOwn {
+            id: 1, // fetch from database
             name: record[1].to_string(),
             team: record[2].to_string(),
-            opp: record[5].to_string(),
-            // TODO how often is points _dollars blank
-            points_dollar: record[9].parse::<f32>().unwrap_or_default(),
-            pos_rank: if record[7].to_string() == "null" {
-                None
-            } else {
-                Some(record[7].parse::<i16>().expect("Failed to get pos_rank"))
-            },
-            price: record[12].parse::<i16>().expect("Failed to get price"),
-            points: record[8].parse::<f32>().unwrap_or_default(),
-            pos: record[3].to_string(),
-            ownership: record[10].parse::<f32>().expect("Failed to get ownership"),
+            opp: record[3].to_string(),
+            pos: record[4].to_string(),
+            salary: record[5].parse::<i32>().expect("Salary Missing"),
+            own_per: record[6].parse::<f32>().expect("Owner Percentage"),
         }
     }
 }
@@ -41,50 +75,30 @@ impl Player {
 mod tests {
     use super::*;
     use csv::StringRecord;
-
-    fn create_test_player(points: f32, price: i16, ownership: f32) -> Player {
-        Player {
-            name: String::from("test"),
-            team: String::from("test"),
-            opp: String::from("test"),
-            points_dollar: 1.0,
-            pos_rank: Some(1),
-            price: price,
-            points: points,
-            pos: String::from("RB"),
-            ownership: ownership,
-        }
-    }
-
+    //85546-69531,Jalen Hurts,PHI,NYG,QB,9000,18.6
     #[test]
     fn test_new_from_fd() {
         let test_record: StringRecord = StringRecord::from(vec![
-            "1",               //0
-            "Jonathan Taylor", //1
-            "IND",             //2
-            "RB",              //3
-            "1",               //4
-            "HOU",             //5
-            "29",              //6
-            "28",              //7
-            "19.57",           //8
-            "1.92",            //9
-            "16",              //10
-            "FanDuel",         //11
-            "10200",           //12
+            "85546-69531",
+            "Jalen Hurts",
+            "PHI",
+            "NYG",
+            "QB",
+            "9000",
+            "18.6",
         ]);
-        let player: Player = Player::new_from_fd(test_record.clone());
+        let player: PlayerOwn = PlayerOwn::new(test_record.clone());
         assert_eq!(player.name, test_record[1].to_string());
-        assert_eq!(player.opp, test_record[5].to_string());
-        assert_eq!(player.ownership, test_record[10].parse::<f32>().unwrap());
-        assert_eq!(player.points, test_record[8].parse::<f32>().unwrap());
-        assert_eq!(player.points_dollar, test_record[9].parse::<f32>().unwrap());
-        assert_eq!(player.pos, test_record[3].to_string());
+        assert_eq!(player.team, test_record[2].to_string());
+        assert_eq!(player.opp, test_record[3].to_string());
+        assert_eq!(player.pos, test_record[4].to_string());
         assert_eq!(
-            player.pos_rank,
-            Some(test_record[7].parse::<i16>().unwrap())
+            player.salary,
+            test_record[5].parse::<i32>().expect("Missing salary")
         );
-        assert_eq!(player.price, test_record[12].parse::<i16>().unwrap());
-        assert_eq!(player.team, test_record[2].to_string())
+        assert_eq!(
+            player.own_per,
+            test_record[6].parse::<f32>().expect("Missing Own Per")
+        );
     }
 }

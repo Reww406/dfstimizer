@@ -5,12 +5,13 @@ const GOOD_SALARY_USAGE: i32 = 45000;
 
 // TODO try to refactor, hopefully can take up less space
 // TODO Optimizer and Linup Builder maybe should be split into seperate classes
-pub fn build_all_possible_lineups(players: &Vec<Player>) -> Vec<Lineup> {
+// TODO should do comparsions with player ID will make this faster
+pub fn build_all_possible_lineups(players: &Vec<PlayerOwn>) -> Vec<Lineup> {
     let mut lineups: Vec<LineupBuilder> = Vec::new();
     players
         .iter()
-        .filter(|player: &&Player| player.pos.to_lowercase() == "qb")
-        .for_each(|qb: &Player| {
+        .filter(|player: &&PlayerOwn| player.pos.to_lowercase() == "qb")
+        .for_each(|qb: &PlayerOwn| {
             let lineup_builder: LineupBuilder = LineupBuilder::new();
             lineups.push(lineup_builder.set_qb(qb))
         });
@@ -33,7 +34,7 @@ pub fn filter_low_salary_cap(
 
 // Needs to barrow players so it can be passed to the rest of the functions
 pub fn add_wrs_to_lineups<'a>(
-    players: &'a Vec<Player>,
+    players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
     let mut iterations: i64 = 0;
@@ -42,8 +43,8 @@ pub fn add_wrs_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|player: &&Player| player.pos.to_lowercase() == "wr")
-            .for_each(|wr: &Player| {
+            .filter(|player: &&PlayerOwn| player.pos.to_lowercase() == "wr")
+            .for_each(|wr: &PlayerOwn| {
                 lineups_with_wr1.push(lineup.clone().set_wr1(wr));
                 iterations += 1
             });
@@ -53,9 +54,9 @@ pub fn add_wrs_to_lineups<'a>(
     for lineup in &lineups_with_wr1 {
         players
             .iter()
-            .filter(|p: &&Player| p.pos.to_lowercase() == "wr")
-            .filter(|wr2: &&Player| wr2.name != lineup.wr1.as_ref().unwrap().name)
-            .for_each(|wr2: &Player| {
+            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "wr")
+            .filter(|wr2: &&PlayerOwn| wr2.name != lineup.wr1.as_ref().unwrap().name)
+            .for_each(|wr2: &PlayerOwn| {
                 lineups_with_wr2.push(lineup.clone().set_wr2(wr2));
                 iterations += 1;
             });
@@ -66,10 +67,10 @@ pub fn add_wrs_to_lineups<'a>(
     for lineup in &lineups_with_wr2 {
         players
             .iter()
-            .filter(|p: &&Player| p.pos.to_lowercase() == "wr")
-            .filter(|wr3: &&Player| wr3.name != lineup.wr1.as_ref().unwrap().name)
-            .filter(|wr3: &&Player| wr3.name != lineup.wr2.as_ref().unwrap().name)
-            .for_each(|wr3: &Player| {
+            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "wr")
+            .filter(|wr3: &&PlayerOwn| wr3.name != lineup.wr1.as_ref().unwrap().name)
+            .filter(|wr3: &&PlayerOwn| wr3.name != lineup.wr2.as_ref().unwrap().name)
+            .for_each(|wr3: &PlayerOwn| {
                 lineup_with_wr3.push(lineup.clone().set_wr3(wr3));
                 iterations += 1;
             });
@@ -80,7 +81,7 @@ pub fn add_wrs_to_lineups<'a>(
 }
 
 pub fn add_rbs_to_lineups<'a>(
-    players: &'a Vec<Player>,
+    players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
     let mut lineups_with_rb1: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
@@ -88,8 +89,8 @@ pub fn add_rbs_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|p: &&Player| p.pos.to_lowercase() == "rb")
-            .for_each(|rb: &Player| {
+            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "rb")
+            .for_each(|rb: &PlayerOwn| {
                 lineups_with_rb1.push(lineup.clone().set_rb1(rb));
                 iterations += 1
             });
@@ -99,9 +100,9 @@ pub fn add_rbs_to_lineups<'a>(
     for lineup in &lineups_with_rb1 {
         players
             .iter()
-            .filter(|p: &&Player| p.pos.to_lowercase() == "rb")
-            .filter(|p: &&Player| p.name != lineup.rb1.unwrap().name)
-            .for_each(|rb2: &Player| {
+            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "rb")
+            .filter(|p: &&PlayerOwn| p.name != lineup.rb1.unwrap().name)
+            .for_each(|rb2: &PlayerOwn| {
                 lineups_with_rb2.push(lineup.clone().set_rb2(rb2));
                 iterations += 1;
             })
@@ -112,7 +113,7 @@ pub fn add_rbs_to_lineups<'a>(
 }
 
 pub fn add_te_to_lineups<'a>(
-    players: &'a Vec<Player>,
+    players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
     let mut lineups_with_te: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
@@ -120,8 +121,8 @@ pub fn add_te_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|p: &&Player| p.pos.to_lowercase() == "te")
-            .for_each(|te: &Player| {
+            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "te")
+            .for_each(|te: &PlayerOwn| {
                 lineups_with_te.push(lineup.clone().set_te(te));
                 iterations += 1
             })
@@ -131,7 +132,7 @@ pub fn add_te_to_lineups<'a>(
 }
 
 pub fn add_flex_find_top_num<'a>(
-    players: &'a Vec<Player>,
+    players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
     lineup_cap: usize,
 ) -> Vec<Lineup> {
@@ -149,12 +150,12 @@ pub fn add_flex_find_top_num<'a>(
         ];
         players
             .iter()
-            .filter(|p: &&Player| flex_pos.contains(&p.pos.to_lowercase()))
-            .filter(|p: &&Player| !running_backs.contains(&&p.name.to_lowercase()))
-            .filter(|p: &&Player| !wide_recievers.contains(&&p.name.to_lowercase()))
-            .filter(|p: &&Player| (p.price as i32 + lineup.total_price) < SALARY_CAP)
-            .filter(|p: &&Player| (p.price as i32 + lineup.total_price) > GOOD_SALARY_USAGE)
-            .for_each(|flex: &Player| {
+            .filter(|p: &&PlayerOwn| flex_pos.contains(&p.pos.to_lowercase()))
+            .filter(|p: &&PlayerOwn| !running_backs.contains(&&p.name.to_lowercase()))
+            .filter(|p: &&PlayerOwn| !wide_recievers.contains(&&p.name.to_lowercase()))
+            .filter(|p: &&PlayerOwn| (p.salary as i32 + lineup.total_price) < SALARY_CAP)
+            .filter(|p: &&PlayerOwn| (p.salary as i32 + lineup.total_price) > GOOD_SALARY_USAGE)
+            .for_each(|flex: &PlayerOwn| {
                 iterations += 1;
                 let finished_lineup = lineup.clone().set_flex(flex);
                 let score = calculate_lineup_score(&finished_lineup);
@@ -188,7 +189,7 @@ pub fn add_flex_find_top_num<'a>(
 }
 
 pub fn add_dst_to_lineups<'a>(
-    players: &'a Vec<Player>,
+    players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
     let mut lineups_with_def: Vec<LineupBuilder> = Vec::new();
@@ -196,8 +197,8 @@ pub fn add_dst_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|p: &&Player| p.pos.to_lowercase() == "dst")
-            .for_each(|def: &Player| {
+            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "d")
+            .for_each(|def: &PlayerOwn| {
                 lineups_with_def.push(lineup.clone().set_def(def));
                 iterations += 1;
             });
@@ -206,11 +207,11 @@ pub fn add_dst_to_lineups<'a>(
     lineups_with_def
 }
 
+// TODO their will need to be mutiple line up scores
 pub fn calculate_lineup_score(lineup: &LineupBuilder) -> f32 {
     let salary_spent_score: f32 = lineup.get_salary_spent_score();
-    let point_score: f32 = lineup.get_points_score();
     let ownership_score: f32 = lineup.get_ownership_score();
-    ownership_score + point_score + salary_spent_score
+    ownership_score + salary_spent_score
 }
 
 // TODO Test build lineup should be sorted and under salary cap.
@@ -219,18 +220,16 @@ pub fn calculate_lineup_score(lineup: &LineupBuilder) -> f32 {
 mod tests {
     use super::*;
     // Helper function for creating line ups
-    fn create_test_lineup(ownership: f32, points: f32, price: i16) -> Lineup {
-        let mut players: Vec<Player> = Vec::with_capacity(9);
+    fn create_test_lineup(ownership: f32, price: i32) -> Lineup {
+        let mut players: Vec<PlayerOwn> = Vec::with_capacity(9);
         for _ in 0..9 {
-            players.push(Player {
+            players.push(PlayerOwn {
+                id: 1,
                 opp: String::from("PIT"),
-                points_dollar: 12.0,
-                pos_rank: Some(2),
                 team: String::from("TEN"),
                 name: String::from("John bob"),
-                ownership: ownership,
-                points: points,
-                price: price,
+                own_per: ownership,
+                salary: price,
                 pos: String::from("QB"),
             })
         }
@@ -252,20 +251,20 @@ mod tests {
 
     #[test]
     fn test_max_score() {
-        let lineup: Lineup = create_test_lineup(MIN_AVG_OWNERSHIP, MAX_POINTS, 6666);
-        assert_eq!(lineup.score, 1.9999)
+        let lineup: Lineup = create_test_lineup(MIN_AVG_OWNERSHIP, 6666);
+        assert_eq!(lineup.score, 1.0)
     }
 
     #[test]
     fn test_min_score() {
-        let lineup: Lineup = create_test_lineup(MAX_AVG_OWNERHSIP, MAX_POINTS, 0);
-        assert_eq!(lineup.score, 0.0);
+        let lineup: Lineup = create_test_lineup(MAX_AVG_OWNERHSIP, 0);
+        assert_eq!(lineup.score, -1.0);
     }
 
     #[test]
     fn test_scoring() {
-        let lineup: Lineup = create_test_lineup(20.0, 25.0, 4000);
-        let lineup1: Lineup = create_test_lineup(19.8, 25.5, 4005);
+        let lineup: Lineup = create_test_lineup(20.0, 4000);
+        let lineup1: Lineup = create_test_lineup(19.8, 4005);
         assert!(lineup.score < lineup1.score);
     }
 }

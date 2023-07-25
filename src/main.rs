@@ -1,6 +1,6 @@
 use csv::Error;
 use dfstimizer::lineup::*;
-use dfstimizer::load_in_fd_csv;
+use dfstimizer::load_in_ownership;
 use dfstimizer::optimizer::*;
 use dfstimizer::player::*;
 
@@ -20,23 +20,19 @@ use dfstimizer::player::*;
 // TODO use Sqlite to avoid doing all iterations in memory
 
 fn main() -> Result<(), Error> {
-    let players: Vec<Player> = load_in_fd_csv(
-        "fanduel.csv",
-        &[String::from("PIT"), String::from("TEN")],
-        1,
+    let players: Vec<PlayerOwn> = load_in_ownership(
+        "fd-ownership.csv",
+        &[
+            String::from("PIT"),
+            String::from("CLE"),
+            String::from("PHI"),
+            String::from("NYG"),
+        ],
     );
 
-    println!(
-        "{:?}",
-        players
-            .into_iter()
-            .filter(|p| p.pos == "QB")
-            .collect::<Vec<Player>>()
-    );
-
-    // let lineups: Vec<Lineup> = build_all_possible_lineups(&players);
-    // for lineup in lineups {
-    //     println!("{:?}", lineup.score);
-    // }
+    let lineups: Vec<Lineup> = build_all_possible_lineups(&players);
+    for lineup in lineups {
+        println!("{:?}", lineup.score);
+    }
     Ok(())
 }
