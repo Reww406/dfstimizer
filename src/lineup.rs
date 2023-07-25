@@ -1,26 +1,13 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{mean, optimizer::calculate_lineup_score};
+use crate::{player::*, return_if_field_exits};
 
-pub const SALARY_CAP: i32 = 60000;
+pub const SALARY_CAP: i32 = 59994;
 pub const MAX_AVG_OWNERHSIP: f32 = 60.0;
 pub const MIN_AVG_OWNERSHIP: f32 = 1.0;
 pub const MAX_POINTS: f32 = 40.0;
 pub const MIN_POINTS: f32 = 10.0;
-
-#[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Player {
-    pub name: String,
-    pub team: String,
-    pub opp: String,
-    pub points_dollar: f32,
-    // Higher the better
-    pub pos_rank: Option<i16>,
-    pub price: i16,
-    pub points: f32,
-    pub pos: String,
-    pub ownership: f32,
-}
 
 #[derive(Clone)]
 pub struct LineupBuilder<'a> {
@@ -49,14 +36,6 @@ pub struct Lineup {
     pub def: Player,
     pub total_price: i32,
     pub score: f32,
-}
-
-// Builder Helper function
-fn return_if_field_exits<'a>(field: Option<&'a Player>, set_to: &'a Player) -> &'a Player {
-    if field.is_some() {
-        panic!("Tried to set {} when one already exits", set_to.pos);
-    }
-    set_to
 }
 
 // TODO Would love to find a way to make this more DRY
@@ -196,36 +175,10 @@ impl<'a> LineupBuilder<'a> {
     }
 }
 
-// Rank 0, Name 1, Team 2, Position 3, Week 4, Opp 5, Opp Rank 6, Opp Pos Rank 7, Proj Points Fanduel 8,
-// Points per dollar 9, Project Ownership 10, Operator (Fanduel) 11, Operator Salary 12
-impl Player {
-    pub fn new_from_fd(record: csv::StringRecord) -> Self {
-        Player {
-            name: record[1].to_string(),
-            team: record[2].to_string(),
-            opp: record[5].to_string(),
-            // TODO what is causing this to fail
-            points_dollar: record[9].parse::<f32>().unwrap_or_default(),
-            pos_rank: if record[7].to_string() == "null" {
-                None
-            } else {
-                Some(record[7].parse::<i16>().expect("Failed to get pos_rank"))
-            },
-            price: record[12].parse::<i16>().expect("Failed to get price"),
-            points: record[8].parse::<f32>().unwrap_or_default(),
-            pos: record[3].to_string(),
-            ownership: record[10].parse::<f32>().expect("Failed to get ownership"),
-        }
-    }
-}
-// TODO Test points score
-// TODO Test salary score
-// TODO Test ownership score
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use csv::StringRecord;
+    // TODO the lineupBuilder init could probably be done with a macro?
     fn create_test_player(points: f32, price: i16, ownership: f32) -> Player {
         Player {
             name: String::from("test"),
@@ -239,59 +192,53 @@ mod tests {
             ownership: ownership,
         }
     }
-    #[test]
-    fn test_new_from_fd() {
-        let test_record: StringRecord = StringRecord::from(vec![
-            "1",               //0
-            "Jonathan Taylor", //1
-            "IND",             //2
-            "RB",              //3
-            "1",               //4
-            "HOU",             //5
-            "29",              //6
-            "28",              //7
-            "19.57",           //8
-            "1.92",            //9
-            "16",              //10
-            "FanDuel",         //11
-            "10200",           //12
-        ]);
-        let player: Player = Player::new_from_fd(test_record.clone());
-        assert_eq!(player.name, test_record[1].to_string());
-        assert_eq!(player.opp, test_record[5].to_string());
-        assert_eq!(player.ownership, test_record[10].parse::<f32>().unwrap());
-        assert_eq!(player.points, test_record[8].parse::<f32>().unwrap());
-        assert_eq!(player.points_dollar, test_record[9].parse::<f32>().unwrap());
-        assert_eq!(player.pos, test_record[3].to_string());
-        assert_eq!(
-            player.pos_rank,
-            Some(test_record[7].parse::<i16>().unwrap())
-        );
-        assert_eq!(player.price, test_record[12].parse::<i16>().unwrap());
-        assert_eq!(player.team, test_record[2].to_string())
+
+    fn create_lineup_vec(
+        points: f32,
+        price: i16,
+        ownership: f32,
+        double: bool,
+    ) -> Vec<Option<Player>> {
+        let mut players: Vec<Option<Player>> = Vec::new();
+        if double {
+            for _ in 0..4 {
+                let player: Player = create_test_player(points, price, ownership);
+                players.push(Some(player));
+            }
+            for _ in 4..9 {
+                let player: Player = create_test_player(2.0 * points, 2 * price, 2.0 * ownership);
+                players.push(Some(player));
+            }
+        } else {
+            for _ in 0..9 {
+                let player: Player = create_test_player(points, price, ownership);
+                players.push(Some(player));
+            }
+        }
+        players
     }
 
     #[test]
     fn test_calculate_total_salary() {
-        let test_player: Player = create_test_player(1.0, 1, 1.0);
-        let test_lineup: LineupBuilder<'_> = LineupBuilder {
-            qb: Some(&test_player),
-            rb1: Some(&test_player),
-            rb2: Some(&test_player),
-            wr1: Some(&test_player),
-            wr2: Some(&test_player),
-            wr3: Some(&test_player),
-            te: Some(&test_player),
-            flex: Some(&test_player),
-            dst: Some(&test_player),
-            total_price: 2,
+        let p: Vec<Option<Player>> = create_lineup_vec(1.0, 1, 1.0, false);
+        let test_lineup: LineupBuilder = LineupBuilder {
+            qb: p[0].as_ref(),
+            rb1: p[1].as_ref(),
+            rb2: p[2].as_ref(),
+            wr1: p[3].as_ref(),
+            wr2: p[4].as_ref(),
+            wr3: p[5].as_ref(),
+            te: p[6].as_ref(),
+            flex: p[7].as_ref(),
+            dst: p[8].as_ref(),
+            total_price: 10,
         };
         assert_eq!(test_lineup.total_amount_spent(), 9);
     }
 
     #[test]
     fn test_lineup_builder_set_functions() {
-        let test_player: Player = create_test_player(1.0, 1, 1.0);
+        let test_player: &Player = &create_test_player(1.0, 1, 1.0);
         let empty_lineup = LineupBuilder::new();
         let qb_lineup = empty_lineup.set_qb(&test_player);
         let rb_lineup = qb_lineup.set_rb2(&test_player);
@@ -299,13 +246,7 @@ mod tests {
     }
     #[test]
     fn test_lineup_averge_functions() {
-        let mut p: Vec<Option<Player>> = Vec::new();
-        for _ in 0..4 {
-            p.push(Some(create_test_player(2.0, 1, 4.0)));
-        }
-        for _ in 0..5 {
-            p.push(Some(create_test_player(12.0, 1, 8.0)));
-        }
+        let p: Vec<Option<Player>> = create_lineup_vec(6.0, 1, 4.0, true);
         let line_up: LineupBuilder = LineupBuilder {
             qb: p[0].as_ref(),
             rb1: p[1].as_ref(),
@@ -319,6 +260,42 @@ mod tests {
             total_price: 10,
         };
         assert_eq!(line_up.averge_ownership(), 6.2222223);
-        assert_eq!(line_up.averge_projected_points(), 7.5555556);
+        assert_eq!(line_up.averge_projected_points(), 9.333333);
+    }
+
+    #[test]
+    fn test_score_functions() {
+        let max_value_players = create_lineup_vec(MAX_POINTS, 6666, MAX_AVG_OWNERHSIP, false);
+        let min_value_players = create_lineup_vec(MIN_POINTS, 0, MIN_AVG_OWNERSHIP, false);
+        let max_line_up: LineupBuilder = LineupBuilder {
+            qb: max_value_players[0].as_ref(),
+            rb1: max_value_players[1].as_ref(),
+            rb2: max_value_players[2].as_ref(),
+            wr1: max_value_players[3].as_ref(),
+            wr2: max_value_players[4].as_ref(),
+            wr3: max_value_players[5].as_ref(),
+            te: max_value_players[6].as_ref(),
+            flex: max_value_players[7].as_ref(),
+            dst: max_value_players[8].as_ref(),
+            total_price: 10,
+        };
+        let min_line_up: LineupBuilder = LineupBuilder {
+            qb: min_value_players[0].as_ref(),
+            rb1: min_value_players[1].as_ref(),
+            rb2: min_value_players[2].as_ref(),
+            wr1: min_value_players[3].as_ref(),
+            wr2: min_value_players[4].as_ref(),
+            wr3: min_value_players[5].as_ref(),
+            te: min_value_players[6].as_ref(),
+            flex: min_value_players[7].as_ref(),
+            dst: min_value_players[8].as_ref(),
+            total_price: 10,
+        };
+        assert_eq!(max_line_up.get_points_score(), 1.0);
+        assert_eq!(min_line_up.get_points_score(), 0.0);
+        assert_eq!(max_line_up.get_ownership_score(), -1.0);
+        assert_eq!(min_line_up.get_ownership_score(), 0.0);
+        assert_eq!(max_line_up.get_salary_spent_score(), 1.0);
+        assert_eq!(min_line_up.get_salary_spent_score(), 0.0);
     }
 }
