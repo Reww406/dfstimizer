@@ -19,20 +19,37 @@ use dfstimizer::player::*;
 
 // TODO use Sqlite to avoid doing all iterations in memory
 
+fn count_player_type(players: &Vec<PlayerOwn>, pos: Pos) -> i32 {
+    let mut count = 0;
+    for player in players {
+        if player.pos == pos {
+            count += 1;
+        }
+    }
+    count
+}
+
 fn main() -> Result<(), Error> {
     let players: Vec<PlayerOwn> = load_in_ownership(
         "fd-ownership.csv",
         &[
-            String::from("PIT"),
-            String::from("CLE"),
-            String::from("PHI"),
-            String::from("NYG"),
+            String::from("*"),
+            // String::from("CLE"),
+            // String::from("BUF"),
+            // String::from("DET"),
         ],
     );
-
-    let lineups: Vec<Lineup> = build_all_possible_lineups(&players);
-    for lineup in lineups {
-        println!("{:?}", lineup.score);
-    }
+    // We shouldn't be iterating over line ups like order matters this will reduce
+    // lineup amount by a lot
+    println!("QB {}", count_player_type(&players, Pos::Qb));
+    println!("WR {}", count_player_type(&players, Pos::Wr));
+    println!("RB {}", count_player_type(&players, Pos::Rb));
+    println!("TE {}", count_player_type(&players, Pos::Te));
+    println!("D {}", count_player_type(&players, Pos::D));
+    // let lineups: Vec<Lineup> = build_all_possible_lineups(&players);
+    // println!("{}", lineups.len());
+    // for lineup in lineups {
+    //     println!("{:?}", lineup.score);
+    // }
     Ok(())
 }

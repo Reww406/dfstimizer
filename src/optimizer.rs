@@ -10,7 +10,7 @@ pub fn build_all_possible_lineups(players: &Vec<PlayerOwn>) -> Vec<Lineup> {
     let mut lineups: Vec<LineupBuilder> = Vec::new();
     players
         .iter()
-        .filter(|player: &&PlayerOwn| player.pos.to_lowercase() == "qb")
+        .filter(|player: &&PlayerOwn| player.pos == Pos::Qb)
         .for_each(|qb: &PlayerOwn| {
             let lineup_builder: LineupBuilder = LineupBuilder::new();
             lineups.push(lineup_builder.set_qb(qb))
@@ -19,8 +19,8 @@ pub fn build_all_possible_lineups(players: &Vec<PlayerOwn>) -> Vec<Lineup> {
     let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&players, wrs_lineups);
     let te_linesups: Vec<LineupBuilder> = add_te_to_lineups(&players, rbs_lineups);
     let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&players, te_linesups);
-    let filterd_lineups = filter_low_salary_cap(dst_lineups, 48000);
-    let flex_lineups: Vec<Lineup> = add_flex_find_top_num(&players, filterd_lineups, 300);
+    let filterd_lineups = filter_low_salary_cap(dst_lineups, 0);
+    let flex_lineups: Vec<Lineup> = add_flex_find_top_num(&players, filterd_lineups, 10000000);
     flex_lineups
 }
 
@@ -43,7 +43,7 @@ pub fn add_wrs_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|player: &&PlayerOwn| player.pos.to_lowercase() == "wr")
+            .filter(|player: &&PlayerOwn| player.pos == Pos::Wr)
             .for_each(|wr: &PlayerOwn| {
                 lineups_with_wr1.push(lineup.clone().set_wr1(wr));
                 iterations += 1
@@ -54,8 +54,8 @@ pub fn add_wrs_to_lineups<'a>(
     for lineup in &lineups_with_wr1 {
         players
             .iter()
-            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "wr")
-            .filter(|wr2: &&PlayerOwn| wr2.name != lineup.wr1.as_ref().unwrap().name)
+            .filter(|p: &&PlayerOwn| p.pos == Pos::Wr)
+            .filter(|wr2: &&PlayerOwn| wr2.id != lineup.wr1.as_ref().unwrap().id)
             .for_each(|wr2: &PlayerOwn| {
                 lineups_with_wr2.push(lineup.clone().set_wr2(wr2));
                 iterations += 1;
@@ -67,9 +67,9 @@ pub fn add_wrs_to_lineups<'a>(
     for lineup in &lineups_with_wr2 {
         players
             .iter()
-            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "wr")
-            .filter(|wr3: &&PlayerOwn| wr3.name != lineup.wr1.as_ref().unwrap().name)
-            .filter(|wr3: &&PlayerOwn| wr3.name != lineup.wr2.as_ref().unwrap().name)
+            .filter(|p: &&PlayerOwn| p.pos == Pos::Wr)
+            .filter(|wr3: &&PlayerOwn| wr3.id != lineup.wr1.as_ref().unwrap().id)
+            .filter(|wr3: &&PlayerOwn| wr3.id != lineup.wr2.as_ref().unwrap().id)
             .for_each(|wr3: &PlayerOwn| {
                 lineup_with_wr3.push(lineup.clone().set_wr3(wr3));
                 iterations += 1;
@@ -89,7 +89,7 @@ pub fn add_rbs_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "rb")
+            .filter(|p: &&PlayerOwn| p.pos == Pos::Rb)
             .for_each(|rb: &PlayerOwn| {
                 lineups_with_rb1.push(lineup.clone().set_rb1(rb));
                 iterations += 1
@@ -100,8 +100,8 @@ pub fn add_rbs_to_lineups<'a>(
     for lineup in &lineups_with_rb1 {
         players
             .iter()
-            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "rb")
-            .filter(|p: &&PlayerOwn| p.name != lineup.rb1.unwrap().name)
+            .filter(|p: &&PlayerOwn| p.pos == Pos::Rb)
+            .filter(|p: &&PlayerOwn| p.id != lineup.rb1.unwrap().id)
             .for_each(|rb2: &PlayerOwn| {
                 lineups_with_rb2.push(lineup.clone().set_rb2(rb2));
                 iterations += 1;
@@ -121,7 +121,7 @@ pub fn add_te_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "te")
+            .filter(|p: &&PlayerOwn| p.pos == Pos::Te)
             .for_each(|te: &PlayerOwn| {
                 lineups_with_te.push(lineup.clone().set_te(te));
                 iterations += 1
@@ -136,35 +136,37 @@ pub fn add_flex_find_top_num<'a>(
     lineups: Vec<LineupBuilder<'a>>,
     lineup_cap: usize,
 ) -> Vec<Lineup> {
-    let flex_pos: [String; 2] = [String::from("wr"), String::from("rb")];
+    let flex_pos: [Pos; 2] = [Pos::Wr, Pos::Rb];
     let mut best_lineups: Vec<Lineup> = Vec::with_capacity(lineup_cap);
     let mut lowest_score: f32 = 0.0;
     let mut sorted: bool = false;
     let mut iterations: i64 = 0;
     for lineup in &lineups {
-        let running_backs: [&String; 2] = [&lineup.rb1.unwrap().name, &lineup.rb2.unwrap().name];
-        let wide_recievers: [&String; 3] = [
-            &lineup.wr1.unwrap().name,
-            &lineup.wr2.unwrap().name,
-            &lineup.wr3.unwrap().name,
+        let running_backs: [&i16; 2] = [&lineup.rb1.unwrap().id, &lineup.rb2.unwrap().id];
+        let wide_recievers: [&i16; 3] = [
+            &lineup.wr1.unwrap().id,
+            &lineup.wr2.unwrap().id,
+            &lineup.wr3.unwrap().id,
         ];
         players
             .iter()
-            .filter(|p: &&PlayerOwn| flex_pos.contains(&p.pos.to_lowercase()))
-            .filter(|p: &&PlayerOwn| !running_backs.contains(&&p.name.to_lowercase()))
-            .filter(|p: &&PlayerOwn| !wide_recievers.contains(&&p.name.to_lowercase()))
+            .filter(|p: &&PlayerOwn| flex_pos.contains(&p.pos))
+            .filter(|p: &&PlayerOwn| !running_backs.contains(&&p.id))
+            .filter(|p: &&PlayerOwn| !wide_recievers.contains(&&p.id))
             .filter(|p: &&PlayerOwn| (p.salary as i32 + lineup.total_price) < SALARY_CAP)
             .filter(|p: &&PlayerOwn| (p.salary as i32 + lineup.total_price) > GOOD_SALARY_USAGE)
             .for_each(|flex: &PlayerOwn| {
                 iterations += 1;
+                if iterations > 100_000_000 {
+                    println!("Reached 100m stopping");
+                    return;
+                }
+
                 let finished_lineup = lineup.clone().set_flex(flex);
                 let score = calculate_lineup_score(&finished_lineup);
                 if best_lineups.len() == lineup_cap && sorted == false {
                     best_lineups.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
                     sorted = true;
-                    for i in &best_lineups {
-                        print!("{}, ", i.score)
-                    }
                 }
                 if best_lineups.len() < lineup_cap {
                     if score < lowest_score {
@@ -197,10 +199,14 @@ pub fn add_dst_to_lineups<'a>(
     for lineup in &lineups {
         players
             .iter()
-            .filter(|p: &&PlayerOwn| p.pos.to_lowercase() == "d")
+            .filter(|p: &&PlayerOwn| p.pos == Pos::D)
             .for_each(|def: &PlayerOwn| {
                 lineups_with_def.push(lineup.clone().set_def(def));
                 iterations += 1;
+                if iterations > 100_000_000 {
+                    println!("Hit 100M stoppping...");
+                    std::process::exit(1)
+                }
             });
     }
     println!("Def iterated: {} times", iterations);
@@ -224,13 +230,12 @@ mod tests {
         let mut players: Vec<PlayerOwn> = Vec::with_capacity(9);
         for _ in 0..9 {
             players.push(PlayerOwn {
+                opp_id: 1,
+                team_id: 1,
                 id: 1,
-                opp: String::from("PIT"),
-                team: String::from("TEN"),
-                name: String::from("John bob"),
                 own_per: ownership,
                 salary: price,
-                pos: String::from("QB"),
+                pos: Pos::Qb,
             })
         }
 

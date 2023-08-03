@@ -169,11 +169,10 @@ mod tests {
     fn create_test_player(salary: i32, ownership: f32) -> PlayerOwn {
         PlayerOwn {
             id: 1,
-            name: String::from("test"),
-            team: String::from("test"),
-            opp: String::from("test"),
+            team_id: 1,
+            opp_id: 1,
             salary,
-            pos: String::from("RB"),
+            pos: Pos::Rb,
             own_per: ownership,
         }
     }
