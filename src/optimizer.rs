@@ -1,6 +1,13 @@
 use crate::lineup::*;
 use crate::player::*;
+use num_bigint::BigInt;
+use num_bigint::BigUint;
+use num_bigint::ToBigInt;
+use num_bigint::ToBigUint;
+use std::mem::size_of_val;
+use std::ops::BitAnd;
 
+// AYU DARK
 const GOOD_SALARY_USAGE: i32 = 45000;
 
 // TODO try to refactor, hopefully can take up less space
@@ -32,6 +39,42 @@ pub fn filter_low_salary_cap(
     lineups
 }
 
+pub fn generate_player_combos(players: &Vec<PlayerOwn>, sample: usize) -> Vec<Vec<PlayerOwn>> {
+    let mut result: Vec<Vec<PlayerOwn>> = Vec::new();
+
+    if sample > players.len() || sample == 0 {
+        return result;
+    }
+    println!("Total Players: {}", players.len());
+    let mut combination_mask: BigInt = (1.to_bigint().unwrap() << sample) - 1;
+    let end_mask: BigInt = 1.to_bigint().unwrap() << players.len();
+
+    let mut combination: Vec<PlayerOwn> = Vec::new();
+    println!("{}", end_mask);
+    while combination_mask < end_mask {
+        for i in 0..players.len() {
+            println!(
+                "mask: {:b}, i: {:b}",
+                combination_mask,
+                1.to_bigint().unwrap() << i
+            );
+
+            if (&combination_mask & 1.to_bigint().unwrap() << i) != 0.to_bigint().unwrap() {
+                combination.push(players[i].clone());
+            }
+        }
+        result.push(combination.clone());
+        combination.clear();
+        // combination.clear();
+        // I have no idea what this does
+        // t is the least significant 0 bit set to 1
+        let t: &BigInt = &(&combination_mask | ((&combination_mask & -&combination_mask) - 1));
+        combination_mask = (t + 1) | (((!t & -!t) - 1) >> (t.trailing_zeros().unwrap() + 1));
+    }
+
+    result
+}
+
 // Needs to barrow players so it can be passed to the rest of the functions
 pub fn add_wrs_to_lineups<'a>(
     players: &'a Vec<PlayerOwn>,
@@ -39,45 +82,11 @@ pub fn add_wrs_to_lineups<'a>(
 ) -> Vec<LineupBuilder<'a>> {
     let mut iterations: i64 = 0;
     // The two vectors should be dereferenced once the function ends
-    let mut lineups_with_wr1: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
-    for lineup in &lineups {
-        players
-            .iter()
-            .filter(|player: &&PlayerOwn| player.pos == Pos::Wr)
-            .for_each(|wr: &PlayerOwn| {
-                lineups_with_wr1.push(lineup.clone().set_wr1(wr));
-                iterations += 1
-            });
-    }
+    let mut new_lineup: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
+    for lineup in &lineups {}
 
-    let mut lineups_with_wr2: Vec<LineupBuilder> = Vec::with_capacity(lineups_with_wr1.len());
-    for lineup in &lineups_with_wr1 {
-        players
-            .iter()
-            .filter(|p: &&PlayerOwn| p.pos == Pos::Wr)
-            .filter(|wr2: &&PlayerOwn| wr2.id != lineup.wr1.as_ref().unwrap().id)
-            .for_each(|wr2: &PlayerOwn| {
-                lineups_with_wr2.push(lineup.clone().set_wr2(wr2));
-                iterations += 1;
-            });
-    }
-
-    let mut lineup_with_wr3: Vec<LineupBuilder> = Vec::with_capacity(lineups_with_wr2.len());
-    drop(lineups_with_wr1);
-    for lineup in &lineups_with_wr2 {
-        players
-            .iter()
-            .filter(|p: &&PlayerOwn| p.pos == Pos::Wr)
-            .filter(|wr3: &&PlayerOwn| wr3.id != lineup.wr1.as_ref().unwrap().id)
-            .filter(|wr3: &&PlayerOwn| wr3.id != lineup.wr2.as_ref().unwrap().id)
-            .for_each(|wr3: &PlayerOwn| {
-                lineup_with_wr3.push(lineup.clone().set_wr3(wr3));
-                iterations += 1;
-            });
-    }
     println!("WR Iterated: {} times", iterations);
-    drop(lineups_with_wr2);
-    lineup_with_wr3
+    return Vec::new();
 }
 
 pub fn add_rbs_to_lineups<'a>(

@@ -3,7 +3,10 @@ use dfstimizer::lineup::*;
 use dfstimizer::load_in_ownership;
 use dfstimizer::optimizer::*;
 use dfstimizer::player::*;
-
+use num_bigint::BigUint;
+use num_bigint::ToBigInt;
+use num_bigint::ToBigUint;
+use std::mem::size_of_val;
 // TODO Stacking should be scored
 // TODO Points per Dollar
 // TODO Opp Pos Rank
@@ -30,10 +33,13 @@ fn count_player_type(players: &Vec<PlayerOwn>, pos: Pos) -> i32 {
 }
 
 fn main() -> Result<(), Error> {
+    let combination_max = (1 << 3) - 1;
+    let end_mash: BigUint = 1.to_biguint().unwrap() << 500;
+    println!("{} : {}", combination_max, size_of_val(&end_mash));
     let players: Vec<PlayerOwn> = load_in_ownership(
         "fd-ownership.csv",
         &[
-            String::from("*"),
+            String::from("PIT"),
             // String::from("CLE"),
             // String::from("BUF"),
             // String::from("DET"),
@@ -41,11 +47,16 @@ fn main() -> Result<(), Error> {
     );
     // We shouldn't be iterating over line ups like order matters this will reduce
     // lineup amount by a lot
-    println!("QB {}", count_player_type(&players, Pos::Qb));
-    println!("WR {}", count_player_type(&players, Pos::Wr));
-    println!("RB {}", count_player_type(&players, Pos::Rb));
-    println!("TE {}", count_player_type(&players, Pos::Te));
-    println!("D {}", count_player_type(&players, Pos::D));
+    // println!("QB {}", count_player_type(&players, Pos::Qb));
+    // println!("WR {}", count_player_type(&players, Pos::Wr));
+    // println!("RB {}", count_player_type(&players, Pos::Rb));
+    // println!("TE {}", count_player_type(&players, Pos::Te));
+    // println!("D {}", count_player_type(&players, Pos::D));
+    let combos = generate_player_combos(&players, 3);
+    println!("Total combos: {}", combos.len());
+    for hello in combos {
+        println!("D {:?}", hello.len());
+    }
     // let lineups: Vec<Lineup> = build_all_possible_lineups(&players);
     // println!("{}", lineups.len());
     // for lineup in lineups {
