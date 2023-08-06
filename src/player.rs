@@ -1,4 +1,4 @@
-use std::error::Error;
+use std::{collections::HashMap, error::Error, hash::Hash};
 
 use serde::{Deserialize, Serialize};
 
@@ -53,7 +53,6 @@ pub enum Pos {
     D = 4,
 }
 
-
 impl Pos {
     pub fn from_str(input: &str) -> Result<Pos, ()> {
         match input {
@@ -68,6 +67,7 @@ impl Pos {
 }
 pub struct DefProj {}
 
+// Can we do just ID
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct PlayerOwn {
     // We will generate our own once we load data into sqlite
@@ -90,6 +90,15 @@ impl PlayerOwn {
             salary: record[5].parse::<i32>().expect("Salary Missing"),
             own_per: record[6].parse::<f32>().expect("Owner Percentage"),
         }
+    }
+
+    // Could make this a singleton so it's only generated once
+    pub fn player_lookup_map(players: &[PlayerOwn]) -> HashMap<i16, &PlayerOwn> {
+        let mut lookup_map = HashMap::new();
+        players.iter().for_each(|p| {
+            lookup_map.insert(p.id, p);
+        });
+        lookup_map
     }
 }
 

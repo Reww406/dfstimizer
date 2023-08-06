@@ -1,12 +1,15 @@
 use csv::Error;
+use dfstimizer::gen_comb;
 use dfstimizer::lineup::*;
 use dfstimizer::load_in_ownership;
 use dfstimizer::optimizer::*;
 use dfstimizer::player::*;
+use dfstimizer::total_comb;
 use num_bigint::BigUint;
 use num_bigint::ToBigInt;
 use num_bigint::ToBigUint;
 use std::mem::size_of_val;
+
 // TODO Stacking should be scored
 // TODO Points per Dollar
 // TODO Opp Pos Rank
@@ -33,34 +36,36 @@ fn count_player_type(players: &Vec<PlayerOwn>, pos: Pos) -> i32 {
 }
 
 fn main() -> Result<(), Error> {
-    let combination_max = (1 << 3) - 1;
-    let end_mash: BigUint = 1.to_biguint().unwrap() << 500;
-    println!("{} : {}", combination_max, size_of_val(&end_mash));
     let players: Vec<PlayerOwn> = load_in_ownership(
         "fd-ownership.csv",
         &[
             String::from("PIT"),
-            // String::from("CLE"),
-            // String::from("BUF"),
-            // String::from("DET"),
+            String::from("CIN"),
+            String::from("TEN"),
+            String::from("DET"),
+            String::from("SEA"),
+            String::from("ATL"),
         ],
     );
     // We shouldn't be iterating over line ups like order matters this will reduce
     // lineup amount by a lot
-    // println!("QB {}", count_player_type(&players, Pos::Qb));
-    // println!("WR {}", count_player_type(&players, Pos::Wr));
-    // println!("RB {}", count_player_type(&players, Pos::Rb));
-    // println!("TE {}", count_player_type(&players, Pos::Te));
-    // println!("D {}", count_player_type(&players, Pos::D));
-    let combos = generate_player_combos(&players, 3);
-    println!("Total combos: {}", combos.len());
-    for hello in combos {
-        println!("D {:?}", hello.len());
-    }
-    // let lineups: Vec<Lineup> = build_all_possible_lineups(&players);
-    // println!("{}", lineups.len());
-    // for lineup in lineups {
-    //     println!("{:?}", lineup.score);
-    // }
+
+    let qb = count_player_type(&players, Pos::Qb);
+    let wr = count_player_type(&players, Pos::Wr);
+    let rb = count_player_type(&players, Pos::Rb);
+    let te = count_player_type(&players, Pos::Te);
+    let d = count_player_type(&players, Pos::D);
+    let flex = wr + rb;
+    println!(
+        "{} {} {} {} {} {}",
+        total_comb(qb.try_into().unwrap(), 1),
+        total_comb(wr.try_into().unwrap(), 3),
+        total_comb(rb.try_into().unwrap(), 2),
+        total_comb(te.try_into().unwrap(), 1),
+        total_comb(d.try_into().unwrap(), 1),
+        total_comb(flex.try_into().unwrap(), 1)
+    );
+    let lineups = build_all_possible_lineups(&players);
+    println!("Total Line ups: {}", lineups.len());
     Ok(())
 }

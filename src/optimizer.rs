@@ -1,9 +1,11 @@
+use crate::gen_comb;
 use crate::lineup::*;
 use crate::player::*;
 use num_bigint::BigInt;
 use num_bigint::BigUint;
 use num_bigint::ToBigInt;
 use num_bigint::ToBigUint;
+use std::collections::HashMap;
 use std::mem::size_of_val;
 use std::ops::BitAnd;
 
@@ -27,7 +29,7 @@ pub fn build_all_possible_lineups(players: &Vec<PlayerOwn>) -> Vec<Lineup> {
     let te_linesups: Vec<LineupBuilder> = add_te_to_lineups(&players, rbs_lineups);
     let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&players, te_linesups);
     let filterd_lineups = filter_low_salary_cap(dst_lineups, 0);
-    let flex_lineups: Vec<Lineup> = add_flex_find_top_num(&players, filterd_lineups, 10000000);
+    let flex_lineups: Vec<Lineup> = add_flex_find_top_num(&players, filterd_lineups, 250);
     flex_lineups
 }
 
@@ -39,40 +41,20 @@ pub fn filter_low_salary_cap(
     lineups
 }
 
-pub fn generate_player_combos(players: &Vec<PlayerOwn>, sample: usize) -> Vec<Vec<PlayerOwn>> {
-    let mut result: Vec<Vec<PlayerOwn>> = Vec::new();
-
-    if sample > players.len() || sample == 0 {
-        return result;
-    }
-    println!("Total Players: {}", players.len());
-    let mut combination_mask: BigInt = (1.to_bigint().unwrap() << sample) - 1;
-    let end_mask: BigInt = 1.to_bigint().unwrap() << players.len();
-
-    let mut combination: Vec<PlayerOwn> = Vec::new();
-    println!("{}", end_mask);
-    while combination_mask < end_mask {
-        for i in 0..players.len() {
-            println!(
-                "mask: {:b}, i: {:b}",
-                combination_mask,
-                1.to_bigint().unwrap() << i
-            );
-
-            if (&combination_mask & 1.to_bigint().unwrap() << i) != 0.to_bigint().unwrap() {
-                combination.push(players[i].clone());
-            }
-        }
-        result.push(combination.clone());
-        combination.clear();
-        // combination.clear();
-        // I have no idea what this does
-        // t is the least significant 0 bit set to 1
-        let t: &BigInt = &(&combination_mask | ((&combination_mask & -&combination_mask) - 1));
-        combination_mask = (t + 1) | (((!t & -!t) - 1) >> (t.trailing_zeros().unwrap() + 1));
-    }
-
-    result
+pub fn get_pos_combos<'a>(
+    players: &Vec<PlayerOwn>,
+    slots: i8,
+    positions: &[Pos],
+) -> Vec<Vec<PlayerOwn>> {
+    let pos: &Vec<PlayerOwn> = &players
+        .into_iter()
+        .filter(|p| positions.contains(&p.pos))
+        .map(|p| p.clone())
+        .collect::<Vec<PlayerOwn>>();
+    gen_comb(
+        pos,
+        slots.try_into().expect("Passed a negative slots value"),
+    )
 }
 
 // Needs to barrow players so it can be passed to the rest of the functions
@@ -80,45 +62,42 @@ pub fn add_wrs_to_lineups<'a>(
     players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
-    let mut iterations: i64 = 0;
-    // The two vectors should be dereferenced once the function ends
-    let mut new_lineup: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
-    for lineup in &lineups {}
-
-    println!("WR Iterated: {} times", iterations);
-    return Vec::new();
+    let mut new_lineups: Vec<LineupBuilder> = Vec::new();
+    let p_lookup: HashMap<i16, &PlayerOwn> = PlayerOwn::player_lookup_map(players);
+    let wr_combo: Vec<Vec<PlayerOwn>> = get_pos_combos(players, 3, &[Pos::Wr]);
+    for lineup in &lineups {
+        for combo in &wr_combo {
+            new_lineups.push(
+                lineup
+                    .clone()
+                    .set_wr1(p_lookup.get(&combo[0].id).expect("Player missing"))
+                    .set_wr2(p_lookup.get(&combo[1].id).expect("Missing Player"))
+                    .set_wr3(p_lookup.get(&combo[2].id).expect("Missing Player")),
+            )
+        }
+    }
+    new_lineups
 }
 
 pub fn add_rbs_to_lineups<'a>(
     players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
-    let mut lineups_with_rb1: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
-    let mut iterations: i64 = 0;
-    for lineup in &lineups {
-        players
-            .iter()
-            .filter(|p: &&PlayerOwn| p.pos == Pos::Rb)
-            .for_each(|rb: &PlayerOwn| {
-                lineups_with_rb1.push(lineup.clone().set_rb1(rb));
-                iterations += 1
-            });
-    }
+    let mut new_lineups: Vec<LineupBuilder> = Vec::new();
 
-    let mut lineups_with_rb2: Vec<LineupBuilder> = Vec::with_capacity(lineups_with_rb1.len());
-    for lineup in &lineups_with_rb1 {
-        players
-            .iter()
-            .filter(|p: &&PlayerOwn| p.pos == Pos::Rb)
-            .filter(|p: &&PlayerOwn| p.id != lineup.rb1.unwrap().id)
-            .for_each(|rb2: &PlayerOwn| {
-                lineups_with_rb2.push(lineup.clone().set_rb2(rb2));
-                iterations += 1;
-            })
+    let p_lookup: HashMap<i16, &PlayerOwn> = PlayerOwn::player_lookup_map(players);
+    let rb_combos: Vec<Vec<PlayerOwn>> = get_pos_combos(players, 2, &[Pos::Rb]);
+    for lineup in &lineups {
+        for combo in &rb_combos {
+            new_lineups.push(
+                lineup
+                    .clone()
+                    .set_rb1(p_lookup.get(&combo[0].id).expect("Player missing"))
+                    .set_rb2(p_lookup.get(&combo[1].id).expect("Player Missing")),
+            );
+        }
     }
-    println!("RB Iterated: {} times", iterations);
-    drop(lineups_with_rb1);
-    lineups_with_rb2
+    new_lineups
 }
 
 pub fn add_te_to_lineups<'a>(
@@ -126,20 +105,18 @@ pub fn add_te_to_lineups<'a>(
     lineups: Vec<LineupBuilder<'a>>,
 ) -> Vec<LineupBuilder<'a>> {
     let mut lineups_with_te: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
-    let mut iterations: i64 = 0;
     for lineup in &lineups {
         players
             .iter()
             .filter(|p: &&PlayerOwn| p.pos == Pos::Te)
             .for_each(|te: &PlayerOwn| {
                 lineups_with_te.push(lineup.clone().set_te(te));
-                iterations += 1
             })
     }
-    println!("TE Iterated: {} times", iterations);
     lineups_with_te
 }
 
+// Pull in data per
 pub fn add_flex_find_top_num<'a>(
     players: &'a Vec<PlayerOwn>,
     lineups: Vec<LineupBuilder<'a>>,
@@ -166,10 +143,6 @@ pub fn add_flex_find_top_num<'a>(
             .filter(|p: &&PlayerOwn| (p.salary as i32 + lineup.total_price) > GOOD_SALARY_USAGE)
             .for_each(|flex: &PlayerOwn| {
                 iterations += 1;
-                if iterations > 100_000_000 {
-                    println!("Reached 100m stopping");
-                    return;
-                }
 
                 let finished_lineup = lineup.clone().set_flex(flex);
                 let score = calculate_lineup_score(&finished_lineup);
