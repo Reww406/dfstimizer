@@ -5,13 +5,32 @@ use serde::{Deserialize, Serialize};
 // TODO add max/min variance, high sacks for def,
 // TODO throws to end zone
 // TODO avg attempts, rec targets need to be pulled from stats
+pub struct Player {
+    pub id: i16,
+    pub name: String,
+    pub team: String,
+    pub pos: Pos,
+}
+
+pub struct Ownership {
+    pub id: i16,
+    pub season: i16,
+    pub week: i8,
+    pub name: String,
+    pub team: String,
+    pub opp: String,
+    pub pos: String,
+    pub salary: i32,
+    pub own_per: f32
+}
+
 pub struct RbProj {
     pub name: String,
     pub team: String,
     pub opp: String,
-    pub points: String,
-    pub avg_att: i16,
-    pub td: i32,
+    pub points: f32,
+    pub avg_att: f32,
+    pub td: f32,
     pub yds: f32,
     pub salary: i32,
     pub own_per: f32,
@@ -36,15 +55,15 @@ pub struct RecProj {
     pub team: String,
     pub opp: String,
     pub points: String,
-    pub avg_rec: i16,
-    pub avg_tgts: i16,
-    pub td: i32,
+    pub avg_rec: f32,
+    pub avg_tgts: f32,
+    pub td: f32,
     pub yds: f32,
     pub salary: i32,
     pub own_per: f32,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Copy)]
 pub enum Pos {
     Qb = 0,
     Rb = 1,
@@ -64,36 +83,42 @@ impl Pos {
             _ => Err(()),
         }
     }
+
+    pub fn to_str(&self) -> Result<&str, ()> {
+        match self {
+            Pos::D => Ok("D"),
+            Pos::Qb => Ok("QB"),
+            Pos::Wr => Ok("WR"),
+            Pos::Te => Ok("TE"),
+            Pos::Rb => Ok("RB"),
+            _ => Err(()),
+        }
+    }
 }
 pub struct DefProj {}
 
 // Can we do just ID
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct PlayerOwn {
+pub struct LitePlayer {
+    // Only POS and SAlARY load rest in the last function
     // We will generate our own once we load data into sqlite
     pub id: i16,
-    pub team_id: i8,
     pub pos: Pos,
-    pub opp_id: i8,
-    pub salary: i32,
-    pub own_per: f32,
+    pub salary: i16,
 }
 
 // Id 0, player 1, team 2, opp 3, pos 4, salary 5, own 6
-impl PlayerOwn {
+impl LitePlayer {
     pub fn new_test(record: csv::StringRecord, id: i16) -> Self {
-        PlayerOwn {
+        LitePlayer {
             id: id, // fetch from database
-            team_id: 4,
-            opp_id: 6,
             pos: Pos::from_str(&record[4].to_string()).expect("Couldn't convert error"),
-            salary: record[5].parse::<i32>().expect("Salary Missing"),
-            own_per: record[6].parse::<f32>().expect("Owner Percentage"),
+            salary: record[5].parse::<i16>().expect("Salary Missing"),
         }
     }
 
     // Could make this a singleton so it's only generated once
-    pub fn player_lookup_map(players: &[PlayerOwn]) -> HashMap<i16, &PlayerOwn> {
+    pub fn player_lookup_map(players: &[LitePlayer]) -> HashMap<i16, &LitePlayer> {
         let mut lookup_map = HashMap::new();
         players.iter().for_each(|p| {
             lookup_map.insert(p.id, p);

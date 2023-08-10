@@ -4,9 +4,12 @@ use num_bigint::{BigInt, BigUint, ToBigInt, ToBigUint};
 
 use crate::player::*;
 
+pub mod data_loader;
 pub mod lineup;
 pub mod optimizer;
 pub mod player;
+
+pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
 
 pub fn mean(data: &[f32]) -> Option<f32> {
     let count: usize = data.len();
@@ -18,10 +21,10 @@ pub fn mean(data: &[f32]) -> Option<f32> {
     Some(sum / count as f32)
 }
 
-pub fn load_in_ownership(path: &str, teams: &[String]) -> Vec<PlayerOwn> {
+pub fn load_in_ownership(path: &str, teams: &[String]) -> Vec<LitePlayer> {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
-    let mut players: Vec<PlayerOwn> = Vec::new();
+    let mut players: Vec<LitePlayer> = Vec::new();
     let mut player_id: i16 = 0;
     for record in rdr.records() {
         // This can be refactored into xor I think
@@ -37,16 +40,16 @@ pub fn load_in_ownership(path: &str, teams: &[String]) -> Vec<PlayerOwn> {
             continue;
         }
 
-        players.push(PlayerOwn::new_test(record, player_id));
+        players.push(LitePlayer::new_test(record, player_id));
         player_id += 1;
     }
     players
 }
 
 pub fn return_if_field_exits<'a>(
-    field: Option<&'a PlayerOwn>,
-    set_to: &'a PlayerOwn,
-) -> &'a PlayerOwn {
+    field: Option<&'a LitePlayer>,
+    set_to: &'a LitePlayer,
+) -> &'a LitePlayer {
     if field.is_some() {
         panic!("Tried to set {:?} when one already exits", set_to.pos);
     }
@@ -67,12 +70,12 @@ pub fn total_comb(len: usize, sample: usize) -> u32 {
 }
 
 // Is this going to blow up the stack? maybe
-pub fn gen_comb(players: &[PlayerOwn], sample: usize) -> Vec<Vec<PlayerOwn>> {
+pub fn gen_comb(players: &[LitePlayer], sample: usize) -> Vec<Vec<LitePlayer>> {
     if sample == 1 {
         return players
             .iter()
             .map(|x| vec![x.clone()])
-            .collect::<Vec<Vec<PlayerOwn>>>();
+            .collect::<Vec<Vec<LitePlayer>>>();
     }
     // Break condition
     if sample == players.len() {
@@ -82,7 +85,7 @@ pub fn gen_comb(players: &[PlayerOwn], sample: usize) -> Vec<Vec<PlayerOwn>> {
     let mut result = gen_comb(&players[1..], sample - 1)
         .into_iter()
         .map(|x| [&players[..1], x.as_slice()].concat())
-        .collect::<Vec<Vec<PlayerOwn>>>();
+        .collect::<Vec<Vec<LitePlayer>>>();
 
     result.extend(gen_comb(&players[1..], sample));
 

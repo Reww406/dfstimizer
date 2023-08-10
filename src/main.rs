@@ -1,13 +1,16 @@
 use csv::Error;
+use dfstimizer::data_loader::*;
 use dfstimizer::gen_comb;
 use dfstimizer::lineup::*;
 use dfstimizer::load_in_ownership;
 use dfstimizer::optimizer::*;
 use dfstimizer::player::*;
 use dfstimizer::total_comb;
+use dfstimizer::DATABASE_FILE;
 use num_bigint::BigUint;
 use num_bigint::ToBigInt;
 use num_bigint::ToBigUint;
+use rusqlite::Connection;
 use std::mem::size_of_val;
 
 // TODO Stacking should be scored
@@ -25,7 +28,7 @@ use std::mem::size_of_val;
 
 // TODO use Sqlite to avoid doing all iterations in memory
 
-fn count_player_type(players: &Vec<PlayerOwn>, pos: Pos) -> i32 {
+fn count_player_type(players: &Vec<LitePlayer>, pos: Pos) -> i32 {
     let mut count = 0;
     for player in players {
         if player.pos == pos {
@@ -35,37 +38,131 @@ fn count_player_type(players: &Vec<PlayerOwn>, pos: Pos) -> i32 {
     count
 }
 
+fn init_tables() {
+    let conn: Connection = Connection::open(DATABASE_FILE).expect("Can't open DB File");
+    let player: &str = "
+        CREATE TABLE IF NOT EXISTS player (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            pos TEXT NOT NULL,
+            UNIQUE(name, team, pos) on CONFLICT REPLACE
+        )
+    ";
+    let rb_proj: &str = "
+        CREATE TABLE IF NOT EXISTS rb_proj (
+            id INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            opp TEXT NOT NULL,
+            points REAL NOT NULL,
+            avg_att REAL NOT NULL,
+            td REAL NOT NULL,
+            yds REAL NOT NULL,
+            salary INTEGER NOT NULL,
+            own_per REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id, season, week) on CONFLICT REPLACE
+        )
+    ";
+    let qb_proj: &str = "
+        CREATE TABLE IF NOT EXISTS qb_proj (
+            id INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            opp TEXT NOT NULL,
+            points REAL NOT NULL,
+            com REAL NOT NULL,
+            int REAL NOT NULL,
+            passing_yards REAL NOT NULL,
+            passing_tds REAL NOT NULL,
+            rushing_yds REAL NOT NULL,
+            salary INTEGER NOT NULL,
+            own_per REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id, season, week) on CONFLICT REPLACE
+        )
+    ";
+    let rec_proj: &str = "
+        CREATE TABLE IF NOT EXISTS rec_proj (
+            id INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            opp TEXT NOT NULL,
+            points REAL NOT NULL,
+            avg_rec REAL NOT NULL,
+            avg_tgts REAL NOT NULL,
+            td REAL NOT NULL,
+            yds REAL NOT NULL,
+            salary INTEGER NOT NULL,
+            own_per REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id, season, week) on CONFLICT REPLACE
+        )
+    ";
+    // id,player,team,opponent,position,salary,ownership
+    let ownership: &str = "
+        CREATE TABLE IF NOT EXISTS ownership (
+            id INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            opp TEXT NOT NULL,
+            pos TEXT NOT NULL,
+            salary INTEGER NOT NULL,
+            own_per REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id, season, week) on CONFLICT REPLACE
+        )
+    ";
+    let tables: [&str; 5] = [player, qb_proj, rec_proj, rb_proj, ownership];
+    for table in tables {
+        conn.execute(table, ()).expect("Could not create table");
+    }
+}
 fn main() -> Result<(), Error> {
-    let players: Vec<PlayerOwn> = load_in_ownership(
-        "fd-ownership.csv",
-        &[
-            String::from("PIT"),
-            String::from("CIN"),
-            String::from("TEN"),
-            String::from("DET"),
-            String::from("SEA"),
-            String::from("ATL"),
-        ],
-    );
-    // We shouldn't be iterating over line ups like order matters this will reduce
-    // lineup amount by a lot
+    // let players: Vec<LitePlayer> = load_in_ownership(
+    //     "fd-ownership.csv",
+    //     &[
+    //         String::from("PIT"),
+    //         String::from("CIN"),
+    //         String::from("TEN"),
+    //         String::from("DET"),
+    //         String::from("SEA"),
+    //         String::from("ATL"),
+    //         String::from("WAS"),
+    //     ],
+    // );
+    // // We shouldn't be iterating over line ups like order matters this will reduce
+    // // lineup amount by a lot
 
-    let qb = count_player_type(&players, Pos::Qb);
-    let wr = count_player_type(&players, Pos::Wr);
-    let rb = count_player_type(&players, Pos::Rb);
-    let te = count_player_type(&players, Pos::Te);
-    let d = count_player_type(&players, Pos::D);
-    let flex = wr + rb;
-    println!(
-        "{} {} {} {} {} {}",
-        total_comb(qb.try_into().unwrap(), 1),
-        total_comb(wr.try_into().unwrap(), 3),
-        total_comb(rb.try_into().unwrap(), 2),
-        total_comb(te.try_into().unwrap(), 1),
-        total_comb(d.try_into().unwrap(), 1),
-        total_comb(flex.try_into().unwrap(), 1)
-    );
-    let lineups = build_all_possible_lineups(&players);
-    println!("Total Line ups: {}", lineups.len());
+    // let qb = count_player_type(&players, Pos::Qb);
+    // let wr = count_player_type(&players, Pos::Wr);
+    // let rb = count_player_type(&players, Pos::Rb);
+    // let te = count_player_type(&players, Pos::Te);
+    // let d = count_player_type(&players, Pos::D);
+    // let flex = wr + rb;
+    // println!(
+    //     "{} {} {} {} {} {}",
+    //     total_comb(qb.try_into().unwrap(), 1),
+    //     total_comb(wr.try_into().unwrap(), 3),
+    //     total_comb(rb.try_into().unwrap(), 2),
+    //     total_comb(te.try_into().unwrap(), 1),
+    //     total_comb(d.try_into().unwrap(), 1),
+    //     total_comb(flex.try_into().unwrap(), 1)
+    // );
+    // let lineups = build_all_possible_lineups(&players);
+    // println!("Total Line ups: {}", lineups.len());
+
+    init_tables();
+    load_all_player_ids(["all-d.csv", "all-qb.csv", "all-rec-rb.csv"]);
+    load_ownership_stats("fd-ownership.csv", 2022, 18);
     Ok(())
 }
