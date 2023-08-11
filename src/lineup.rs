@@ -1,3 +1,4 @@
+use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
 use crate::{mean, optimizer::calculate_lineup_score};
@@ -24,17 +25,17 @@ pub struct LineupBuilder<'a> {
 }
 
 // Will be converted to typed positions instead of generic playerown
-#[derive(Deserialize, Serialize, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct Lineup {
-    pub qb: LitePlayer,
-    pub rb1: LitePlayer,
-    pub rb2: LitePlayer,
-    pub wr1: LitePlayer,
-    pub wr2: LitePlayer,
-    pub wr3: LitePlayer,
-    pub te: LitePlayer,
-    pub flex: LitePlayer,
-    pub def: LitePlayer,
+    pub qb: QbProj,
+    pub rb1: RbProj,
+    pub rb2: RbProj,
+    pub wr1: RecProj,
+    pub wr2: RecProj,
+    pub wr3: RecProj,
+    pub te: RecProj,
+    pub flex: FlexProj,
+    pub def: DefProj,
     pub total_price: i32,
     pub score: f32,
 }
@@ -145,17 +146,33 @@ impl<'a> LineupBuilder<'a> {
         self
     }
     // Will pull actual data from Sqlite
-    pub fn build(self) -> Lineup {
+    pub fn build(self, week: i8, season: i16, conn: &Connection) -> Lineup {
+        let flex: FlexProj = if self.flex.unwrap().pos == Pos::Wr {
+            FlexProj {
+                pos: Pos::Wr,
+                rec_proj: Some(
+                    query_rec_proj(self.flex.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
+                ),
+                rb_proj: None,
+            }
+        } else {
+            FlexProj {
+                pos: Pos::Rb,
+                rec_proj: None,
+                rb_proj: Some(query_rb_proj(self.flex.unwrap().id, week, season, conn).unwrap()),
+            }
+        };
+
         Lineup {
-            qb: self.qb.unwrap().clone(),
-            rb1: self.rb1.unwrap().clone(),
-            rb2: self.rb2.unwrap().clone(),
-            wr1: self.wr1.unwrap().clone(),
-            wr2: self.wr2.unwrap().clone(),
-            wr3: self.wr3.unwrap().clone(),
-            te: self.te.unwrap().clone(),
-            flex: self.flex.unwrap().clone(),
-            def: self.dst.unwrap().clone(),
+            qb: query_qb_proj(self.qb.unwrap().id, week, season, conn).unwrap(),
+            rb1: query_rb_proj(self.rb1.unwrap().id, week, season, conn).unwrap(),
+            rb2: query_rb_proj(self.rb2.unwrap().id, week, season, conn).unwrap(),
+            wr1: query_rec_proj(self.wr1.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
+            wr2: query_rec_proj(self.wr2.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
+            wr3: query_rec_proj(self.wr3.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
+            te: query_rec_proj(self.te.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
+            flex: flex,
+            def: query_def_proj(self.dst.unwrap().id, week, season, conn).unwrap(),
             total_price: self.total_price,
             score: calculate_lineup_score(&self),
         }

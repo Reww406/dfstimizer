@@ -49,6 +49,7 @@ fn init_tables() {
             UNIQUE(name, team, pos) on CONFLICT REPLACE
         )
     ";
+
     let rb_proj: &str = "
         CREATE TABLE IF NOT EXISTS rb_proj (
             id INTEGER NOT NULL,
@@ -57,16 +58,34 @@ fn init_tables() {
             name TEXT NOT NULL,
             team TEXT NOT NULL,
             opp TEXT NOT NULL,
-            points REAL NOT NULL,
-            avg_att REAL NOT NULL,
-            td REAL NOT NULL,
-            yds REAL NOT NULL,
+            pts REAL NOT NULL,
+            atts REAL NOT NULL,
+            tds REAL NOT NULL,
+            rush_yds REAL NOT NULL,
+            rec_yds REAL NOT NULL,
             salary INTEGER NOT NULL,
             own_per REAL NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
     ";
+
+    let dst_proj: &str = "
+        CREATE TABLE IF NOT EXISTS dst_proj (
+            id INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            opp TEXT NOT NULL,
+            pts REAL NOT NULL,
+            salary INTEGER NOT NULL,
+            own_per REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id, season, week) on CONFLICT REPLACE
+        )
+    ";
+
     let qb_proj: &str = "
         CREATE TABLE IF NOT EXISTS qb_proj (
             id INTEGER NOT NULL,
@@ -75,37 +94,62 @@ fn init_tables() {
             name TEXT NOT NULL,
             team TEXT NOT NULL,
             opp TEXT NOT NULL,
-            points REAL NOT NULL,
-            com REAL NOT NULL,
-            int REAL NOT NULL,
-            passing_yards REAL NOT NULL,
-            passing_tds REAL NOT NULL,
-            rushing_yds REAL NOT NULL,
+            pts REAL NOT NULL,
+            atts REAL NOT NULL,
+            comps REAL NOT NULL,
+            ints REAL NOT NULL,
+            pass_yds REAL NOT NULL,
+            pass_tds REAL NOT NULL,
+            rush_yds REAL NOT NULL,
             salary INTEGER NOT NULL,
             own_per REAL NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
     ";
-    let rec_proj: &str = "
-        CREATE TABLE IF NOT EXISTS rec_proj (
+
+    let wr_proj: &str = "
+        CREATE TABLE IF NOT EXISTS wr_proj (
             id INTEGER NOT NULL,
             season INTEGER NOT NULL,
             week INTEGER NOT NULL,
             name TEXT NOT NULL,
             team TEXT NOT NULL,
             opp TEXT NOT NULL,
-            points REAL NOT NULL,
-            avg_rec REAL NOT NULL,
-            avg_tgts REAL NOT NULL,
-            td REAL NOT NULL,
-            yds REAL NOT NULL,
+            pts REAL NOT NULL,
+            rec REAL NOT NULL,
+            tgts REAL NOT NULL,
+            tds REAL NOT NULL,
+            rec_yds REAL NOT NULL,
+            rush_yds REAL NOT NULL,
             salary INTEGER NOT NULL,
             own_per REAL NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
     ";
+
+    let te_proj: &str = "
+        CREATE TABLE IF NOT EXISTS te_proj (
+            id INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            team TEXT NOT NULL,
+            opp TEXT NOT NULL,
+            pts REAL NOT NULL,
+            rec REAL NOT NULL,
+            tgts REAL NOT NULL,
+            tds REAL NOT NULL,
+            rec_yds REAL NOT NULL,
+            rush_yds REAL NOT NULL,
+            salary INTEGER NOT NULL,
+            own_per REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id, season, week) on CONFLICT REPLACE
+        )
+    ";
+
     // id,player,team,opponent,position,salary,ownership
     let ownership: &str = "
         CREATE TABLE IF NOT EXISTS ownership (
@@ -115,54 +159,57 @@ fn init_tables() {
             name TEXT NOT NULL,
             team TEXT NOT NULL,
             opp TEXT NOT NULL,
-            pos TEXT NOT NULL,
+            pos REAL NOT NULL,
             salary INTEGER NOT NULL,
             own_per REAL NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
     ";
-    let tables: [&str; 5] = [player, qb_proj, rec_proj, rb_proj, ownership];
+    let tables: [&str; 7] = [
+        player, qb_proj, wr_proj, dst_proj, te_proj, rb_proj, ownership,
+    ];
     for table in tables {
         conn.execute(table, ()).expect("Could not create table");
     }
 }
 fn main() -> Result<(), Error> {
-    // let players: Vec<LitePlayer> = load_in_ownership(
-    //     "fd-ownership.csv",
-    //     &[
-    //         String::from("PIT"),
-    //         String::from("CIN"),
-    //         String::from("TEN"),
-    //         String::from("DET"),
-    //         String::from("SEA"),
-    //         String::from("ATL"),
-    //         String::from("WAS"),
-    //     ],
-    // );
-    // // We shouldn't be iterating over line ups like order matters this will reduce
-    // // lineup amount by a lot
+    // init_tables();
+    // load_ownership_stats("fd-ownership.csv", 2022, 18);
+    // load_in_proj("all_projs.csv", 2022, 18);
 
-    // let qb = count_player_type(&players, Pos::Qb);
-    // let wr = count_player_type(&players, Pos::Wr);
-    // let rb = count_player_type(&players, Pos::Rb);
-    // let te = count_player_type(&players, Pos::Te);
-    // let d = count_player_type(&players, Pos::D);
-    // let flex = wr + rb;
-    // println!(
-    //     "{} {} {} {} {} {}",
-    //     total_comb(qb.try_into().unwrap(), 1),
-    //     total_comb(wr.try_into().unwrap(), 3),
-    //     total_comb(rb.try_into().unwrap(), 2),
-    //     total_comb(te.try_into().unwrap(), 1),
-    //     total_comb(d.try_into().unwrap(), 1),
-    //     total_comb(flex.try_into().unwrap(), 1)
-    // );
-    // let lineups = build_all_possible_lineups(&players);
-    // println!("Total Line ups: {}", lineups.len());
+    let players: Vec<LitePlayer> = load_in_ownership(
+        "fd-ownership.csv",
+        &[
+            String::from("PIT"),
+            // String::from("CIN"),
+            // String::from("TEN"),
+            // String::from("DET"),
+            // String::from("SEA"),
+            // String::from("ATL"),
+            // String::from("WAS"),
+        ],
+    );
+    // We shouldn't be iterating over line ups like order matters this will reduce
+    // lineup amount by a lot
 
-    init_tables();
-    load_all_player_ids(["all-d.csv", "all-qb.csv", "all-rec-rb.csv"]);
-    load_ownership_stats("fd-ownership.csv", 2022, 18);
+    let qb = count_player_type(&players, Pos::Qb);
+    let wr = count_player_type(&players, Pos::Wr);
+    let rb = count_player_type(&players, Pos::Rb);
+    let te = count_player_type(&players, Pos::Te);
+    let d = count_player_type(&players, Pos::D);
+    let flex = wr + rb;
+    println!(
+        "{} {} {} {} {} {}",
+        total_comb(qb.try_into().unwrap(), 1),
+        total_comb(wr.try_into().unwrap(), 3),
+        total_comb(rb.try_into().unwrap(), 2),
+        total_comb(te.try_into().unwrap(), 1),
+        total_comb(d.try_into().unwrap(), 1),
+        total_comb(flex.try_into().unwrap(), 1)
+    );
+    let lineups = build_all_possible_lineups(&players, 18, 2022);
+    println!("Total Line ups: {}", lineups.len());
+
     Ok(())
 }
