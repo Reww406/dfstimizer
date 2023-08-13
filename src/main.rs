@@ -174,15 +174,11 @@ fn init_tables() {
     }
 }
 fn main() -> Result<(), Error> {
-    // init_tables();
-    // load_ownership_stats("fd-ownership.csv", 2022, 18);
-    // load_in_proj("all_projs.csv", 2022, 18);
-
     let players: Vec<LitePlayer> = load_in_ownership(
         "fd-ownership.csv",
         &[
-            String::from("PIT"),
-            // String::from("CIN"),
+            // String::from("PIT"),
+            String::from("CIN"),
             // String::from("TEN"),
             // String::from("DET"),
             // String::from("SEA"),
@@ -209,7 +205,10 @@ fn main() -> Result<(), Error> {
         total_comb(flex.try_into().unwrap(), 1)
     );
     let lineups = build_all_possible_lineups(&players, 18, 2022);
-    println!("Total Line ups: {}", lineups.len());
+    for lineup in lineups {
+        println!("{:?}\n", lineup)
+    }
+    // println!("Total Line ups: {}", lineups.len());
 
     Ok(())
 }

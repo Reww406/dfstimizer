@@ -5,6 +5,7 @@ use crate::lineup::*;
 use crate::player::*;
 use crate::DATABASE_FILE;
 use std::collections::HashMap;
+use std::error::Error;
 
 // AYU DARK
 const GOOD_SALARY_USAGE: i32 = 45000;
@@ -155,11 +156,21 @@ pub fn add_flex_find_top_num<'a>(
                     if score < lowest_score {
                         lowest_score = score;
                     }
-                    best_lineups.push(finished_lineup.clone().build(week, season, &conn));
+                    let lineup_res: Result<Lineup, Box<dyn Error>> = finished_lineup.clone().build(week, season, &conn);
+                    if lineup_res.is_err() {
+                        println!("Missing Proj for Lineup, {:?}", lineup_res.err());
+                        return
+                    }
+                    best_lineups.push(lineup_res.unwrap());
                 } else if score > lowest_score {
                     for i in 0..best_lineups.len() {
                         if score > best_lineups[i].score {
-                            best_lineups[i] = finished_lineup.clone().build(week, season, &conn);
+                            let lineup_res: Result<Lineup, Box<dyn Error>> = finished_lineup.clone().build(week, season, &conn);
+                            if lineup_res.is_err() {
+                                println!("Missing Proj for Lineup, {:?}", lineup_res.err());
+                                return
+                            }
+                            best_lineups[i] = lineup_res.unwrap();
                             if i == (best_lineups.len() - 1) {
                                 lowest_score = score;
                             }

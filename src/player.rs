@@ -72,7 +72,7 @@ pub struct RecProj {
     pub team: String,
     pub opp: String,
     pub pos: Pos,
-    pub pts: String,
+    pub pts: f32,
     pub rec: f32,
     pub tgts: f32,
     pub td: f32,
@@ -87,7 +87,7 @@ pub struct DefProj {
     pub name: String,
     pub team: String,
     pub opp: String,
-    pub pts: String,
+    pub pts: f32,
     pub salary: i32,
     pub own_per: f32,
 }
@@ -144,10 +144,12 @@ pub struct LitePlayer {
 
 // Id 0, player 1, team 2, opp 3, pos 4, salary 5, own 6
 impl LitePlayer {
-    pub fn new_test(record: csv::StringRecord, id: i16) -> Self {
+    pub fn new(record: csv::StringRecord, conn: &Connection) -> Self {
+        let pos: Pos = Pos::from_str(&record[4].to_string()).expect("Couldn't convert error");
         LitePlayer {
-            id: id, // fetch from database
-            pos: Pos::from_str(&record[4].to_string()).expect("Couldn't convert error"),
+            id: get_player_id(&record[1].to_string(), &record[2].to_string(), &pos, conn).unwrap()
+                as i16,
+            pos: pos,
             salary: record[5].parse::<i16>().expect("Salary Missing"),
         }
     }
@@ -338,6 +340,18 @@ pub fn get_player_id_create_if_missing(
         pos: pos.clone(),
     };
     return load_player_id(player, conn);
+}
+
+pub fn proj_exists(id: i16, week: i8, season: i16, conn: &Connection) -> bool {
+    let proj_exists = "select 
+    NOT EXISTS (select id from rb_proj where id = ?1 AND week = ?2 AND season = ?3) AND 
+    NOT EXISTS (select id from te_proj where id = ?1 AND week = ?2 AND season = ?3) AND 
+    NOT EXISTS (select id from wr_proj where id = ?1 AND week = ?2 AND season = ?3) AND 
+    NOT EXISTS (select id from qb_proj where id = ?1 AND week = ?2 AND season = ?3);";
+    let exists: bool = conn
+        .query_row(proj_exists, (id, week, season), |row| row.get(0))
+        .unwrap();
+    exists
 }
 
 // Get Player ID, Searches D, Then Exact, Then Fuzzy

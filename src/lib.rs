@@ -1,6 +1,7 @@
 use std::fs;
 
 use num_bigint::{BigInt, BigUint, ToBigInt, ToBigUint};
+use rusqlite::Connection;
 
 use crate::player::*;
 
@@ -22,11 +23,12 @@ pub fn mean(data: &[f32]) -> Option<f32> {
 }
 
 pub fn load_in_ownership(path: &str, teams: &[String]) -> Vec<LitePlayer> {
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
     let mut players: Vec<LitePlayer> = Vec::new();
-    let mut player_id: i16 = 0;
     for record in rdr.records() {
+        
         // This can be refactored into xor I think
         let mut skip = false;
         let record: csv::StringRecord = record.unwrap();
@@ -40,8 +42,10 @@ pub fn load_in_ownership(path: &str, teams: &[String]) -> Vec<LitePlayer> {
             continue;
         }
 
-        players.push(LitePlayer::new_test(record, player_id));
-        player_id += 1;
+        players.push(LitePlayer::new(
+            record,
+            &conn,
+        ));
     }
     players
 }
@@ -66,6 +70,9 @@ pub fn factorial(num: usize) -> BigUint {
 }
 
 pub fn total_comb(len: usize, sample: usize) -> u32 {
+    if sample > len {
+        return sample as u32;
+    }
     (factorial(len) / (factorial(sample) * factorial(len - sample))).to_u32_digits()[0]
 }
 

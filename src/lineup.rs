@@ -1,3 +1,6 @@
+use std::io::Error;
+
+use anyhow::Context;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
@@ -146,12 +149,18 @@ impl<'a> LineupBuilder<'a> {
         self
     }
     // Will pull actual data from Sqlite
-    pub fn build(self, week: i8, season: i16, conn: &Connection) -> Lineup {
+    pub fn build(
+        self,
+        week: i8,
+        season: i16,
+        conn: &Connection,
+    ) -> Result<Lineup, Box<dyn std::error::Error>> {
         let flex: FlexProj = if self.flex.unwrap().pos == Pos::Wr {
             FlexProj {
                 pos: Pos::Wr,
                 rec_proj: Some(
-                    query_rec_proj(self.flex.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
+                    query_rec_proj(self.flex.unwrap().id, week, season, &Pos::Wr, conn)
+                        .ok_or("Could not find flex wr")?,
                 ),
                 rb_proj: None,
             }
@@ -159,23 +168,44 @@ impl<'a> LineupBuilder<'a> {
             FlexProj {
                 pos: Pos::Rb,
                 rec_proj: None,
-                rb_proj: Some(query_rb_proj(self.flex.unwrap().id, week, season, conn).unwrap()),
+                rb_proj: Some(
+                    query_rb_proj(self.flex.unwrap().id, week, season, conn)
+                        .ok_or("Could not find flex rb")?,
+                ),
             }
         };
 
-        Lineup {
-            qb: query_qb_proj(self.qb.unwrap().id, week, season, conn).unwrap(),
-            rb1: query_rb_proj(self.rb1.unwrap().id, week, season, conn).unwrap(),
-            rb2: query_rb_proj(self.rb2.unwrap().id, week, season, conn).unwrap(),
-            wr1: query_rec_proj(self.wr1.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
-            wr2: query_rec_proj(self.wr2.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
-            wr3: query_rec_proj(self.wr3.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
-            te: query_rec_proj(self.te.unwrap().id, week, season, &Pos::Wr, conn).unwrap(),
-            flex: flex,
-            def: query_def_proj(self.dst.unwrap().id, week, season, conn).unwrap(),
+        let qb: QbProj = query_qb_proj(self.qb.unwrap().id, week, season, conn)
+            .ok_or("QB Could not be found")?;
+        let rb1: RbProj = query_rb_proj(self.rb1.unwrap().id, week, season, conn)
+            .ok_or("Rb1 Could not be found")?;
+        let rb2: RbProj = query_rb_proj(self.rb2.unwrap().id, week, season, conn)
+            .ok_or("Rb2 could not be found")?;
+        let wr1: RecProj = query_rec_proj(self.wr1.unwrap().id, week, season, &Pos::Wr, conn)
+            .ok_or("Wr1 could not be found")?;
+        let wr2: RecProj = query_rec_proj(self.wr2.unwrap().id, week, season, &Pos::Wr, conn)
+            .ok_or("Wr2 could not be found")?;
+        let wr3: RecProj = query_rec_proj(self.wr3.unwrap().id, week, season, &Pos::Wr, conn)
+            .ok_or("Wr3 could not be found")?;
+        let te: RecProj = query_rec_proj(self.te.unwrap().id, week, season, &Pos::Te, conn)
+            .ok_or("Te could not be found")?;
+        let flex: FlexProj = flex;
+        let def: DefProj = query_def_proj(self.dst.unwrap().id, week, season, conn)
+            .ok_or("Def could not be found")?;
+
+        Ok(Lineup {
+            qb,
+            rb1,
+            rb2,
+            wr1,
+            wr2,
+            wr3,
+            te,
+            flex,
+            def,
             total_price: self.total_price,
             score: calculate_lineup_score(&self),
-        }
+        })
     }
 }
 
