@@ -101,6 +101,7 @@ impl LineupBuilder {
     //     mean(&ownerships).unwrap()
     // }
 
+    // TODO Can turn these all into a match on a enum that has the slot
     pub fn set_qb(mut self, qb: Arc<LitePlayer>) -> LineupBuilder {
         self.qb = Some(return_if_field_exits(self.qb, &qb));
         self.total_price += qb.salary as i32;

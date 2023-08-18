@@ -13,6 +13,7 @@ use num_bigint::ToBigUint;
 use rusqlite::Connection;
 use std::mem::size_of_val;
 use std::sync::Arc;
+use std::time::Instant;
 
 // TODO Stacking should be scored
 // TODO Points per Dollar
@@ -175,20 +176,21 @@ fn init_tables() {
     }
 }
 fn main() -> Result<(), Error> {
+    let start = Instant::now();
     let players: Vec<Arc<LitePlayer>> = load_in_ownership(
         "fd-ownership.csv",
         18,
         2022,
         &[
-            String::from("*"),
-            // String::from("PIT"),
-            // String::from("CIN"),
-            // String::from("TEN"),
-            // String::from("DET"),
-            // String::from("SEA"),
-            // // String::from("ATL"),
-            // // String::from("WAS"),
-            // // String::from("SF"),
+            // String::from("*"),
+            String::from("PIT"),
+            String::from("CIN"),
+            String::from("TEN"),
+            String::from("DET"),
+            String::from("SEA"),
+            String::from("ATL"),
+            // String::from("WAS"),
+            // String::from("SF"),
         ],
     );
 
@@ -224,11 +226,12 @@ fn main() -> Result<(), Error> {
     // );
     let mut count = 0;
     let len = wrs_lineups.len();
-    for wr_lineup in wrs_lineups {
-        count += 1;
-        let lineups = build_all_possible_lineups(players.clone(), wr_lineup, 18, 2022);
-        println!("Total Lineups: {} count {}", len, count)
-    }
+    // for wr_lineup in wrs_lineups {
+    //     count += 1;
+    let lineups = build_all_possible_lineups(players.clone(), 18, 2022);
+    println!("Total Lineups: {} count {}", len, lineups.len());
+    println!("Elapsed: {:?}", start.elapsed());
+    // }
     // println!("Total Line ups: {}", lineups.len());
 
     Ok(())

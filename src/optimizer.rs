@@ -1,6 +1,8 @@
 use futures::channel::mpsc;
 use futures::executor;
 use futures::executor::ThreadPool;
+use futures::try_join;
+use futures::Future;
 use futures::StreamExt;
 use lazy_static::__Deref;
 use rusqlite::Connection;
@@ -12,6 +14,8 @@ use crate::DATABASE_FILE;
 use std::collections::HashMap;
 use std::error::Error;
 use std::sync::Arc;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 // AYU DARK
 const GOOD_SALARY_USAGE: i32 = 45000;
@@ -20,39 +24,69 @@ const GOOD_SALARY_USAGE: i32 = 45000;
 // Combine all at the end and sort again.
 pub fn build_all_possible_lineups(
     players: Vec<Arc<LitePlayer>>,
-    wr_lineup: Arc<LineupBuilder>,
+    // wr_lineup: Arc<LineupBuilder>,
     week: i8,
     season: i16,
 ) -> Vec<Lineup> {
-    let pool = ThreadPool::new().unwrap();
-    let (tx, rx) = mpsc::unbounded::<Lineup>();
-    let wr_lineup_clone = Arc::clone(&wr_lineup);
-    let binding = wr_lineup_clone.clone();
-    let future = async {
-        let player_clone = players.clone();
+    let mut pool_builder = ThreadPool::builder();
+    pool_builder.pool_size(32);
+    let pool = pool_builder.create().unwrap();
+    let mut lineups: Vec<LineupBuilder> = Vec::new();
+    let mut finished_lineups: Vec<Lineup> = Vec::new();
+    players
+        .iter()
+        .filter(|player| player.pos == Pos::Qb)
+        .for_each(|qb| {
+            let lineup_builder: LineupBuilder = LineupBuilder::new();
+            lineups.push(lineup_builder.set_qb(qb.clone()))
+        });
+    // let players_ref = players.clone();
+    let wrs_lineups: Vec<Arc<LineupBuilder>> = add_wrs_to_lineups(&players, lineups);
+    let size = wrs_lineups.len();
+    let mut current = 0;
+    let mut futures: Vec<_> = Vec::new();
+    for wr_lp in wrs_lineups {
+        current += 1;
+        println!("Started {} need {}", current, size);
+        let (tx, rx) = mpsc::unbounded::<Lineup>();
+        let binding = wr_lp.clone();
+        let future = async {
+            let player_clone = players.clone();
 
-        let fut_tx_result = async move {
-            let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&player_clone, &binding);
-            // println!("WR Lineup: {:?}", rbs_lineups);
+            let fut_tx_result = async move {
+                // println!("Start thread.");
+                // let start = SystemTime::now();
+                let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&player_clone, &binding);
+                // println!("WR Lineup: {:?}", rbs_lineups);
 
-            let te_linesups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, rbs_lineups);
-            // println!("TE Lineups: ", te_linesups)
-            let filterd_lineups = filter_low_salary_cap(te_linesups, 40000);
-            let dst_lineups: Vec<LineupBuilder> =
-                add_dst_to_lineups(&player_clone, filterd_lineups);
-            let lineups: Vec<Lineup> =
-                add_flex_find_top_num(&player_clone, dst_lineups, 250, week, season);
-            println!("Finished lineups..");
-            lineups.iter().for_each(|l: &Lineup| {
-                tx.unbounded_send(l.clone()).expect("Failed to send lineup")
-            });
+                let te_linesups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, rbs_lineups);
+                // println!("TE Lineups: ", te_linesups)
+                let filterd_lineups = filter_low_salary_cap(te_linesups, 40000);
+                let dst_lineups: Vec<LineupBuilder> =
+                    add_dst_to_lineups(&player_clone, filterd_lineups);
+                let lineups: Vec<Lineup> =
+                    add_flex_find_top_num(&player_clone, dst_lineups, 20, week, season);
+                lineups.iter().for_each(|l: &Lineup| {
+                    tx.unbounded_send(l.clone()).expect("Failed to send lineup")
+                });
+                // let since_the_epoch = start
+                //     .duration_since(UNIX_EPOCH)
+                //     .expect("Time went backwards");
+                // println!("Finished in {:?}ms", since_the_epoch.as_millis());
+            };
+
+            pool.spawn_ok(fut_tx_result);
+
+            let future = rx.collect::<Vec<Lineup>>();
+            future.await
         };
-        pool.spawn_ok(fut_tx_result);
-
-        let future = rx.collect::<Vec<Lineup>>();
-        future.await
-    };
-    executor::block_on(future)
+        futures.push(future);
+        // finished_lineups.extend(result);
+    }
+    for future in futures {
+        finished_lineups.extend(executor::block_on(future));
+    }
+    finished_lineups
 }
 
 pub fn filter_low_salary_cap(
@@ -235,7 +269,7 @@ pub fn add_flex_find_top_num(
                 }
             });
     }
-    println!("Flex iterated {} times", iterations);
+    // println!("Flex iterated {} times", iterations);
     best_lineups
 }
 
@@ -249,13 +283,9 @@ pub fn add_dst_to_lineups(
         players.iter().filter(|p| p.pos == Pos::D).for_each(|def| {
             lineups_with_def.push(lineup.clone().set_def(def.clone()));
             iterations += 1;
-            if iterations > 100_000_000 {
-                println!("Hit 100M stoppping...");
-                std::process::exit(1)
-            }
         });
     }
-    println!("Def iterated: {} times", iterations);
+    // println!("Def iterated: {} times", iterations);
     lineups_with_def
 }
 
