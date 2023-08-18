@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, sync::Arc};
 
 use num_bigint::{BigInt, BigUint, ToBigInt, ToBigUint};
 use rusqlite::Connection;
@@ -22,13 +22,17 @@ pub fn mean(data: &[f32]) -> Option<f32> {
     Some(sum / count as f32)
 }
 
-pub fn load_in_ownership(path: &str, teams: &[String]) -> Vec<LitePlayer> {
+pub fn load_in_ownership(
+    path: &str,
+    week: i8,
+    season: i16,
+    teams: &[String],
+) -> Vec<Arc<LitePlayer>> {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
-    let mut players: Vec<LitePlayer> = Vec::new();
+    let mut players: Vec<Arc<LitePlayer>> = Vec::new();
     for record in rdr.records() {
-        
         // This can be refactored into xor I think
         let mut skip = false;
         let record: csv::StringRecord = record.unwrap();
@@ -41,23 +45,23 @@ pub fn load_in_ownership(path: &str, teams: &[String]) -> Vec<LitePlayer> {
         if skip {
             continue;
         }
-
-        players.push(LitePlayer::new(
-            record,
-            &conn,
-        ));
+        let lite_player: LitePlayer = LitePlayer::new(record, &conn);
+        if proj_exist(lite_player.id, week, season, lite_player.pos, &conn) {
+            println!("Removing Player: {}", lite_player.id);
+            players.push(Arc::new(lite_player));
+        }
     }
     players
 }
 
-pub fn return_if_field_exits<'a>(
-    field: Option<&'a LitePlayer>,
-    set_to: &'a LitePlayer,
-) -> &'a LitePlayer {
+pub fn return_if_field_exits(
+    field: Option<Arc<LitePlayer>>,
+    set_to: &Arc<LitePlayer>,
+) -> Arc<LitePlayer> {
     if field.is_some() {
         panic!("Tried to set {:?} when one already exits", set_to.pos);
     }
-    set_to
+    set_to.clone()
 }
 
 pub fn factorial(num: usize) -> BigUint {
@@ -77,12 +81,12 @@ pub fn total_comb(len: usize, sample: usize) -> u32 {
 }
 
 // Is this going to blow up the stack? maybe
-pub fn gen_comb(players: &[LitePlayer], sample: usize) -> Vec<Vec<LitePlayer>> {
+pub fn gen_comb(players: &[Arc<LitePlayer>], sample: usize) -> Vec<Vec<Arc<LitePlayer>>> {
     if sample == 1 {
         return players
             .iter()
             .map(|x| vec![x.clone()])
-            .collect::<Vec<Vec<LitePlayer>>>();
+            .collect::<Vec<Vec<Arc<LitePlayer>>>>();
     }
     // Break condition
     if sample == players.len() {
@@ -92,7 +96,7 @@ pub fn gen_comb(players: &[LitePlayer], sample: usize) -> Vec<Vec<LitePlayer>> {
     let mut result = gen_comb(&players[1..], sample - 1)
         .into_iter()
         .map(|x| [&players[..1], x.as_slice()].concat())
-        .collect::<Vec<Vec<LitePlayer>>>();
+        .collect::<Vec<Vec<Arc<LitePlayer>>>>();
 
     result.extend(gen_comb(&players[1..], sample));
 

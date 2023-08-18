@@ -1,6 +1,6 @@
 use lazy_static::lazy_static;
 use std::str::Split;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::{collections::HashMap, error::Error, hash::Hash};
 
 use rusqlite::{Connection, OptionalExtension};
@@ -38,7 +38,7 @@ pub struct Ownership {
     pub own_per: f32,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct RbProj {
     pub name: String,
     pub team: String,
@@ -51,7 +51,7 @@ pub struct RbProj {
     pub salary: i32,
     pub own_per: f32,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct QbProj {
     pub name: String,
     pub team: String,
@@ -66,7 +66,7 @@ pub struct QbProj {
     pub salary: i32,
     pub own_per: f32,
 }
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct RecProj {
     pub name: String,
     pub team: String,
@@ -82,7 +82,7 @@ pub struct RecProj {
     pub own_per: f32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct DefProj {
     pub name: String,
     pub team: String,
@@ -92,7 +92,7 @@ pub struct DefProj {
     pub own_per: f32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct FlexProj {
     pub pos: Pos,
     pub rec_proj: Option<RecProj>,
@@ -108,6 +108,11 @@ pub enum Pos {
     D = 4,
 }
 
+impl Default for Pos {
+    fn default() -> Self {
+        Self::D
+    }
+}
 impl Pos {
     pub fn from_str(input: &str) -> Result<Pos, ()> {
         let input = input.to_uppercase();
@@ -154,8 +159,16 @@ impl LitePlayer {
         }
     }
 
+    pub fn test() -> Self {
+        LitePlayer {
+            id: 1,
+            pos: Pos::Rb,
+            salary: 15000,
+        }
+    }
+
     // Could make this a singleton so it's only generated once
-    pub fn player_lookup_map(players: &[LitePlayer]) -> HashMap<i16, &LitePlayer> {
+    pub fn player_lookup_map(players: &[Arc<LitePlayer>]) -> HashMap<i16, &Arc<LitePlayer>> {
         let mut lookup_map = HashMap::new();
         players.iter().for_each(|p| {
             lookup_map.insert(p.id, p);
@@ -342,16 +355,14 @@ pub fn get_player_id_create_if_missing(
     return load_player_id(player, conn);
 }
 
-pub fn proj_exists(id: i16, week: i8, season: i16, conn: &Connection) -> bool {
-    let proj_exists = "select 
-    NOT EXISTS (select id from rb_proj where id = ?1 AND week = ?2 AND season = ?3) AND 
-    NOT EXISTS (select id from te_proj where id = ?1 AND week = ?2 AND season = ?3) AND 
-    NOT EXISTS (select id from wr_proj where id = ?1 AND week = ?2 AND season = ?3) AND 
-    NOT EXISTS (select id from qb_proj where id = ?1 AND week = ?2 AND season = ?3);";
-    let exists: bool = conn
-        .query_row(proj_exists, (id, week, season), |row| row.get(0))
-        .unwrap();
-    exists
+pub fn proj_exist(id: i16, week: i8, season: i16, pos: Pos, conn: &Connection) -> bool {
+    match pos {
+        Pos::D => return query_def_proj(id, week, season, conn).is_some(),
+        Pos::Qb => return query_qb_proj(id, week, season, conn).is_some(),
+        Pos::Rb => return query_rb_proj(id, week, season, conn).is_some(),
+        Pos::Te => return query_rec_proj(id, week, season, &pos, conn).is_some(),
+        Pos::Wr => return query_rec_proj(id, week, season, &pos, conn).is_some(),
+    }
 }
 
 // Get Player ID, Searches D, Then Exact, Then Fuzzy

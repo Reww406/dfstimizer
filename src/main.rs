@@ -12,6 +12,7 @@ use num_bigint::ToBigInt;
 use num_bigint::ToBigUint;
 use rusqlite::Connection;
 use std::mem::size_of_val;
+use std::sync::Arc;
 
 // TODO Stacking should be scored
 // TODO Points per Dollar
@@ -174,39 +175,59 @@ fn init_tables() {
     }
 }
 fn main() -> Result<(), Error> {
-    let players: Vec<LitePlayer> = load_in_ownership(
+    let players: Vec<Arc<LitePlayer>> = load_in_ownership(
         "fd-ownership.csv",
+        18,
+        2022,
         &[
+            String::from("*"),
             // String::from("PIT"),
-            String::from("CIN"),
+            // String::from("CIN"),
             // String::from("TEN"),
             // String::from("DET"),
             // String::from("SEA"),
-            // String::from("ATL"),
-            // String::from("WAS"),
+            // // String::from("ATL"),
+            // // String::from("WAS"),
+            // // String::from("SF"),
         ],
     );
+
+    let mut lineups: Vec<LineupBuilder> = Vec::new();
+    players
+        .iter()
+        .filter(|player| player.pos == Pos::Qb)
+        .for_each(|qb| {
+            let lineup_builder: LineupBuilder = LineupBuilder::new();
+            lineups.push(lineup_builder.set_qb(qb.clone()))
+        });
+    // let players_ref = players.clone();
+    let players_clone = players.clone();
+    let wrs_lineups: Vec<Arc<LineupBuilder>> = add_wrs_to_lineups(&players, lineups);
+
     // We shouldn't be iterating over line ups like order matters this will reduce
     // lineup amount by a lot
 
-    let qb = count_player_type(&players, Pos::Qb);
-    let wr = count_player_type(&players, Pos::Wr);
-    let rb = count_player_type(&players, Pos::Rb);
-    let te = count_player_type(&players, Pos::Te);
-    let d = count_player_type(&players, Pos::D);
-    let flex = wr + rb;
-    println!(
-        "{} {} {} {} {} {}",
-        total_comb(qb.try_into().unwrap(), 1),
-        total_comb(wr.try_into().unwrap(), 3),
-        total_comb(rb.try_into().unwrap(), 2),
-        total_comb(te.try_into().unwrap(), 1),
-        total_comb(d.try_into().unwrap(), 1),
-        total_comb(flex.try_into().unwrap(), 1)
-    );
-    let lineups = build_all_possible_lineups(&players, 18, 2022);
-    for lineup in lineups {
-        println!("{:?}\n", lineup)
+    // let qb = count_player_type(&players, Pos::Qb);
+    // let wr = count_player_type(&players, Pos::Wr);
+    // let rb = count_player_type(&players, Pos::Rb);
+    // let te = count_player_type(&players, Pos::Te);
+    // let d = count_player_type(&players, Pos::D);
+    // let flex = wr + rb;
+    // println!(
+    //     "{} {} {} {} {} {}",
+    //     total_comb(qb.try_into().unwrap(), 1),
+    //     total_comb(wr.try_into().unwrap(), 3),
+    //     total_comb(rb.try_into().unwrap(), 2),
+    //     total_comb(te.try_into().unwrap(), 1),
+    //     total_comb(d.try_into().unwrap(), 1),
+    //     total_comb(flex.try_into().unwrap(), 1)
+    // );
+    let mut count = 0;
+    let len = wrs_lineups.len();
+    for wr_lineup in wrs_lineups {
+        count += 1;
+        let lineups = build_all_possible_lineups(players.clone(), wr_lineup, 18, 2022);
+        println!("Total Lineups: {} count {}", len, count)
     }
     // println!("Total Line ups: {}", lineups.len());
 
