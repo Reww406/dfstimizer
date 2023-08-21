@@ -178,7 +178,7 @@ impl LitePlayer {
 }
 
 //
-// Player Queries
+// Player Queries TODO turn all to prepared statements
 //
 pub fn query_rec_proj(
     id: i16,
@@ -196,12 +196,17 @@ pub fn query_rec_proj(
     } else {
         "te_proj"
     };
-    let query: String = format!(
-        "SELECT * FROM {} WHERE id = ?1 AND week = ?2 AND season = ?3",
-        table
-    );
-    let rec_proj: Option<RecProj> = conn
-        .query_row(query.as_str(), (id, week, season), |row| {
+    let mut query = conn
+        .prepare(
+            format!(
+                "SELECT * FROM {} WHERE id = ?1 AND week = ?2 AND season = ?3",
+                table
+            )
+            .as_str(),
+        )
+        .expect("Couldn't Prepare statement");
+    let rec_proj: Option<RecProj> = query
+        .query_row((id, week, season), |row| {
             Ok(RecProj {
                 name: row.get(3)?,
                 team: row.get(4)?,
@@ -234,9 +239,11 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         let proj: RbProj = RB_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
-    let query: &str = "SELECT * FROM rb_proj WHERE id = ?1 AND week = ?2 AND season = ?3";
-    let rb_proj: Option<RbProj> = conn
-        .query_row(query, (id, week, season), |row| {
+    let mut query = conn
+        .prepare("SELECT * FROM rb_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
+        .expect("Couldn't Prepare statement");
+    let rb_proj: Option<RbProj> = query
+        .query_row((id, week, season), |row| {
             Ok(RbProj {
                 name: row.get(3)?,
                 team: row.get(4)?,
@@ -267,9 +274,11 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         let proj: QbProj = QB_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
-    let query: &str = "SELECT * FROM qb_proj WHERE id = ?1 AND week = ?2 AND season = ?3";
-    let qb_proj: Option<QbProj> = conn
-        .query_row(query, (id, week, season), |row| {
+    let mut query = conn
+        .prepare("SELECT * FROM qb_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
+        .expect("Couldn't prepare query");
+    let qb_proj: Option<QbProj> = query
+        .query_row((id, week, season), |row| {
             Ok(QbProj {
                 name: row.get(3)?,
                 team: row.get(4)?,
@@ -302,9 +311,11 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
         let proj: DefProj = DEF_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
-    let query: &str = "SELECT * FROM dst_proj WHERE id = ?1 AND week = ?2 AND season = ?3";
-    let def_proj: Option<DefProj> = conn
-        .query_row(query, (id, week, season), |row| {
+    let mut query = conn
+        .prepare("SELECT * FROM dst_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
+        .expect("Couldn't prepare query");
+    let def_proj: Option<DefProj> = query
+        .query_row((id, week, season), |row| {
             Ok(DefProj {
                 name: row.get(3)?,
                 team: row.get(4)?,

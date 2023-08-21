@@ -9,6 +9,7 @@ pub mod data_loader;
 pub mod lineup;
 pub mod optimizer;
 pub mod player;
+pub mod tables;
 
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
 
@@ -67,7 +68,7 @@ pub fn return_if_field_exits(
 pub fn factorial(num: usize) -> BigUint {
     let mut fact: BigUint = 1.to_biguint().unwrap();
     for i in 2..num + 1 {
-        let ib = i.to_biguint().unwrap();
+        let ib: BigUint = i.to_biguint().unwrap();
         fact *= &ib;
     }
     fact
@@ -80,7 +81,6 @@ pub fn total_comb(len: usize, sample: usize) -> u32 {
     (factorial(len) / (factorial(sample) * factorial(len - sample))).to_u32_digits()[0]
 }
 
-// Is this going to blow up the stack? maybe
 pub fn gen_comb(players: &[Arc<LitePlayer>], sample: usize) -> Vec<Vec<Arc<LitePlayer>>> {
     if sample == 1 {
         return players
@@ -93,7 +93,7 @@ pub fn gen_comb(players: &[Arc<LitePlayer>], sample: usize) -> Vec<Vec<Arc<LiteP
         return vec![players.to_vec()];
     }
     // Slice 1.. iterates by one each time?
-    let mut result = gen_comb(&players[1..], sample - 1)
+    let mut result: Vec<Vec<Arc<LitePlayer>>> = gen_comb(&players[1..], sample - 1)
         .into_iter()
         .map(|x| [&players[..1], x.as_slice()].concat())
         .collect::<Vec<Vec<Arc<LitePlayer>>>>();

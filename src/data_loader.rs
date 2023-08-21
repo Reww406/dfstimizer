@@ -132,7 +132,7 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
             id_and_ownership.own_per,
         ),
     )
-    .expect("Failed to insert Quater Back into database");
+    .expect("Failed to insert Quarter Back into database");
 }
 
 fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {

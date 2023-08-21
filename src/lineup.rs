@@ -43,12 +43,6 @@ pub struct Lineup {
     pub score: f32,
 }
 
-// impl<'a> Default for LineupBuilder<'a> {
-//     fn default() -> Self {
-//         LineupBuilder::new()
-//     }
-// }
-
 // TODO Would love to find a way to make this more DRY
 impl LineupBuilder {
     pub fn new() -> Self {

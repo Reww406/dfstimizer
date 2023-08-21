@@ -1,7 +1,7 @@
 use futures::channel::mpsc;
 use futures::executor;
 use futures::executor::ThreadPool;
-use futures::try_join;
+use futures::future::join_all;
 use futures::Future;
 use futures::StreamExt;
 use lazy_static::__Deref;
@@ -14,8 +14,6 @@ use crate::DATABASE_FILE;
 use std::collections::HashMap;
 use std::error::Error;
 use std::sync::Arc;
-use std::time::SystemTime;
-use std::time::UNIX_EPOCH;
 
 // AYU DARK
 const GOOD_SALARY_USAGE: i32 = 45000;
@@ -28,51 +26,36 @@ pub fn build_all_possible_lineups(
     week: i8,
     season: i16,
 ) -> Vec<Lineup> {
-    let mut pool_builder = ThreadPool::builder();
-    pool_builder.pool_size(32);
-    let pool = pool_builder.create().unwrap();
-    let mut lineups: Vec<LineupBuilder> = Vec::new();
+    let pool = ThreadPool::new().unwrap();
+    let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
     let mut finished_lineups: Vec<Lineup> = Vec::new();
     players
         .iter()
         .filter(|player| player.pos == Pos::Qb)
         .for_each(|qb| {
             let lineup_builder: LineupBuilder = LineupBuilder::new();
-            lineups.push(lineup_builder.set_qb(qb.clone()))
+            qb_lineups.push(lineup_builder.set_qb(qb.clone()))
         });
-    // let players_ref = players.clone();
-    let wrs_lineups: Vec<Arc<LineupBuilder>> = add_wrs_to_lineups(&players, lineups);
-    let size = wrs_lineups.len();
-    let mut current = 0;
     let mut futures: Vec<_> = Vec::new();
-    for wr_lp in wrs_lineups {
-        current += 1;
-        println!("Started {} need {}", current, size);
+    for qb_lp in qb_lineups {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
-        let binding = wr_lp.clone();
+        let binding = qb_lp.clone();
         let future = async {
             let player_clone = players.clone();
-
             let fut_tx_result = async move {
-                // println!("Start thread.");
-                // let start = SystemTime::now();
+                println!("Start thread {:?}", std::thread::current().id());
                 let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&player_clone, &binding);
-                // println!("WR Lineup: {:?}", rbs_lineups);
-
-                let te_linesups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, rbs_lineups);
-                // println!("TE Lineups: ", te_linesups)
-                let filterd_lineups = filter_low_salary_cap(te_linesups, 40000);
-                let dst_lineups: Vec<LineupBuilder> =
-                    add_dst_to_lineups(&player_clone, filterd_lineups);
+                let wrs_lineups: Vec<LineupBuilder> =
+                    add_wrs_to_lineups(&player_clone, rbs_lineups);
+                let te_lineups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, wrs_lineups);
+                let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&player_clone, te_lineups);
+                // let filterd_lineups = filter_low_salary_cap(dst_lineups, 47000);
                 let lineups: Vec<Lineup> =
-                    add_flex_find_top_num(&player_clone, dst_lineups, 20, week, season);
+                    add_flex_find_top_num(&player_clone, dst_lineups, 500, week, season);
                 lineups.iter().for_each(|l: &Lineup| {
                     tx.unbounded_send(l.clone()).expect("Failed to send lineup")
                 });
-                // let since_the_epoch = start
-                //     .duration_since(UNIX_EPOCH)
-                //     .expect("Time went backwards");
-                // println!("Finished in {:?}ms", since_the_epoch.as_millis());
+                println!("Stopped thread {:?}", std::thread::current().id());
             };
 
             pool.spawn_ok(fut_tx_result);
@@ -81,10 +64,11 @@ pub fn build_all_possible_lineups(
             future.await
         };
         futures.push(future);
-        // finished_lineups.extend(result);
     }
-    for future in futures {
-        finished_lineups.extend(executor::block_on(future));
+    let futures_join = join_all(futures);
+    let test = executor::block_on(futures_join);
+    for future in test {
+        finished_lineups.extend(future);
     }
     finished_lineups
 }
@@ -97,7 +81,7 @@ pub fn filter_low_salary_cap(
     lineups
 }
 
-pub fn get_pos_combos<'a>(
+pub fn get_combos_for_pos<'a>(
     players: &Vec<Arc<LitePlayer>>,
     slots: i8,
     positions: &[Pos],
@@ -117,38 +101,19 @@ pub fn get_pos_combos<'a>(
 pub fn add_wrs_to_lineups(
     players: &Vec<Arc<LitePlayer>>,
     lineups: Vec<LineupBuilder>,
-) -> Vec<Arc<LineupBuilder>> {
-    let mut new_lineups: Vec<Arc<LineupBuilder>> = Vec::new();
+) -> Vec<LineupBuilder> {
+    let mut new_lineups: Vec<LineupBuilder> = Vec::new();
     let p_lookup: HashMap<i16, &Arc<LitePlayer>> = LitePlayer::player_lookup_map(players);
-    let wr_combo: Vec<Vec<Arc<LitePlayer>>> = get_pos_combos(players, 3, &[Pos::Wr]);
+    let wr_combo: Vec<Vec<Arc<LitePlayer>>> = get_combos_for_pos(players, 3, &[Pos::Wr]);
     for lineup in &lineups {
         for combo in &wr_combo {
-            //TODO WTF?!?! clone clone
-            new_lineups.push(Arc::new(
+            new_lineups.push(
                 lineup
                     .clone()
-                    .set_wr1(
-                        p_lookup
-                            .get(&combo[0].id)
-                            .expect("Player missing")
-                            .clone()
-                            .clone(),
-                    )
-                    .set_wr2(
-                        p_lookup
-                            .get(&combo[1].id)
-                            .expect("Missing Player")
-                            .clone()
-                            .clone(),
-                    )
-                    .set_wr3(
-                        p_lookup
-                            .get(&combo[2].id)
-                            .expect("Missing Player")
-                            .clone()
-                            .clone(),
-                    ),
-            ))
+                    .set_wr1((*p_lookup.get(&combo[0].id).expect("Player missing")).clone())
+                    .set_wr2((*p_lookup.get(&combo[1].id).expect("Missing Player")).clone())
+                    .set_wr3((*p_lookup.get(&combo[2].id).expect("Missing Player")).clone()),
+            )
         }
     }
     new_lineups
@@ -160,26 +125,13 @@ pub fn add_rbs_to_lineups(
 ) -> Vec<LineupBuilder> {
     let mut new_lineups: Vec<LineupBuilder> = Vec::new();
     let p_lookup: HashMap<i16, &Arc<LitePlayer>> = LitePlayer::player_lookup_map(players);
-    let rb_combos: Vec<Vec<Arc<LitePlayer>>> = get_pos_combos(players, 2, &[Pos::Rb]);
-
+    let rb_combos: Vec<Vec<Arc<LitePlayer>>> = get_combos_for_pos(players, 2, &[Pos::Rb]);
     for combo in &rb_combos {
         new_lineups.push(
             lineup
                 .clone()
-                .set_rb1(
-                    p_lookup
-                        .get(&combo[0].id)
-                        .expect("Player missing")
-                        .clone()
-                        .clone(),
-                )
-                .set_rb2(
-                    p_lookup
-                        .get(&combo[1].id)
-                        .expect("Player Missing")
-                        .clone()
-                        .clone(),
-                ),
+                .set_rb1((*p_lookup.get(&combo[0].id).expect("Player missing")).clone())
+                .set_rb2((*p_lookup.get(&combo[1].id).expect("Player Missing")).clone()),
         );
     }
 
@@ -199,6 +151,9 @@ pub fn add_te_to_lineups(
     lineups_with_te
 }
 
+// Remove QB and opposing D and RB and opposing RB
+// WR2 And QB are most correlated, than 3 than 2
+// 
 // Pull in data per
 pub fn add_flex_find_top_num(
     players: &Vec<Arc<LitePlayer>>,
@@ -269,7 +224,7 @@ pub fn add_flex_find_top_num(
                 }
             });
     }
-    // println!("Flex iterated {} times", iterations);
+    println!("Flex iterated {} times", iterations);
     best_lineups
 }
 
@@ -285,7 +240,7 @@ pub fn add_dst_to_lineups(
             iterations += 1;
         });
     }
-    // println!("Def iterated: {} times", iterations);
+    println!("Def iterated: {} times", iterations);
     lineups_with_def
 }
 
