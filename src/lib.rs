@@ -47,7 +47,7 @@ pub fn load_in_ownership(
             continue;
         }
         let lite_player: LitePlayer = LitePlayer::new(record, &conn);
-        if proj_exist(lite_player.id, week, season, lite_player.pos, &conn) {
+        if proj_exists(lite_player.id, week, season, lite_player.pos, &conn) {
             println!("Removing Player: {}", lite_player.id);
             players.push(Arc::new(lite_player));
         }

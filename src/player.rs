@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::data_loader::NON_OFF_TO_OFF_ABBR;
 use crate::data_loader::*;
+use crate::lineup::LineupBuilder;
 
 lazy_static! {
     pub static ref REC_PROJ_CACHE: Mutex<HashMap<i16, RecProj>> = Mutex::new(HashMap::new());
@@ -15,10 +16,13 @@ lazy_static! {
     pub static ref QB_PROJ_CACHE: Mutex<HashMap<i16, QbProj>> = Mutex::new(HashMap::new());
     pub static ref DEF_PROJ_CACHE: Mutex<HashMap<i16, DefProj>> = Mutex::new(HashMap::new());
 }
+enum PosToProj {
+    QbProj(QbProj),
+    RecProj(RecProj),
+    RbProj(RbProj),
+    DefProj(DefProj),
+}
 
-// TODO add max/min variance, high sacks for def,
-// TODO throws to end zone
-// TODO avg attempts, rec targets need to be pulled from stats
 #[derive(Clone)]
 pub struct Player {
     pub id: i16,
@@ -177,9 +181,78 @@ impl LitePlayer {
     }
 }
 
-//
-// Player Queries TODO turn all to prepared statements
-//
+pub fn query_rec_proj_helper(
+    player: &Option<Arc<LitePlayer>>,
+    week: i8,
+    season: i16,
+    pos: &Pos,
+    conn: &Connection,
+) -> RecProj {
+    query_rec_proj(
+        player
+            .as_ref()
+            .expect("WR/TE was not set when trying to filter")
+            .id,
+        week,
+        season,
+        pos,
+        conn,
+    )
+    .expect("Could not find WR/TE when trying to filter")
+}
+
+pub fn query_def_proj_helper(
+    player: &Option<Arc<LitePlayer>>,
+    week: i8,
+    season: i16,
+    conn: &Connection,
+) -> DefProj {
+    query_def_proj(
+        player
+            .as_ref()
+            .expect("DST was not set when trying to get Proj")
+            .id,
+        week,
+        season,
+        conn,
+    )
+    .expect("Could not find DST Proj")
+}
+pub fn query_rb_proj_helper(
+    player: &Option<Arc<LitePlayer>>,
+    week: i8,
+    season: i16,
+    conn: &Connection,
+) -> RbProj {
+    query_rb_proj(
+        player
+            .as_ref()
+            .expect("RB was not set when trying to get Proj")
+            .id,
+        week,
+        season,
+        conn,
+    )
+    .expect("Could not find RB when trying to get Proj")
+}
+
+pub fn query_qb_proj_helper(
+    player: &Option<Arc<LitePlayer>>,
+    week: i8,
+    season: i16,
+    conn: &Connection,
+) -> QbProj {
+    query_qb_proj(
+        player
+            .as_ref()
+            .expect("QB was not set when trying to get Proj")
+            .id,
+        week,
+        season,
+        conn,
+    )
+    .expect("Could not find QB when trying to get Proj")
+}
 pub fn query_rec_proj(
     id: i16,
     week: i8,
@@ -366,7 +439,7 @@ pub fn get_player_id_create_if_missing(
     return load_player_id(player, conn);
 }
 
-pub fn proj_exist(id: i16, week: i8, season: i16, pos: Pos, conn: &Connection) -> bool {
+pub fn proj_exists(id: i16, week: i8, season: i16, pos: Pos, conn: &Connection) -> bool {
     match pos {
         Pos::D => return query_def_proj(id, week, season, conn).is_some(),
         Pos::Qb => return query_qb_proj(id, week, season, conn).is_some(),
