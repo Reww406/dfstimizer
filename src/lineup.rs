@@ -4,7 +4,10 @@ use std::sync::Arc;
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
-use crate::mean;
+use crate::{
+    mean, QB_ATT_MAX, QB_ATT_MIN, QB_PTS_MAX, QB_PTS_MIN, RB_ATT_MAX, RB_ATT_MIN, RB_PTS_MAX,
+    RB_PTS_MIN, TE_TGTS_MAX, TE_TGTS_MIN, WR_PTS_MAX, WR_PTS_MIN, WR_TGTS_MAX, WR_TGTS_MIN,
+};
 use crate::{player::*, return_if_field_exits};
 
 pub const SALARY_CAP: i32 = 59994;
@@ -12,6 +15,17 @@ pub const MAX_AVG_OWNERHSIP: f32 = 25.0;
 pub const MIN_AVG_OWNERSHIP: f32 = 1.0;
 pub const MAX_POINTS: f32 = 35.0;
 pub const MIN_POINTS: f32 = 10.0;
+
+// Thursday kicker, 5 flex spots
+// maybe dont care about kicker
+
+pub struct IslandLB {
+    pub mvp: Option<Arc<LitePlayer>>,
+    pub first: Option<Arc<LitePlayer>>,
+    pub second: Option<Arc<LitePlayer>>,
+    pub third: Option<Arc<LitePlayer>>,
+    pub fourth: Option<Arc<LitePlayer>>,
+}
 
 #[derive(Clone, Debug)]
 pub struct LineupBuilder {
@@ -22,6 +36,7 @@ pub struct LineupBuilder {
     pub wr2: Option<Arc<LitePlayer>>,
     pub wr3: Option<Arc<LitePlayer>>,
     pub te: Option<Arc<LitePlayer>>,
+    pub flex: Option<Arc<LitePlayer>>,
     pub dst: Option<Arc<LitePlayer>>,
     pub total_price: i32,
 }
@@ -40,6 +55,20 @@ pub struct Lineup {
     pub def: DefProj,
     pub total_price: i32,
 }
+
+pub struct IslandLineup {
+    pub mvp: Proj,
+    pub first: Proj,
+    pub second: Proj,
+    pub third: Proj,
+    pub fourth: Proj,
+}
+
+fn get_normalized_score(value: f32, max: f32, min: f32) -> f32 {
+    (value - max) / (max - min)
+}
+
+// This can be way more DRY
 impl Lineup {
     pub fn get_salary_spent_score(&self) -> f32 {
         let spent = self.total_price as f32;
@@ -58,28 +87,77 @@ impl Lineup {
     }
 
     pub fn score(&self) -> f32 {
-        let salary_spent_score: f32 = self.get_salary_spent_score();
-        let ownership_score: f32 = self.get_ownership_score();
-        ownership_score + salary_spent_score
+        let scores: Vec<f32> = vec![
+            self.get_ownership_score(),
+            self.get_salary_spent_score(),
+            self.rb_score(),
+            self.wr_score(),
+            self.te_score(),
+            self.dst_score(),
+            self.qb_score(),
+            self.flex_score(),
+        ];
+        scores.iter().sum()
     }
 
-    // * 2
     pub fn rb_score(&self) -> f32 {
-        0.0
+        let rbs: [&RbProj; 2] = [&self.rb1, &self.rb2];
+        let mut score = 0.0;
+        rbs.iter().for_each(|rb| {
+            score += get_normalized_score(rb.atts, *RB_ATT_MAX, *RB_ATT_MIN);
+            score += get_normalized_score(rb.pts, *RB_PTS_MAX, *RB_PTS_MIN)
+        });
+        score
     }
 
+    // Top 5 Stats once we have it
     pub fn qb_score(&self) -> f32 {
-        0.0
-    }
-    // * 3
-    pub fn rec_score(&self) -> f32 {
-        0.0
+        let atts_score: f32 = (self.qb.atts - *QB_ATT_MIN) / (*QB_ATT_MAX - *QB_ATT_MIN);
+        let pts_score: f32 = get_normalized_score(self.qb.pts, *QB_PTS_MAX, *QB_PTS_MIN);
+        if self.qb.team == self.wr2.team || self.qb.team == self.wr3.team {
+            return atts_score + pts_score + 0.5;
+        }
+        atts_score + pts_score
     }
 
+    // Max/Min Receptions, Projected Points
+    // Top 5 Average, Deep passes?
+    pub fn wr_score(&self) -> f32 {
+        let wrs: [&RecProj; 3] = [&self.wr1, &self.wr2, &self.wr3];
+        let mut score: f32 = 0.0;
+        wrs.iter().for_each(|wr| {
+            score += get_normalized_score(wr.tgts, *WR_TGTS_MAX, *WR_TGTS_MIN);
+            score += get_normalized_score(wr.pts, *WR_PTS_MAX, *WR_PTS_MIN);
+        });
+        score
+    }
+
+    // Max/Min Receptions, Projected Points
     pub fn flex_score(&self) -> f32 {
-        0.0
+        match self.flex.pos {
+            Pos::Wr => {
+                let wr: &RecProj = self.flex.rec_proj.as_ref().unwrap();
+                let wr_pts = get_normalized_score(wr.pts, *WR_PTS_MAX, *WR_PTS_MIN);
+                let wr_tgts = get_normalized_score(wr.tgts, *WR_TGTS_MAX, *WR_TGTS_MIN);
+                return wr_pts + wr_tgts;
+            }
+            Pos::Rb => {
+                let rb: &RbProj = self.flex.rb_proj.as_ref().unwrap();
+                let rb_pts = get_normalized_score(rb.pts, *RB_PTS_MAX, *RB_PTS_MIN);
+                let rb_atts = get_normalized_score(rb.atts, *RB_ATT_MAX, *RB_ATT_MIN);
+                return rb_pts + rb_atts;
+            }
+            _ => {
+                panic!("Wrong Flex Pos..");
+            }
+        }
     }
 
+    pub fn te_score(&self) -> f32 {
+        return get_normalized_score(self.te.tgts, *TE_TGTS_MAX, *TE_TGTS_MIN);
+    }
+
+    // Points
     pub fn dst_score(&self) -> f32 {
         0.0
     }
@@ -132,12 +210,13 @@ impl LineupBuilder {
             wr2: None,
             wr3: None,
             te: None,
+            flex: None,
             dst: None,
             total_price: 0,
         }
     }
 
-    pub fn array_of_players(&self) -> [Arc<LitePlayer>; 8] {
+    pub fn array_of_players(&self) -> [Arc<LitePlayer>; 9] {
         [
             self.qb.clone().expect("Line up missing qb"),
             self.rb1.clone().expect("Line up missing rb1"),
@@ -146,6 +225,7 @@ impl LineupBuilder {
             self.wr2.clone().expect("Line up missing wr2"),
             self.wr3.clone().expect("Line up missing wr3"),
             self.te.clone().expect("Line up missing te"),
+            self.flex.clone().expect("Line up missing flex"),
             self.dst.clone().expect("Line up missing def"),
         ]
     }
@@ -156,8 +236,30 @@ impl LineupBuilder {
     }
 
     pub fn total_amount_spent(&self) -> i32 {
-        let line_up_array: [Arc<LitePlayer>; 8] = self.array_of_players();
+        let line_up_array: [Arc<LitePlayer>; 9] = self.array_of_players();
         line_up_array.into_iter().map(|x| x.salary as i32).sum()
+    }
+
+    pub fn set_pos(mut self, lp: Arc<LitePlayer>, pos: Pos, slot: i8) -> LineupBuilder {
+        match pos {
+            Pos::Qb => self.qb = Some(return_if_field_exits(self.qb, &lp)),
+            Pos::Rb => match slot {
+                1 => self.rb1 = Some(return_if_field_exits(self.rb1, &lp)),
+                2 => self.rb2 = Some(return_if_field_exits(self.rb2, &lp)),
+                _ => panic!("Bad RB Slot"),
+            },
+            Pos::Wr => match slot {
+                1 => self.wr1 = Some(return_if_field_exits(self.wr1, &lp)),
+                2 => self.wr2 = Some(return_if_field_exits(self.wr2, &lp)),
+                3 => self.wr3 = Some(return_if_field_exits(self.wr3, &lp)),
+                _ => panic!("Bad WR Slot"),
+            },
+            Pos::Te => self.te = Some(return_if_field_exits(self.te, &lp)),
+            Pos::D => self.dst = Some(return_if_field_exits(self.dst, &lp)),
+            Pos::K => panic!("No kicker in regular optimizer."),
+        }
+        self.total_price += lp.salary as i32;
+        self
     }
 
     // TODO Can turn these all into a match on a enum that has the slot
@@ -203,6 +305,12 @@ impl LineupBuilder {
         self
     }
 
+    pub fn set_flex(mut self, flex: Arc<LitePlayer>) -> LineupBuilder {
+        self.flex = Some(return_if_field_exits(self.flex, &flex));
+        self.total_price += flex.salary as i32;
+        self
+    }
+
     pub fn set_def(mut self, def: Arc<LitePlayer>) -> LineupBuilder {
         self.dst = Some(return_if_field_exits(self.dst, &def));
         self.total_price += def.salary as i32;
@@ -214,8 +322,27 @@ impl LineupBuilder {
         week: i8,
         season: i16,
         conn: &Connection,
-        flex: FlexProj,
     ) -> Result<Lineup, Box<dyn std::error::Error>> {
+        let flex: FlexProj = if self.flex.as_ref().unwrap().pos == Pos::Wr {
+            FlexProj {
+                pos: Pos::Wr,
+                rec_proj: Some(
+                    query_rec_proj(self.flex.as_ref().unwrap().id, week, season, &Pos::Wr, conn)
+                        .ok_or("Could not find flex wr")?,
+                ),
+                rb_proj: None,
+            }
+        } else {
+            FlexProj {
+                pos: Pos::Rb,
+                rec_proj: None,
+                rb_proj: Some(
+                    query_rb_proj(self.flex.as_ref().unwrap().id, week, season, conn)
+                        .ok_or("Could not find flex rb")?,
+                ),
+            }
+        };
+
         let qb: QbProj = query_qb_proj(self.qb.as_ref().unwrap().id, week, season, conn)
             .ok_or("QB Could not be found")?;
         let rb1: RbProj = query_rb_proj(self.rb1.as_ref().unwrap().id, week, season, conn)
@@ -234,6 +361,7 @@ impl LineupBuilder {
         let te: RecProj =
             query_rec_proj(self.te.as_ref().unwrap().id, week, season, &Pos::Te, conn)
                 .ok_or("Te could not be found")?;
+        let flex: FlexProj = flex;
         let def: DefProj = query_def_proj(self.dst.as_ref().unwrap().id, week, season, conn)
             .ok_or("Def could not be found")?;
 

@@ -1,5 +1,6 @@
 use std::{fs, sync::Arc};
 
+use lazy_static::lazy_static;
 use num_bigint::{BigInt, BigUint, ToBigInt, ToBigUint};
 use rusqlite::Connection;
 
@@ -12,7 +13,43 @@ pub mod player;
 pub mod tables;
 
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
+const SEASON: i16 = 2022;
+const WEEK: i8 = 18;
 
+lazy_static! {
+    pub static ref QB_ATT_MAX: f32 = get_max_min(SEASON, WEEK, false, "atts", "qb_proj");
+    pub static ref QB_ATT_MIN: f32 = get_max_min(SEASON, WEEK, true, "atts", "qb_proj");
+    pub static ref RB_ATT_MAX: f32 = get_max_min(SEASON, WEEK, false, "atts", "rb_proj");
+    pub static ref RB_ATT_MIN: f32 = get_max_min(SEASON, WEEK, true, "atts", "rb_proj");
+    pub static ref WR_TGTS_MAX: f32 = get_max_min(SEASON, WEEK, false, "tgts", "wr_proj");
+    pub static ref WR_TGTS_MIN: f32 = get_max_min(SEASON, WEEK, true, "tgts", "wr_proj");
+    pub static ref TE_TGTS_MAX: f32 = get_max_min(SEASON, WEEK, false, "tgts", "te_proj");
+    pub static ref TE_TGTS_MIN: f32 = get_max_min(SEASON, WEEK, true, "tgts", "te_proj");
+
+    pub static ref QB_PTS_MAX: f32 = get_max_min(SEASON, WEEK, false, "pts", "qb_proj");
+    pub static ref QB_PTS_MIN: f32 = get_max_min(SEASON, WEEK, true, "pts", "qb_proj");
+    pub static ref RB_PTS_MAX: f32 = get_max_min(SEASON, WEEK, false, "pts", "rb_proj");
+    pub static ref RB_PTS_MIN: f32 = get_max_min(SEASON, WEEK, true, "pts", "rb_proj");
+    pub static ref WR_PTS_MAX: f32 = get_max_min(SEASON, WEEK, false, "pts", "wr_proj");
+    pub static ref WR_PTS_MIN: f32 = get_max_min(SEASON, WEEK, true, "pts", "wr_proj");
+    pub static ref TE_PTS_MAX: f32 = get_max_min(SEASON, WEEK, false, "pts", "te_proj");
+    pub static ref TE_PTS_MIN: f32 = get_max_min(SEASON, WEEK, true, "pts", "te_proj");
+}
+
+fn get_max_min(season: i16, week: i8, min: bool, field: &str, table: &str) -> f32 {
+    let conn = Connection::open(DATABASE_FILE).unwrap();
+    let max_or_min = if min == true { "MIN" } else { "MAX" };
+    let mut statement = conn
+        .prepare(
+            format!(
+                "SELECT {}({}) FROM {} WHERE week = ?1 AND season = ?2",
+                max_or_min, field, table
+            )
+            .as_str(),
+        )
+        .expect("Couldn't prepare statement..");
+    statement.query_row((week, season), |r| r.get(0)).unwrap()
+}
 pub fn mean(data: &[f32]) -> Option<f32> {
     let count: usize = data.len();
     if count == 0 {

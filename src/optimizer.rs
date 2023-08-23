@@ -2,27 +2,22 @@ use futures::channel::mpsc;
 use futures::executor;
 use futures::executor::ThreadPool;
 use futures::future::join_all;
-use futures::Future;
 use futures::StreamExt;
-use lazy_static::__Deref;
 use rusqlite::Connection;
 
 use crate::gen_comb;
+use crate::lineup;
 use crate::lineup::*;
 use crate::player::*;
 use crate::DATABASE_FILE;
 use std::collections::HashMap;
-use std::error::Error;
 use std::sync::Arc;
 
 // AYU DARK
 const GOOD_SALARY_USAGE: i32 = 45000;
 
-// TODO Build all combinations of WR's than go through and generate 200 for each one.
-// Combine all at the end and sort again.
 pub fn build_all_possible_lineups(
     players: Vec<Arc<LitePlayer>>,
-    // wr_lineup: Arc<LineupBuilder>,
     week: i8,
     season: i16,
 ) -> Vec<Lineup> {
@@ -49,8 +44,8 @@ pub fn build_all_possible_lineups(
                     add_wrs_to_lineups(&player_clone, rbs_lineups);
                 let te_lineups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, wrs_lineups);
                 let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&player_clone, te_lineups);
-                // let filterd_lineups = filter_low_salary_cap(dst_lineups, 47000);
-                let no_bad_combinations = filter_bad_lineups(dst_lineups, week, season);
+                let filterd_lineups = filter_low_salary_cap(dst_lineups, 42000);
+                let no_bad_combinations = filter_bad_lineups(filterd_lineups, week, season);
                 let lineups: Vec<Lineup> =
                     add_flex_find_top_num(&player_clone, no_bad_combinations, 500, week, season);
                 lineups.iter().for_each(|l: &Lineup| {
@@ -206,6 +201,7 @@ pub fn add_flex_find_top_num(
             .filter(|p| (p.salary as i32 + lineup.total_price) < SALARY_CAP)
             .filter(|p| (p.salary as i32 + lineup.total_price) > GOOD_SALARY_USAGE)
             .for_each(|flex| {
+                // should be refactored to a function
                 iterations += 1;
                 let finished_lineup = lineup
                     .clone()
@@ -240,6 +236,17 @@ pub fn add_flex_find_top_num(
     best_lineups
 }
 
+pub fn insert_value_sorted(lineups: &mut Vec<Lineup>, new_lineup: Lineup) -> (&Vec<Lineup>, bool) {
+    let pos = lineups
+        .binary_search_by(|probe| new_lineup.score().total_cmp(&probe.score()))
+        .expect("Failed to find value");
+    lineups[pos] = new_lineup;
+    if pos == (lineups.len() - 1) {
+        return (lineups, true);
+    }
+    (lineups, false)
+}
+
 pub fn add_dst_to_lineups(
     players: &Vec<Arc<LitePlayer>>,
     lineups: Vec<LineupBuilder>,
@@ -259,31 +266,46 @@ pub fn add_dst_to_lineups(
 // TODO Test build lineup should be sorted and under salary cap.
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use super::*;
     // Helper function for creating line ups
-    // fn create_test_lineup(ownership: f32, price: i16) -> Lineup {
-    //     let mut players: Vec<LitePlayer> = Vec::with_capacity(9);
-    //     for _ in 0..9 {
-    //         players.push(LitePlayer {
-    //             id: 1,
-    //             salary: price,
-    //             pos: Pos::Qb,
-    //         })
-    //     }
+    fn create_test_lineup(price: i32) -> Lineup {
+        let conn: Connection = Connection::open(DATABASE_FILE).expect("Failed to open DB");
+        let week = 18;
+        let season = 2022;
+        Lineup {
+            qb: query_qb_proj(26, week, season, &conn).unwrap(),
+            rb1: query_rb_proj(1, week, season, &conn).unwrap(),
+            rb2: query_rb_proj(2, week, season, &conn).unwrap(),
+            wr1: query_rec_proj(3, week, season, &Pos::Wr, &conn).unwrap(),
+            wr2: query_rec_proj(8, week, season, &Pos::Wr, &conn).unwrap(),
+            wr3: query_rec_proj(8, week, season, &Pos::Wr, &conn).unwrap(),
+            te: query_rec_proj(56, week, season, &Pos::Te, &conn).unwrap(),
+            flex: FlexProj {
+                rb_proj: Some(query_rb_proj(2, week, season, &conn).unwrap()),
+                pos: Pos::Rb,
+                rec_proj: None,
+            },
+            def: query_def_proj(17, week, season, &conn).unwrap(),
+            total_price: price,
+        }
+    }
 
-    //     let lineup: LineupBuilder = LineupBuilder {
-    //         dst: Some(&players[0]),
-    //         qb: Some(&players[1]),
-    //         rb1: Some(&players[2]),
-    //         rb2: Some(&players[3]),
-    //         wr1: Some(&players[4]),
-    //         wr2: Some(&players[5]),
-    //         wr3: Some(&players[6]),
-    //         te: Some(&players[7]),
-    //         flex: Some(&players[8]),
-    //         total_price: 60000,
-    //     };
-    //     lineup.build()
+    // #[test]
+    // fn test_insert_sorted_val() {
+    //     let mut lineups: Vec<Lineup> = vec![
+    //         create_test_lineup(1030),
+    //         create_test_lineup(1030),
+    //         create_test_lineup(1050),
+    //     ];
+    //     lineups
+    //         .iter()
+    //         .for_each(|l| println!("Current {:?}", l.score()));
+    //     let new_lineup = create_test_lineup(5500);
+    //     println!("new score {}", new_lineup);
+    //     let value = insert_value_sorted(&mut lineups, new_lineup);
+    //     value.0.iter().for_each(|l| println!("New {:?}", l.score()));
     // }
 
     // #[test]

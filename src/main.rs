@@ -1,33 +1,20 @@
 use csv::Error;
-use dfstimizer::data_loader::*;
-use dfstimizer::gen_comb;
 use dfstimizer::lineup::*;
 use dfstimizer::load_in_ownership;
 use dfstimizer::optimizer::*;
 use dfstimizer::player::*;
 use dfstimizer::total_comb;
-use dfstimizer::DATABASE_FILE;
-use num_bigint::BigUint;
-use num_bigint::ToBigInt;
-use num_bigint::ToBigUint;
-use rusqlite::Connection;
-use std::mem::size_of_val;
+
 use std::sync::Arc;
 use std::time::Instant;
 
-// TODO Stacking should be scored
 // TODO Points per Dollar
 // TODO Opp Pos Rank
-// TODO remove all negative correlations when building line ups page 57 of book
-// TODO Stacking for turnaments
-// TODO Get player consitensy numbers and pick the max ?
-// TODO Load QB stats, WR stats, RB stats, TE stats and DST stats into Sqlite
-// TODO Seperate table for Targets
-// TODO load in rolling salary averge
+// TODO Load QB stats, WR stats, RB stats, TE stats
+// TODO load in rolling salary averge to cache?
 // TODO calculate plus minus
 // TODO less target seperation good for stacking
-
-// TODO use Sqlite to avoid doing all iterations in memory
+// TODO Look at premium stats on pff
 
 fn count_player_type(players: &Vec<Arc<LitePlayer>>, pos: Pos) -> i32 {
     let mut count: i32 = 0;
@@ -38,7 +25,6 @@ fn count_player_type(players: &Vec<Arc<LitePlayer>>, pos: Pos) -> i32 {
     }
     count
 }
-
 fn main() -> Result<(), Error> {
     let start: Instant = Instant::now();
     let players: Vec<Arc<LitePlayer>> = load_in_ownership(
@@ -73,6 +59,5 @@ fn main() -> Result<(), Error> {
     let lineups: Vec<Lineup> = build_all_possible_lineups(players.clone(), 18, 2022);
     println!("Total lineup count {}", lineups.len());
     println!("Elapsed: {:?}", start.elapsed());
-
     Ok(())
 }

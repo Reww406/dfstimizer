@@ -16,11 +16,24 @@ lazy_static! {
     pub static ref QB_PROJ_CACHE: Mutex<HashMap<i16, QbProj>> = Mutex::new(HashMap::new());
     pub static ref DEF_PROJ_CACHE: Mutex<HashMap<i16, DefProj>> = Mutex::new(HashMap::new());
 }
-enum PosToProj {
+pub enum Proj {
     QbProj(QbProj),
     RecProj(RecProj),
     RbProj(RbProj),
     DefProj(DefProj),
+    KickProj(KickProj),
+}
+
+impl Proj {
+    pub fn get_proj_pos(&self) -> Pos {
+        match self {
+            Proj::QbProj(_) => return Pos::Qb,
+            Proj::DefProj(_) => return Pos::D,
+            Proj::RecProj(rec_proj) => return rec_proj.pos,
+            Proj::RbProj(_) => return Pos::Rb,
+            Proj::KickProj(_) => return Pos::K,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -97,6 +110,17 @@ pub struct DefProj {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct KickProj {
+    pub name: String,
+    pub team: String,
+    pub opp: String,
+    pub pts: f32,
+    pub salary: i32,
+    pub own_per: f32,
+}
+
+// Should be Enum will reduce code
+#[derive(Debug, Clone, Default)]
 pub struct FlexProj {
     pub pos: Pos,
     pub rec_proj: Option<RecProj>,
@@ -110,6 +134,7 @@ pub enum Pos {
     Wr = 2,
     Te = 3,
     D = 4,
+    K = 5,
 }
 
 impl Default for Pos {
@@ -120,6 +145,7 @@ impl Default for Pos {
 impl Pos {
     pub fn from_str(input: &str) -> Result<Pos, ()> {
         let input = input.to_uppercase();
+
         match input.as_str() {
             "QB" => Ok(Pos::Qb),
             "RB" => Ok(Pos::Rb),
@@ -127,6 +153,7 @@ impl Pos {
             "TE" => Ok(Pos::Te),
             "D" => Ok(Pos::D),
             "DST" => Ok(Pos::D),
+            "K" => Ok(Pos::K),
             _ => Err(()),
         }
     }
@@ -253,6 +280,16 @@ pub fn query_qb_proj_helper(
     )
     .expect("Could not find QB when trying to get Proj")
 }
+pub fn query_kick_proj(
+    id: i16,
+    week: i8,
+    season: i16,
+    pos: &Pos,
+    conn: &Connection,
+) -> Option<KickProj> {
+    None
+}
+
 pub fn query_rec_proj(
     id: i16,
     week: i8,
@@ -446,6 +483,7 @@ pub fn proj_exists(id: i16, week: i8, season: i16, pos: Pos, conn: &Connection) 
         Pos::Rb => return query_rb_proj(id, week, season, conn).is_some(),
         Pos::Te => return query_rec_proj(id, week, season, &pos, conn).is_some(),
         Pos::Wr => return query_rec_proj(id, week, season, &pos, conn).is_some(),
+        Pos::K => return query_kick_proj(id, week, season, &pos, conn).is_some(),
     }
 }
 

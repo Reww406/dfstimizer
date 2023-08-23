@@ -1,10 +1,10 @@
 use crate::{player::*, DATABASE_FILE};
-use csv::{Reader, StringRecord};
+
+use csv::StringRecord;
 use lazy_static::lazy_static;
-use regex::Regex;
-use rusqlite::{Connection, OptionalExtension, Result};
+use rusqlite::{Connection, Result};
 use serde::Deserialize;
-use std::{collections::HashMap, fs, str::Split};
+use std::{collections::HashMap, fs};
 
 lazy_static! {
     pub static ref NON_OFF_TO_OFF_ABBR: HashMap<&'static str, &'static str> = HashMap::from([
@@ -29,6 +29,7 @@ struct ProjRecord {
     #[serde(rename = "games")]
     opp: String,
     fantasy_points: f32,
+    auctin_value: f32,
     salary: i32,
     pass_comp: f32,
     pass_att: f32,
@@ -57,6 +58,22 @@ struct IdAndOwnership {
     id: i32,
     own_per: f32,
 }
+
+pub fn load_in_kick_proj(path: &str, season: i16, week: i8) {
+    let contents: String = fs::read_to_string(path).expect("Failed to read in file");
+    let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    for res in rdr.deserialize() {
+        let rec: ProjRecord = res.unwrap();
+        let pos: Result<Pos, ()> = Pos::from_str(&rec.position);
+        match pos {
+            Ok(Pos::K) => store_kick_proj(&rec, season, week, &conn),
+            Ok(_) => continue,
+            Err(_) => println!("Error getiting pos.."),
+        }
+    }
+}
+
 pub fn load_in_proj(path: &str, season: i16, week: i8) {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
@@ -70,6 +87,7 @@ pub fn load_in_proj(path: &str, season: i16, week: i8) {
             Ok(Pos::Rb) => store_rb_proj(&rec, season, week, &conn),
             Ok(Pos::Te) => store_rec_proj(&rec, season, week, Pos::Te, &conn),
             Ok(Pos::Wr) => store_rec_proj(&rec, season, week, Pos::Wr, &conn),
+            Ok(Pos::K) => store_kick_proj(&rec, season, week, &conn),
             Err(_) => println!("Pos missing {:?}", pos),
         }
     }
@@ -208,6 +226,39 @@ fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, pos: Pos, conn: &Conn
         ),
     )
     .expect("Failed to insert Wide Reciever into database");
+}
+
+fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
+    let id_and_ownership: Option<IdAndOwnership> = get_id_ownership(
+        &rec.player_name,
+        &rec.team_name,
+        &Pos::D,
+        week,
+        season,
+        conn,
+    );
+    if id_and_ownership.is_none() {
+        return;
+    }
+    let id_and_ownership: IdAndOwnership = id_and_ownership.unwrap();
+    let dst_in: &str = "INSERT INTO kick_proj (id, season, week, name, team, opp, pts,
+        salary, own_per) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)";
+    conn.execute(
+        dst_in,
+        (
+            id_and_ownership.id,
+            season,
+            week,
+            &rec.player_name,
+            &rec.team_name,
+            &rec.opp,
+            rec.fantasy_points,
+            rec.salary,
+            id_and_ownership.own_per,
+        ),
+    )
+    .expect("Failed to insert Defense into database");
 }
 
 fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
