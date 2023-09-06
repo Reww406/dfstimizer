@@ -2,7 +2,7 @@ use crate::{player::*, DATABASE_FILE};
 
 use csv::StringRecord;
 use lazy_static::lazy_static;
-use rusqlite::{Connection, Result};
+use rusqlite::{params, Connection, Result};
 use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
@@ -29,7 +29,7 @@ struct ProjRecord {
     #[serde(rename = "games")]
     opp: String,
     fantasy_points: f32,
-    auctin_value: f32,
+    // auctin_value: f32,
     salary: i32,
     pass_comp: f32,
     pass_att: f32,
@@ -54,6 +54,61 @@ struct ProjRecord {
     dst_sacks: f32,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RushRecStats {
+    player: String,
+    team: String,
+    position: String,
+    rec_yds: i16,
+    rush_yds: i16,
+    rec_tds: i16,
+    rush_tds: i16,
+    #[serde(rename = "rushCarries")]
+    rush_atts: i16,
+    #[serde(rename = "recTarg")]
+    tgts: i16,
+    #[serde(rename = "recRec")]
+    rec: i16,
+    #[serde(rename = "rush40s")]
+    rush_40: i16,
+    #[serde(rename = "recRec40s")]
+    rec_40: i16,
+    #[serde(rename = "fantasyPts")]
+    fan_pts: f32,
+    #[serde(rename = "rzRushCarries")]
+    rz_atts: i16,
+    #[serde(rename = "rzRecTarg")]
+    rz_tgts: i16,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QbStats {
+    player: String,
+    team: String,
+    dropbacks: i16,
+    #[serde(rename = "att")]
+    atts: i16,
+    comp: i16,
+    #[serde(rename = "yds")]
+    pass_yds: i16,
+    #[serde(rename = "depthAim")]
+    avg_depth: Option<f32>,
+    #[serde(rename = "tds")]
+    pass_tds: i16,
+    ints: i16,
+    #[serde(rename = "rzRushCarries")]
+    ez_rush_atts: i16,
+    #[serde(rename = "ezAtt")]
+    ez_pass_atts: i16,
+    #[serde(rename = "rushCarries")]
+    rush_atts: i16,
+    rush_yds: i16,
+    rush_tds: i16,
+    #[serde(rename = "fantasyPts")]
+    fan_pts: f32,
+}
 struct IdAndOwnership {
     id: i32,
     own_per: f32,
@@ -76,9 +131,12 @@ pub fn load_in_kick_proj(path: &str, season: i16, week: i8) {
 
 pub fn load_in_proj(path: &str, season: i16, week: i8) {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
-    let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
+    let mut reader: csv::Reader<&[u8]> = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .flexible(true)
+        .from_reader(contents.as_bytes());
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
-    for res in rdr.deserialize() {
+    for res in reader.deserialize() {
         let rec: ProjRecord = res.unwrap();
         let pos: Result<Pos, ()> = Pos::from_str(&rec.position);
         match pos {
@@ -91,6 +149,96 @@ pub fn load_in_proj(path: &str, season: i16, week: i8) {
             Err(_) => println!("Pos missing {:?}", pos),
         }
     }
+}
+
+pub fn load_in_qb_stats(path: &str, season: i16, week: i8) {
+    let contents: String = fs::read_to_string(path).expect("Failed to read in file");
+    let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    for res in rdr.deserialize() {
+        let qb_stats: QbStats = res.unwrap();
+        store_qb_stats(&qb_stats, season, week, &conn);
+    }
+}
+
+pub fn store_qb_stats(stats: &QbStats, season: i16, week: i8, conn: &Connection) {
+    let id = get_player_id_create_if_missing(&stats.player, &stats.team, &Pos::Qb, conn);
+    let qb_in: &str =
+        "INSERT INTO qb_stats (id, season, week, name, team, drop_backs, att, comp, avg_depth,
+        pass_yds, pass_tds, ints, ez_rush_atts, ez_pass_atts, rush_atts, rush_yds, rush_tds,
+        fan_pts) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)";
+    conn.execute(
+        qb_in,
+        params![
+            id,
+            season,
+            week,
+            &stats.player,
+            &stats.team,
+            stats.dropbacks,
+            stats.atts,
+            stats.comp,
+            stats.avg_depth.unwrap_or_default(),
+            stats.pass_yds,
+            stats.pass_tds,
+            stats.ints,
+            stats.ez_rush_atts,
+            stats.ez_pass_atts,
+            stats.rush_atts,
+            stats.rush_yds,
+            stats.rush_tds,
+            stats.fan_pts
+        ],
+    )
+    .expect("Failed to insert QB into database");
+}
+
+pub fn load_in_rec_rush_stats(path: &str, season: i16, week: i8) {
+    let contents: String = fs::read_to_string(path).expect("Failed to read in file");
+    let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    for res in rdr.deserialize() {
+        let rush_rec_stats: RushRecStats = res.unwrap();
+        store_rush_rec_stats(&rush_rec_stats, season, week, &conn);
+    }
+}
+
+pub fn store_rush_rec_stats(stats: &RushRecStats, season: i16, week: i8, conn: &Connection) {
+    let id = get_player_id_create_if_missing(
+        &stats.player,
+        &stats.team,
+        &Pos::from_str(&stats.position).unwrap(),
+        conn,
+    );
+    let stats_in: &str =
+        "INSERT INTO rush_rec_stats (id, season, week, name, team, pos, rec_yds, rush_yds, rec_tds,
+        rush_tds, rush_atts, tgts, rec, rush_40, rec_40, fan_pts, rz_atts, rz_tgts) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)";
+    conn.execute(
+        stats_in,
+        params![
+            id,
+            season,
+            week,
+            &stats.player,
+            &stats.team,
+            &stats.position,
+            stats.rec_yds,
+            stats.rush_yds,
+            stats.rec_tds,
+            stats.rush_tds,
+            stats.rush_atts,
+            stats.tgts,
+            stats.rec,
+            stats.rush_40,
+            stats.rec_40,
+            stats.fan_pts,
+            stats.rz_atts,
+            stats.rz_tgts
+        ],
+    )
+    .expect("Failed to insert QB into database");
 }
 
 fn get_id_ownership(
@@ -113,6 +261,7 @@ fn get_id_ownership(
     })
 }
 
+// TODO Should add rushing stats..
 fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     let id_and_ownership: Option<IdAndOwnership> = get_id_ownership(
         &rec.player_name,
@@ -303,7 +452,7 @@ fn create_ownership(
 ) -> Option<Ownership> {
     let name = rec[1].to_string();
     let team = rec[2].to_string();
-    let pos = Pos::from_str(&rec[4].to_string()).expect("Couldnt get pos");
+    let pos = Pos::from_str(&rec[4].to_string()).expect("Couldn't get pos");
     let id: i32 = get_player_id_create_if_missing(&name, &team, &pos, conn);
     Some(Ownership {
         id: id as i16,
@@ -409,9 +558,6 @@ pub fn load_all_player_ids(path: &str) {
 
 #[cfg(test)]
 mod tests {
-
-    use num_bigint::ToBigUint;
-
     use super::*;
 
     #[test]

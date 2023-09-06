@@ -3,10 +3,9 @@ use futures::executor;
 use futures::executor::ThreadPool;
 use futures::future::join_all;
 use futures::StreamExt;
+use itertools::Itertools;
 use rusqlite::Connection;
 
-use crate::gen_comb;
-use crate::lineup;
 use crate::lineup::*;
 use crate::player::*;
 use crate::DATABASE_FILE;
@@ -21,7 +20,9 @@ pub fn build_all_possible_lineups(
     week: i8,
     season: i16,
 ) -> Vec<Lineup> {
-    let pool = ThreadPool::new().unwrap();
+    let mut pool_b = ThreadPool::builder();
+    pool_b.pool_size(16);
+    let pool = pool_b.create().unwrap();
     let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
     let mut finished_lineups: Vec<Lineup> = Vec::new();
     players
@@ -29,20 +30,21 @@ pub fn build_all_possible_lineups(
         .filter(|player| player.pos == Pos::Qb)
         .for_each(|qb| {
             let lineup_builder: LineupBuilder = LineupBuilder::new();
-            qb_lineups.push(lineup_builder.set_qb(qb.clone()))
+            qb_lineups.push(lineup_builder.set_pos(&qb, Slot::None))
         });
+
+    let wrs_lineups: Vec<LineupBuilder> = add_wrs_to_lineups(&players, qb_lineups);
+
     let mut futures: Vec<_> = Vec::new();
-    for qb_lp in qb_lineups {
+    for wr_lp in wrs_lineups {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
-        let binding = qb_lp.clone();
+        let binding = wr_lp.clone();
         let future = async {
             let player_clone = players.clone();
             let fut_tx_result = async move {
                 println!("Start thread {:?}", std::thread::current().id());
                 let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&player_clone, &binding);
-                let wrs_lineups: Vec<LineupBuilder> =
-                    add_wrs_to_lineups(&player_clone, rbs_lineups);
-                let te_lineups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, wrs_lineups);
+                let te_lineups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, rbs_lineups);
                 let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&player_clone, te_lineups);
                 let filterd_lineups = filter_low_salary_cap(dst_lineups, 42000);
                 let no_bad_combinations = filter_bad_lineups(filterd_lineups, week, season);
@@ -66,6 +68,7 @@ pub fn build_all_possible_lineups(
     for future in test {
         finished_lineups.extend(future);
     }
+    finished_lineups.sort_by(|a, b: &Lineup| b.score().partial_cmp(&a.score()).unwrap());
     finished_lineups
 }
 
@@ -73,24 +76,8 @@ pub fn filter_low_salary_cap(
     mut lineups: Vec<LineupBuilder>,
     filter_cap: i32,
 ) -> Vec<LineupBuilder> {
-    lineups.retain(|l| l.total_price > filter_cap);
+    lineups.retain(|l| l.salary_used > filter_cap);
     lineups
-}
-
-pub fn get_combos_for_pos<'a>(
-    players: &Vec<Arc<LitePlayer>>,
-    slots: i8,
-    positions: &[Pos],
-) -> Vec<Vec<Arc<LitePlayer>>> {
-    let pos: &Vec<Arc<LitePlayer>> = &players
-        .into_iter()
-        .filter(|p| positions.contains(&p.pos))
-        .map(|p| p.clone())
-        .collect::<Vec<Arc<LitePlayer>>>();
-    gen_comb(
-        pos,
-        slots.try_into().expect("Passed a negative slots value"),
-    )
 }
 
 pub fn filter_bad_lineups(
@@ -122,15 +109,23 @@ pub fn add_wrs_to_lineups(
 ) -> Vec<LineupBuilder> {
     let mut new_lineups: Vec<LineupBuilder> = Vec::new();
     let p_lookup: HashMap<i16, &Arc<LitePlayer>> = LitePlayer::player_lookup_map(players);
-    let wr_combo: Vec<Vec<Arc<LitePlayer>>> = get_combos_for_pos(players, 3, &[Pos::Wr]);
     for lineup in &lineups {
-        for combo in &wr_combo {
+        for combo in players.iter().filter(|p| p.pos == Pos::Wr).combinations(3) {
             new_lineups.push(
                 lineup
                     .clone()
-                    .set_wr1((*p_lookup.get(&combo[0].id).expect("Player missing")).clone())
-                    .set_wr2((*p_lookup.get(&combo[1].id).expect("Missing Player")).clone())
-                    .set_wr3((*p_lookup.get(&combo[2].id).expect("Missing Player")).clone()),
+                    .set_pos(
+                        *p_lookup.get(&combo[0].id).expect("Player missing"),
+                        Slot::First,
+                    )
+                    .set_pos(
+                        *p_lookup.get(&combo[1].id).expect("Missing Player"),
+                        Slot::Second,
+                    )
+                    .set_pos(
+                        *p_lookup.get(&combo[2].id).expect("Missing Player"),
+                        Slot::Third,
+                    ),
             )
         }
     }
@@ -143,13 +138,18 @@ pub fn add_rbs_to_lineups(
 ) -> Vec<LineupBuilder> {
     let mut new_lineups: Vec<LineupBuilder> = Vec::new();
     let p_lookup: HashMap<i16, &Arc<LitePlayer>> = LitePlayer::player_lookup_map(players);
-    let rb_combos: Vec<Vec<Arc<LitePlayer>>> = get_combos_for_pos(players, 2, &[Pos::Rb]);
-    for combo in &rb_combos {
+    for combo in players.iter().filter(|p| p.pos == Pos::Rb).combinations(2) {
         new_lineups.push(
             lineup
                 .clone()
-                .set_rb1((*p_lookup.get(&combo[0].id).expect("Player missing")).clone())
-                .set_rb2((*p_lookup.get(&combo[1].id).expect("Player Missing")).clone()),
+                .set_pos(
+                    *p_lookup.get(&combo[0].id).expect("Player missing"),
+                    Slot::First,
+                )
+                .set_pos(
+                    *p_lookup.get(&combo[1].id).expect("Player Missing"),
+                    Slot::Second,
+                ),
         );
     }
 
@@ -163,7 +163,7 @@ pub fn add_te_to_lineups(
     let mut lineups_with_te: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
     for lineup in &lineups {
         players.iter().filter(|p| p.pos == Pos::Te).for_each(|te| {
-            lineups_with_te.push(lineup.clone().set_te(te.clone()));
+            lineups_with_te.push(lineup.clone().set_pos(&te, Slot::None));
         })
     }
     lineups_with_te
@@ -198,14 +198,14 @@ pub fn add_flex_find_top_num(
             .filter(|p| flex_pos.contains(&p.pos))
             .filter(|p| !running_backs.contains(&&p.id))
             .filter(|p| !wide_recievers.contains(&&p.id))
-            .filter(|p| (p.salary as i32 + lineup.total_price) < SALARY_CAP)
-            .filter(|p| (p.salary as i32 + lineup.total_price) > GOOD_SALARY_USAGE)
+            .filter(|p| (p.salary as i32 + lineup.salary_used) < SALARY_CAP)
+            .filter(|p| (p.salary as i32 + lineup.salary_used) > GOOD_SALARY_USAGE)
             .for_each(|flex| {
                 // should be refactored to a function
                 iterations += 1;
                 let finished_lineup = lineup
                     .clone()
-                    .set_flex(flex.clone())
+                    .set_pos(&flex, Slot::Flex)
                     .build(week, season, &conn)
                     .expect("Failed to build lineup..");
                 let score: f32 = finished_lineup.score();
@@ -255,7 +255,7 @@ pub fn add_dst_to_lineups(
     let mut iterations: i64 = 0;
     for lineup in &lineups {
         players.iter().filter(|p| p.pos == Pos::D).for_each(|def| {
-            lineups_with_def.push(lineup.clone().set_def(def.clone()));
+            lineups_with_def.push(lineup.clone().set_pos(&def, Slot::None));
             iterations += 1;
         });
     }
@@ -288,7 +288,7 @@ mod tests {
                 rec_proj: None,
             },
             def: query_def_proj(17, week, season, &conn).unwrap(),
-            total_price: price,
+            salary_used: price,
         }
     }
 

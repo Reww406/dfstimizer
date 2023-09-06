@@ -7,8 +7,8 @@ use rusqlite::{Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
 use crate::data_loader::NON_OFF_TO_OFF_ABBR;
-use crate::data_loader::*;
 use crate::lineup::LineupBuilder;
+use crate::{data_loader::*, DATABASE_FILE};
 
 lazy_static! {
     pub static ref REC_PROJ_CACHE: Mutex<HashMap<i16, RecProj>> = Mutex::new(HashMap::new());
@@ -16,6 +16,8 @@ lazy_static! {
     pub static ref QB_PROJ_CACHE: Mutex<HashMap<i16, QbProj>> = Mutex::new(HashMap::new());
     pub static ref DEF_PROJ_CACHE: Mutex<HashMap<i16, DefProj>> = Mutex::new(HashMap::new());
 }
+
+#[derive(Debug)]
 pub enum Proj {
     QbProj(QbProj),
     RecProj(RecProj),
@@ -24,19 +26,17 @@ pub enum Proj {
     KickProj(KickProj),
 }
 
-impl Proj {
-    pub fn get_proj_pos(&self) -> Pos {
-        match self {
-            Proj::QbProj(_) => return Pos::Qb,
-            Proj::DefProj(_) => return Pos::D,
-            Proj::RecProj(rec_proj) => return rec_proj.pos,
-            Proj::RbProj(_) => return Pos::Rb,
-            Proj::KickProj(_) => return Pos::K,
-        }
-    }
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Copy)]
+pub enum Pos {
+    Qb = 0,
+    Rb = 1,
+    Wr = 2,
+    Te = 3,
+    D = 4,
+    K = 5,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Player {
     pub id: i16,
     pub name: String,
@@ -58,6 +58,7 @@ pub struct Ownership {
 #[derive(Clone, Debug, Default)]
 pub struct RbProj {
     pub name: String,
+    pub id: i16,
     pub team: String,
     pub opp: String,
     pub pts: f32,
@@ -71,6 +72,7 @@ pub struct RbProj {
 #[derive(Clone, Debug, Default)]
 pub struct QbProj {
     pub name: String,
+    pub id: i16,
     pub team: String,
     pub opp: String,
     pub pts: f32,
@@ -86,6 +88,7 @@ pub struct QbProj {
 #[derive(Clone, Debug, Default)]
 pub struct RecProj {
     pub name: String,
+    pub id: i16,
     pub team: String,
     pub opp: String,
     pub pos: Pos,
@@ -102,6 +105,7 @@ pub struct RecProj {
 #[derive(Debug, Clone, Default)]
 pub struct DefProj {
     pub name: String,
+    pub id: i16,
     pub team: String,
     pub opp: String,
     pub pts: f32,
@@ -127,14 +131,30 @@ pub struct FlexProj {
     pub rb_proj: Option<RbProj>,
 }
 
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Copy)]
-pub enum Pos {
-    Qb = 0,
-    Rb = 1,
-    Wr = 2,
-    Te = 3,
-    D = 4,
-    K = 5,
+impl Proj {
+    pub fn get_proj_pos(&self) -> Pos {
+        match self {
+            Proj::QbProj(_) => return Pos::Qb,
+            Proj::DefProj(_) => return Pos::D,
+            Proj::RecProj(rec_proj) => return rec_proj.pos,
+            Proj::RbProj(_) => return Pos::Rb,
+            Proj::KickProj(_) => return Pos::K,
+        }
+    }
+
+    pub fn get_qb_proj(&self) -> &QbProj {
+        match self {
+            Proj::QbProj(qb_proj) => return qb_proj,
+            _ => panic!("Not a QB Proj"),
+        }
+    }
+
+    pub fn get_rec_proj(&self) -> &RecProj {
+        match self {
+            Proj::RecProj(rec_proj) => return rec_proj,
+            _ => panic!("Not a WR Proj"),
+        }
+    }
 }
 
 impl Default for Pos {
@@ -142,8 +162,24 @@ impl Default for Pos {
         Self::D
     }
 }
+
 impl Pos {
     pub fn from_str(input: &str) -> Result<Pos, ()> {
+        let input = input.to_uppercase();
+
+        match input.as_str() {
+            "QB" => Ok(Pos::Qb),
+            "RB" => Ok(Pos::Rb),
+            "WR" => Ok(Pos::Wr),
+            "TE" => Ok(Pos::Te),
+            "D" => Ok(Pos::D),
+            "DST" => Ok(Pos::D),
+            "K" => Ok(Pos::K),
+            _ => Err(()),
+        }
+    }
+
+    pub fn from_string(input: String) -> Result<Pos, ()> {
         let input = input.to_uppercase();
 
         match input.as_str() {
@@ -206,6 +242,88 @@ impl LitePlayer {
         });
         lookup_map
     }
+}
+
+pub fn query_proj(
+    player: &Option<Arc<LitePlayer>>,
+    week: i8,
+    season: i16,
+    conn: &Connection,
+) -> Proj {
+    match player.as_ref().unwrap().pos {
+        Pos::Qb => return Proj::QbProj(query_qb_proj_helper(player, week, season, conn)),
+        Pos::Rb => return Proj::RbProj(query_rb_proj_helper(player, week, season, conn)),
+        Pos::Wr => {
+            return Proj::RecProj(query_rec_proj_helper(player, week, season, &Pos::Wr, conn))
+        }
+        Pos::Te => {
+            return Proj::RecProj(query_rec_proj_helper(player, week, season, &Pos::Te, conn))
+        }
+        Pos::D => return Proj::DefProj(query_def_proj_helper(player, week, season, conn)),
+        Pos::K => panic!("Shouldn't be kickers yet.."),
+    }
+}
+
+pub fn get_recent_stat_ceiling(
+    season: i16,
+    week: i8,
+    field: &str,
+    table: &str,
+    player_id: i16,
+    conn: &Connection,
+) -> f32 {
+    let week_range_start: i8 = week - (2);
+    let mut ceiling: f32 = 0.0;
+    let query: String = format!(
+        "SELECT ({}) FROM {} WHERE season = ?1 AND week BETWEEN ?2 AND ?3 AND id = ?4",
+        field, table
+    );
+    let mut stmt: rusqlite::Statement<'_> = conn.prepare(query.as_str()).unwrap();
+    stmt.query_map((season, week_range_start, week, player_id), |row| {
+        row.get(0)
+    })
+    .unwrap()
+    .into_iter()
+    .for_each(|row| {
+        let value: f32 = row.unwrap();
+        if value > ceiling {
+            ceiling = value
+        }
+    });
+    ceiling
+}
+
+/// Gets the avg of the last 3 stat records.
+/// Panics if the player does not have 3 stats
+pub fn get_recent_avg(
+    season: i16,
+    week: i8,
+    field: &str,
+    table: &str,
+    player_id: i16,
+    conn: &Connection,
+) -> f32 {
+    let week_range_start: i8 = week - (4);
+    let query: String = format!(
+        "SELECT ({}) FROM {} WHERE season = ?1 AND week BETWEEN ?2 AND ?3 AND id = ?4",
+        field, table
+    );
+    let mut stmt: rusqlite::Statement<'_> = conn.prepare(query.as_str()).unwrap();
+
+    let mut result: Vec<f32> = stmt
+        .query_map((season, week_range_start, week, player_id), |row| {
+            row.get(0)
+        })
+        .unwrap()
+        .into_iter()
+        .map(|r| r.unwrap())
+        .collect::<Vec<f32>>();
+    if result.len() < 3 {
+        panic!("{} Doesn't have enough stats..", player_id)
+    }
+    result.sort_by(|a: &f32, b: &f32| b.partial_cmp(a).unwrap());
+    let avg: f32 = &result[0..3].iter().sum::<f32>() / 3.0;
+    avg
 }
 
 pub fn query_rec_proj_helper(
@@ -319,6 +437,7 @@ pub fn query_rec_proj(
         .query_row((id, week, season), |row| {
             Ok(RecProj {
                 name: row.get(3)?,
+                id: row.get(0)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
                 pos: *pos,
@@ -356,6 +475,7 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .query_row((id, week, season), |row| {
             Ok(RbProj {
                 name: row.get(3)?,
+                id: row.get(0)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
                 pts: row.get(6)?,
@@ -391,6 +511,7 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .query_row((id, week, season), |row| {
             Ok(QbProj {
                 name: row.get(3)?,
+                id: row.get(0)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
                 pts: row.get(6)?,
@@ -428,6 +549,7 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
         .query_row((id, week, season), |row| {
             Ok(DefProj {
                 name: row.get(3)?,
+                id: row.get(0)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
                 pts: row.get(6)?,
@@ -495,7 +617,6 @@ pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection)
     } else {
         team
     };
-
     if pos == &Pos::D {
         let def_select: String = format!("SELECT id FROM player WHERE team = '{}'", correct_team);
         return conn
@@ -540,6 +661,13 @@ mod tests {
     fn test_enum_compartor() {
         let pos: Pos = Pos::from_str("QB").unwrap();
         assert!(pos == Pos::Qb)
+    }
+
+    #[test]
+    fn test_recent_avg() {
+        let conn = Connection::open(DATABASE_FILE).unwrap();
+        let avg = get_recent_avg(2022, 18, "rz_atts", "rush_rec_stats", 9, &conn);
+        println!("{}", avg)
     }
 
     //85546-69531,Jalen Hurts,PHI,NYG,QB,9000,18.6

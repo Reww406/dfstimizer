@@ -1,32 +1,23 @@
 use std::io::Error;
 use std::sync::Arc;
+use std::vec;
 
 use rusqlite::Connection;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    mean, QB_ATT_MAX, QB_ATT_MIN, QB_PTS_MAX, QB_PTS_MIN, RB_ATT_MAX, RB_ATT_MIN, RB_PTS_MAX,
-    RB_PTS_MIN, TE_TGTS_MAX, TE_TGTS_MIN, WR_PTS_MAX, WR_PTS_MIN, WR_TGTS_MAX, WR_TGTS_MIN,
+    get_recent_stat_ceiling_all, mean, DATABASE_FILE, DST_PTS_MAX_MIN, OWN_PER_MAX_MIN,
+    QB_ATT_MAX_MIN, QB_AVG_DEPTH_MAX_MIN, QB_PTS_MAX_MIN, QB_RECENT_PTS_CIELING,
+    QB_RUSH_YDS_MAX_MIN, RB_ATT_MAX_MIN, RB_AVG_EZ_ATT_MAX_MIN, RB_PTS_MAX_MIN, STAT_SEASON,
+    STAT_WEEK, TE_PTS_MAX_MIN, TE_TGTS_MAX_MIN, WEEK, WR_PTS_MAX_MIN, WR_RECENT_PTS_CIELING,
+    WR_TDS_MAX_MIN, WR_TGTS_MAX_MIN,
 };
 use crate::{player::*, return_if_field_exits};
 
 pub const SALARY_CAP: i32 = 59994;
-pub const MAX_AVG_OWNERHSIP: f32 = 25.0;
-pub const MIN_AVG_OWNERSHIP: f32 = 1.0;
-pub const MAX_POINTS: f32 = 35.0;
-pub const MIN_POINTS: f32 = 10.0;
 
 // Thursday kicker, 5 flex spots
 // maybe dont care about kicker
-
-pub struct IslandLB {
-    pub mvp: Option<Arc<LitePlayer>>,
-    pub first: Option<Arc<LitePlayer>>,
-    pub second: Option<Arc<LitePlayer>>,
-    pub third: Option<Arc<LitePlayer>>,
-    pub fourth: Option<Arc<LitePlayer>>,
-}
-
 #[derive(Clone, Debug)]
 pub struct LineupBuilder {
     pub qb: Option<Arc<LitePlayer>>,
@@ -38,7 +29,7 @@ pub struct LineupBuilder {
     pub te: Option<Arc<LitePlayer>>,
     pub flex: Option<Arc<LitePlayer>>,
     pub dst: Option<Arc<LitePlayer>>,
-    pub total_price: i32,
+    pub salary_used: i32,
 }
 
 // Will be converted to typed positions instead of generic playerown
@@ -53,31 +44,252 @@ pub struct Lineup {
     pub te: RecProj,
     pub flex: FlexProj,
     pub def: DefProj,
-    pub total_price: i32,
+    pub salary_used: i32,
+}
+#[derive(Clone)]
+
+pub struct IslandLB {
+    pub mvp: Option<Arc<LitePlayer>>,
+    pub first: Option<Arc<LitePlayer>>,
+    pub second: Option<Arc<LitePlayer>>,
+    pub third: Option<Arc<LitePlayer>>,
+    pub fourth: Option<Arc<LitePlayer>>,
+    pub salary_used: i32,
 }
 
+#[derive(Debug)]
 pub struct IslandLineup {
     pub mvp: Proj,
     pub first: Proj,
     pub second: Proj,
     pub third: Proj,
     pub fourth: Proj,
+    pub salary_used: i32,
+    pub score: f32,
 }
 
-fn get_normalized_score(value: f32, max: f32, min: f32) -> f32 {
-    (value - max) / (max - min)
+/// Takes tuple of max: f32, min: f32
+fn get_normalized_score(value: f32, max_min: (f32, f32)) -> f32 {
+    (value - max_min.1) / (max_min.0 - max_min.1)
 }
+
+pub enum Slot {
+    Mvp,
+    First,
+    Second,
+    Third,
+    Fourth,
+    None,
+    Flex,
+}
+
+impl IslandLB {
+    pub fn new() -> IslandLB {
+        IslandLB {
+            mvp: None,
+            first: None,
+            second: None,
+            third: None,
+            fourth: None,
+            salary_used: 0,
+        }
+    }
+    // TODO Change pts to pts per dollar
+    // return if field exits already
+    pub fn set_slot(mut self, lite_player: &Arc<LitePlayer>, slot: Slot) -> IslandLB {
+        match slot {
+            Slot::Mvp => self.mvp = Some(return_if_field_exits(self.mvp, lite_player)),
+            Slot::First => self.first = Some(return_if_field_exits(self.first, lite_player)),
+            Slot::Second => self.second = Some(return_if_field_exits(self.second, lite_player)),
+            Slot::Third => self.third = Some(return_if_field_exits(self.third, lite_player)),
+            Slot::Fourth => self.fourth = Some(return_if_field_exits(self.fourth, lite_player)),
+            _ => panic!("Not a valid Island Slot"),
+        }
+        self.salary_used += lite_player.salary as i32;
+        self
+    }
+
+    fn get_proj_score(proj: &Proj, conn: &Connection) -> f32 {
+        match proj {
+            Proj::QbProj(qb_proj) => Self::score_qb(qb_proj, &conn),
+            Proj::RecProj(rec_proj) => match rec_proj.pos {
+                Pos::Wr => Self::score_wr(rec_proj, &conn),
+                Pos::Te => Self::score_te(rec_proj, &conn),
+                _ => panic!("Rec Proj had wrong POS."),
+            },
+            Proj::RbProj(rb_proj) => Self::score_rb(rb_proj, &conn),
+            Proj::DefProj(def_proj) => Self::score_dst(def_proj, &conn),
+            Proj::KickProj(kick_proj) => panic!("Kicker scoring not implemented yet"),
+        }
+    }
+
+    pub fn score(mvp_proj: &Proj, projs: &[&Proj; 4], salary_used: i32, conn: &Connection) -> f32 {
+        let mut total_score = 0.0;
+        projs.into_iter().for_each(|p: &&Proj| {
+            total_score += Self::get_proj_score(p, conn);
+        });
+        total_score += Self::get_proj_score(mvp_proj, conn) * 1.5;
+        total_score += get_normalized_score(salary_used as f32, (SALARY_CAP as f32, 45000.0));
+        total_score += Self::get_ownership_score(mvp_proj, projs);
+        total_score += Self::score_statcking(mvp_proj, projs);
+        total_score
+    }
+
+    fn score_rb(proj: &RbProj, conn: &Connection) -> f32 {
+        let att_score = get_normalized_score(proj.atts, *RB_ATT_MAX_MIN);
+        let rb_pts = get_normalized_score(proj.pts, *RB_PTS_MAX_MIN);
+        let ez_atts: f32 = get_normalized_score(
+            get_recent_avg(
+                STAT_SEASON,
+                WEEK,
+                "rz_atts",
+                "rush_rec_stats",
+                proj.id,
+                &conn,
+            ),
+            *RB_AVG_EZ_ATT_MAX_MIN,
+        );
+        return rb_pts + att_score + ez_atts;
+    }
+    // TODO Could add QB Score
+    fn score_wr(proj: &RecProj, conn: &Connection) -> f32 {
+        let tgt_score = get_normalized_score(proj.tgts, *WR_TGTS_MAX_MIN);
+        let cieling_score = get_normalized_score(
+            get_recent_stat_ceiling(
+                STAT_SEASON,
+                STAT_WEEK,
+                "fan_pts",
+                "rush_rec_stats",
+                proj.id,
+                &conn,
+            ),
+            (*WR_RECENT_PTS_CIELING, 0.0),
+        );
+        let tds_score = get_normalized_score(proj.td, *WR_TDS_MAX_MIN);
+        tgt_score + cieling_score + tds_score
+    }
+
+    fn score_te(proj: &RecProj, conn: &Connection) -> f32 {
+        let tgt_score = get_normalized_score(proj.tgts, *TE_TGTS_MAX_MIN);
+        let proj_score: f32 = get_normalized_score(proj.pts, *TE_PTS_MAX_MIN);
+        tgt_score + proj_score
+    }
+
+    fn score_qb(proj: &QbProj, conn: &Connection) -> f32 {
+        let att_score = get_normalized_score(proj.atts, *QB_ATT_MAX_MIN);
+        let rush_yards = get_normalized_score(proj.rush_yds, *QB_RUSH_YDS_MAX_MIN);
+        let avg_depth_score: f32 = get_normalized_score(
+            get_recent_avg(
+                STAT_SEASON,
+                STAT_WEEK,
+                "avg_depth",
+                "qb_stats",
+                proj.id,
+                &conn,
+            ),
+            *QB_AVG_DEPTH_MAX_MIN,
+        );
+        let pts_cieling_score = get_normalized_score(
+            get_recent_stat_ceiling(
+                STAT_SEASON,
+                STAT_WEEK,
+                "fan_pts",
+                "qb_stats",
+                proj.id,
+                &conn,
+            ),
+            (*QB_RECENT_PTS_CIELING, 0.0),
+        );
+        att_score + rush_yards + avg_depth_score + pts_cieling_score
+    }
+
+    fn score_dst(proj: &DefProj, conn: &Connection) -> f32 {
+        let pts_score = get_normalized_score(proj.pts, *DST_PTS_MAX_MIN);
+        pts_score
+    }
+
+    //TODO lets see if we can unnest a couple of these
+    fn score_statcking(mvp_proj: &Proj, projs: &[&Proj; 4]) -> f32 {
+        let mut score = 0.0;
+        let mut all_proj = vec![mvp_proj];
+        all_proj.extend(projs);
+        projs
+            .iter()
+            .filter(|p| matches!(p, Proj::QbProj(_)))
+            .for_each(|qb: &&Proj| {
+                let qb_proj = qb.get_qb_proj();
+                projs
+                    .iter()
+                    .filter(|p| matches!(p, Proj::RecProj(_)))
+                    .for_each(|rec| {
+                        let rec_proj = rec.get_rec_proj();
+                        if rec_proj.pos == Pos::Wr {
+                            if rec_proj.team == qb_proj.team {
+                                score += 1.0;
+                                println!("Stacked WR {} {}", rec_proj.name, qb_proj.name)
+                            }
+                        };
+                    })
+            });
+        score
+    }
+
+    fn get_ownership_score(mvp_proj: &Proj, projs: &[&Proj; 4]) -> f32 {
+        let mut ownerships = 0.0;
+        let mut all_proj = vec![mvp_proj];
+        all_proj.extend(projs);
+        for proj in all_proj {
+            match proj {
+                Proj::QbProj(qb_proj) => ownerships += qb_proj.own_per,
+                Proj::RecProj(rec_proj) => ownerships += rec_proj.own_per,
+                Proj::RbProj(rb_proj) => ownerships += rb_proj.own_per,
+                Proj::DefProj(def_proj) => ownerships += def_proj.own_per,
+                Proj::KickProj(_) => todo!(),
+            }
+        }
+        let averge_ownership: f32 = ownerships / 5.0;
+        // TODO is this too much
+        -3.0 * get_normalized_score(averge_ownership, *OWN_PER_MAX_MIN)
+    }
+
+    pub fn build(self, week: i8, season: i16, conn: &Connection) -> IslandLineup {
+        let mvp_proj = query_proj(&self.mvp, week, season, conn);
+        let first = query_proj(&self.first, week, season, conn);
+        let second = query_proj(&self.second, week, season, conn);
+        let third = query_proj(&self.third, week, season, conn);
+        let fourth = query_proj(&self.fourth, week, season, conn);
+
+        let score = Self::score(
+            &mvp_proj,
+            &[&first, &second, &third, &fourth],
+            self.salary_used,
+            &conn,
+        );
+        IslandLineup {
+            mvp: mvp_proj,
+            first: first,
+            second: second,
+            third: third,
+            fourth: fourth,
+            salary_used: self.salary_used,
+            score: score,
+        }
+    }
+}
+
+impl IslandLineup {}
 
 // This can be way more DRY
 impl Lineup {
+    // TODO These scoring criteria is shitty lets think a lot more into this..
     pub fn get_salary_spent_score(&self) -> f32 {
-        let spent = self.total_price as f32;
+        let spent = self.salary_used as f32;
         (spent - 0.0) / (SALARY_CAP as f32 - 0.0)
     }
 
     pub fn get_ownership_score(&self) -> f32 {
         let averge_ownership: f32 = self.averge_ownership();
-        -1.0 * (averge_ownership - 1.0) / (MAX_AVG_OWNERHSIP - MIN_AVG_OWNERSHIP)
+        -1.0 * (averge_ownership - OWN_PER_MAX_MIN.1) / (OWN_PER_MAX_MIN.0 - OWN_PER_MAX_MIN.1)
     }
 
     pub fn averge_ownership(&self) -> f32 {
@@ -104,16 +316,16 @@ impl Lineup {
         let rbs: [&RbProj; 2] = [&self.rb1, &self.rb2];
         let mut score = 0.0;
         rbs.iter().for_each(|rb| {
-            score += get_normalized_score(rb.atts, *RB_ATT_MAX, *RB_ATT_MIN);
-            score += get_normalized_score(rb.pts, *RB_PTS_MAX, *RB_PTS_MIN)
+            score += get_normalized_score(rb.atts, *RB_ATT_MAX_MIN);
+            score += get_normalized_score(rb.pts, *RB_ATT_MAX_MIN)
         });
         score
     }
 
     // Top 5 Stats once we have it
     pub fn qb_score(&self) -> f32 {
-        let atts_score: f32 = (self.qb.atts - *QB_ATT_MIN) / (*QB_ATT_MAX - *QB_ATT_MIN);
-        let pts_score: f32 = get_normalized_score(self.qb.pts, *QB_PTS_MAX, *QB_PTS_MIN);
+        let atts_score: f32 = get_normalized_score(self.qb.pts, *QB_ATT_MAX_MIN);
+        let pts_score: f32 = get_normalized_score(self.qb.pts, *QB_PTS_MAX_MIN);
         if self.qb.team == self.wr2.team || self.qb.team == self.wr3.team {
             return atts_score + pts_score + 0.5;
         }
@@ -126,25 +338,24 @@ impl Lineup {
         let wrs: [&RecProj; 3] = [&self.wr1, &self.wr2, &self.wr3];
         let mut score: f32 = 0.0;
         wrs.iter().for_each(|wr| {
-            score += get_normalized_score(wr.tgts, *WR_TGTS_MAX, *WR_TGTS_MIN);
-            score += get_normalized_score(wr.pts, *WR_PTS_MAX, *WR_PTS_MIN);
+            score += get_normalized_score(wr.tgts, *WR_TGTS_MAX_MIN);
+            score += get_normalized_score(wr.pts, *WR_PTS_MAX_MIN);
         });
         score
     }
 
-    // Max/Min Receptions, Projected Points
-    pub fn flex_score(&self) -> f32 {
+    fn flex_score(&self) -> f32 {
         match self.flex.pos {
             Pos::Wr => {
                 let wr: &RecProj = self.flex.rec_proj.as_ref().unwrap();
-                let wr_pts = get_normalized_score(wr.pts, *WR_PTS_MAX, *WR_PTS_MIN);
-                let wr_tgts = get_normalized_score(wr.tgts, *WR_TGTS_MAX, *WR_TGTS_MIN);
+                let wr_tgts = get_normalized_score(wr.tgts, *WR_TGTS_MAX_MIN);
+                let wr_pts = get_normalized_score(wr.pts, *WR_PTS_MAX_MIN);
                 return wr_pts + wr_tgts;
             }
             Pos::Rb => {
                 let rb: &RbProj = self.flex.rb_proj.as_ref().unwrap();
-                let rb_pts = get_normalized_score(rb.pts, *RB_PTS_MAX, *RB_PTS_MIN);
-                let rb_atts = get_normalized_score(rb.atts, *RB_ATT_MAX, *RB_ATT_MIN);
+                let rb_atts = get_normalized_score(rb.atts, *RB_ATT_MAX_MIN);
+                let rb_pts = get_normalized_score(rb.pts, *RB_PTS_MAX_MIN);
                 return rb_pts + rb_atts;
             }
             _ => {
@@ -154,7 +365,7 @@ impl Lineup {
     }
 
     pub fn te_score(&self) -> f32 {
-        return get_normalized_score(self.te.tgts, *TE_TGTS_MAX, *TE_TGTS_MIN);
+        return get_normalized_score(self.te.tgts, *TE_TGTS_MAX_MIN);
     }
 
     // Points
@@ -199,7 +410,6 @@ impl Lineup {
     }
 }
 
-// TODO Would love to find a way to make this more DRY
 impl LineupBuilder {
     pub fn new() -> Self {
         LineupBuilder {
@@ -212,21 +422,21 @@ impl LineupBuilder {
             te: None,
             flex: None,
             dst: None,
-            total_price: 0,
+            salary_used: 0,
         }
     }
 
-    pub fn array_of_players(&self) -> [Arc<LitePlayer>; 9] {
+    pub fn array_of_players(&self) -> [&Arc<LitePlayer>; 9] {
         [
-            self.qb.clone().expect("Line up missing qb"),
-            self.rb1.clone().expect("Line up missing rb1"),
-            self.rb2.clone().expect("Line up missing rb2"),
-            self.wr1.clone().expect("Line up missing wr1"),
-            self.wr2.clone().expect("Line up missing wr2"),
-            self.wr3.clone().expect("Line up missing wr3"),
-            self.te.clone().expect("Line up missing te"),
-            self.flex.clone().expect("Line up missing flex"),
-            self.dst.clone().expect("Line up missing def"),
+            self.qb.as_ref().expect("Line up missing qb"),
+            self.rb1.as_ref().expect("Line up missing rb1"),
+            self.rb2.as_ref().expect("Line up missing rb2"),
+            self.wr1.as_ref().expect("Line up missing wr1"),
+            self.wr2.as_ref().expect("Line up missing wr2"),
+            self.wr3.as_ref().expect("Line up missing wr3"),
+            self.te.as_ref().expect("Line up missing te"),
+            self.flex.as_ref().expect("Line up missing flex"),
+            self.dst.as_ref().expect("Line up missing def"),
         ]
     }
 
@@ -236,86 +446,33 @@ impl LineupBuilder {
     }
 
     pub fn total_amount_spent(&self) -> i32 {
-        let line_up_array: [Arc<LitePlayer>; 9] = self.array_of_players();
+        let line_up_array: [&Arc<LitePlayer>; 9] = self.array_of_players();
         line_up_array.into_iter().map(|x| x.salary as i32).sum()
     }
-
-    pub fn set_pos(mut self, lp: Arc<LitePlayer>, pos: Pos, slot: i8) -> LineupBuilder {
-        match pos {
+    pub fn set_pos(mut self, lp: &Arc<LitePlayer>, slot: Slot) -> LineupBuilder {
+        match lp.pos {
             Pos::Qb => self.qb = Some(return_if_field_exits(self.qb, &lp)),
             Pos::Rb => match slot {
-                1 => self.rb1 = Some(return_if_field_exits(self.rb1, &lp)),
-                2 => self.rb2 = Some(return_if_field_exits(self.rb2, &lp)),
+                Slot::First => self.rb1 = Some(return_if_field_exits(self.rb1, &lp)),
+                Slot::Second => self.rb2 = Some(return_if_field_exits(self.rb2, &lp)),
+                Slot::Flex => self.flex = Some(return_if_field_exits(self.flex, &lp)),
                 _ => panic!("Bad RB Slot"),
             },
             Pos::Wr => match slot {
-                1 => self.wr1 = Some(return_if_field_exits(self.wr1, &lp)),
-                2 => self.wr2 = Some(return_if_field_exits(self.wr2, &lp)),
-                3 => self.wr3 = Some(return_if_field_exits(self.wr3, &lp)),
+                Slot::First => self.wr1 = Some(return_if_field_exits(self.wr1, &lp)),
+                Slot::Second => self.wr2 = Some(return_if_field_exits(self.wr2, &lp)),
+                Slot::Third => self.wr3 = Some(return_if_field_exits(self.wr3, &lp)),
+                Slot::Flex => self.flex = Some(return_if_field_exits(self.flex, &lp)),
                 _ => panic!("Bad WR Slot"),
             },
             Pos::Te => self.te = Some(return_if_field_exits(self.te, &lp)),
             Pos::D => self.dst = Some(return_if_field_exits(self.dst, &lp)),
             Pos::K => panic!("No kicker in regular optimizer."),
         }
-        self.total_price += lp.salary as i32;
+        self.salary_used += lp.salary as i32;
         self
     }
 
-    // TODO Can turn these all into a match on a enum that has the slot
-    pub fn set_qb(mut self, qb: Arc<LitePlayer>) -> LineupBuilder {
-        self.qb = Some(return_if_field_exits(self.qb, &qb));
-        self.total_price += qb.salary as i32;
-        self
-    }
-
-    pub fn set_rb1(mut self, rb1: Arc<LitePlayer>) -> LineupBuilder {
-        self.rb1 = Some(return_if_field_exits(self.rb1, &rb1));
-        self.total_price += rb1.salary as i32;
-        self
-    }
-
-    pub fn set_rb2(mut self, rb2: Arc<LitePlayer>) -> LineupBuilder {
-        self.rb2 = Some(return_if_field_exits(self.rb2, &rb2));
-        self.total_price += rb2.salary as i32;
-        self
-    }
-
-    pub fn set_wr1(mut self, wr1: Arc<LitePlayer>) -> LineupBuilder {
-        self.wr1 = Some(return_if_field_exits(self.wr1, &wr1));
-        self.total_price += wr1.salary as i32;
-        self
-    }
-
-    pub fn set_wr2(mut self, wr2: Arc<LitePlayer>) -> LineupBuilder {
-        self.wr2 = Some(return_if_field_exits(self.wr2, &wr2));
-        self.total_price += wr2.salary as i32;
-        self
-    }
-
-    pub fn set_wr3(mut self, wr3: Arc<LitePlayer>) -> LineupBuilder {
-        self.wr3 = Some(return_if_field_exits(self.wr3, &wr3));
-        self.total_price += wr3.salary as i32;
-        self
-    }
-
-    pub fn set_te(mut self, te: Arc<LitePlayer>) -> LineupBuilder {
-        self.te = Some(return_if_field_exits(self.te, &te));
-        self.total_price += te.salary as i32;
-        self
-    }
-
-    pub fn set_flex(mut self, flex: Arc<LitePlayer>) -> LineupBuilder {
-        self.flex = Some(return_if_field_exits(self.flex, &flex));
-        self.total_price += flex.salary as i32;
-        self
-    }
-
-    pub fn set_def(mut self, def: Arc<LitePlayer>) -> LineupBuilder {
-        self.dst = Some(return_if_field_exits(self.dst, &def));
-        self.total_price += def.salary as i32;
-        self
-    }
     // Will pull actual data from Sqlite
     pub fn build(
         self,
@@ -343,28 +500,15 @@ impl LineupBuilder {
             }
         };
 
-        let qb: QbProj = query_qb_proj(self.qb.as_ref().unwrap().id, week, season, conn)
-            .ok_or("QB Could not be found")?;
-        let rb1: RbProj = query_rb_proj(self.rb1.as_ref().unwrap().id, week, season, conn)
-            .ok_or("Rb1 Could not be found")?;
-        let rb2: RbProj = query_rb_proj(self.rb2.as_ref().unwrap().id, week, season, conn)
-            .ok_or("Rb2 could not be found")?;
-        let wr1: RecProj =
-            query_rec_proj(self.wr1.as_ref().unwrap().id, week, season, &Pos::Wr, conn)
-                .ok_or("Wr1 could not be found")?;
-        let wr2: RecProj =
-            query_rec_proj(self.wr2.as_ref().unwrap().id, week, season, &Pos::Wr, conn)
-                .ok_or("Wr2 could not be found")?;
-        let wr3: RecProj =
-            query_rec_proj(self.wr3.as_ref().unwrap().id, week, season, &Pos::Wr, conn)
-                .ok_or("Wr3 could not be found")?;
-        let te: RecProj =
-            query_rec_proj(self.te.as_ref().unwrap().id, week, season, &Pos::Te, conn)
-                .ok_or("Te could not be found")?;
+        let qb: QbProj = query_qb_proj_helper(&self.qb, week, season, conn);
+        let rb1: RbProj = query_rb_proj_helper(&self.rb1, week, season, conn);
+        let rb2: RbProj = query_rb_proj_helper(&self.rb2, week, season, conn);
+        let wr1: RecProj = query_rec_proj_helper(&self.wr1, week, season, &Pos::Wr, conn);
+        let wr2: RecProj = query_rec_proj_helper(&self.wr2, week, season, &Pos::Wr, conn);
+        let wr3: RecProj = query_rec_proj_helper(&self.wr3, week, season, &Pos::Wr, conn);
+        let te: RecProj = query_rec_proj_helper(&self.te, week, season, &Pos::Te, conn);
         let flex: FlexProj = flex;
-        let def: DefProj = query_def_proj(self.dst.as_ref().unwrap().id, week, season, conn)
-            .ok_or("Def could not be found")?;
-
+        let def: DefProj = query_def_proj_helper(&self.dst, week, season, conn);
         Ok(Lineup {
             qb,
             rb1,
@@ -375,122 +519,7 @@ impl LineupBuilder {
             te,
             flex,
             def,
-            total_price: self.total_price,
+            salary_used: self.salary_used,
         })
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     // TODO the lineupBuilder init could probably be done with a macro?
-//     fn create_test_player(salary: i16, ownership: f32) -> LitePlayer {
-//         LitePlayer {
-//             id: 1,
-//             salary,
-//             pos: Pos::Rb,
-//         }
-//     }
-
-//     fn create_lineup_vec(
-//         points: f32,
-//         price: i16,
-//         ownership: f32,
-//         double: bool,
-//     ) -> Vec<Option<LitePlayer>> {
-//         let mut players: Vec<Option<LitePlayer>> = Vec::new();
-//         if double {
-//             for _ in 0..4 {
-//                 let player: LitePlayer = create_test_player(price, ownership);
-//                 players.push(Some(player));
-//             }
-//             for _ in 4..9 {
-//                 let player: LitePlayer = create_test_player(2 * price, 2.0 * ownership);
-//                 players.push(Some(player));
-//             }
-//         } else {
-//             for _ in 0..9 {
-//                 let player: LitePlayer = create_test_player(price, ownership);
-//                 players.push(Some(player));
-//             }
-//         }
-//         players
-//     }
-
-//     #[test]
-//     // fn test_calculate_total_salary() {
-//     //     let p: Vec<Option<LitePlayer>> = create_lineup_vec(1.0, 1, 1.0, false);
-//     //     let test_lineup: LineupBuilder = LineupBuilder {
-//     //         qb: p[0].as_ref(),
-//     //         rb1: p[1].as_ref(),
-//     //         rb2: p[2].as_ref(),
-//     //         wr1: p[3].as_ref(),
-//     //         wr2: p[4].as_ref(),
-//     //         wr3: p[5].as_ref(),
-//     //         te: p[6].as_ref(),
-//     //         flex: p[7].as_ref(),
-//     //         dst: p[8].as_ref(),
-//     //         total_price: 10,
-//     //     };
-//     //     assert_eq!(test_lineup.total_amount_spent(), 9);
-//     // }
-
-//     // #[test]
-//     // fn test_lineup_builder_set_functions() {
-//     //     let test_player: &LitePlayer = &create_test_player(1, 1.0);
-//     //     let empty_lineup = LineupBuilder::new();
-//     //     let qb_lineup = empty_lineup.set_qb(&test_player);
-//     //     let rb_lineup = qb_lineup.set_rb2(&test_player);
-//     //     assert_eq!(rb_lineup.total_price, 2)
-//     // }
-//     #[test]
-//     // fn test_lineup_averge_functions() {
-//     //     let p: Vec<Option<LitePlayer>> = create_lineup_vec(6.0, 1, 4.0, true);
-//     //     let line_up: LineupBuilder = LineupBuilder {
-//     //         qb: p[0].as_ref(),
-//     //         rb1: p[1].as_ref(),
-//     //         rb2: p[2].as_ref(),
-//     //         wr1: p[3].as_ref(),
-//     //         wr2: p[4].as_ref(),
-//     //         wr3: p[5].as_ref(),
-//     //         te: p[6].as_ref(),
-//     //         flex: p[7].as_ref(),
-//     //         dst: p[8].as_ref(),
-//     //         total_price: 10,
-//     //     };
-//     //     assert_eq!(line_up.averge_ownership(), 6.2222223);
-//     // }
-//     #[test]
-//     // fn test_score_functions() {
-//     //     let max_value_players = create_lineup_vec(MAX_POINTS, 6666, MAX_AVG_OWNERHSIP, false);
-//     //     let min_value_players = create_lineup_vec(MIN_POINTS, 0, MIN_AVG_OWNERSHIP, false);
-//     //     let max_line_up: LineupBuilder = LineupBuilder {
-//     //         qb: max_value_players[0].as_ref(),
-//     //         rb1: max_value_players[1].as_ref(),
-//     //         rb2: max_value_players[2].as_ref(),
-//     //         wr1: max_value_players[3].as_ref(),
-//     //         wr2: max_value_players[4].as_ref(),
-//     //         wr3: max_value_players[5].as_ref(),
-//     //         te: max_value_players[6].as_ref(),
-//     //         flex: max_value_players[7].as_ref(),
-//     //         dst: max_value_players[8].as_ref(),
-//     //         total_price: 10,
-//     //     };
-//     //     let min_line_up: LineupBuilder = LineupBuilder {
-//     //         qb: min_value_players[0].as_ref(),
-//     //         rb1: min_value_players[1].as_ref(),
-//     //         rb2: min_value_players[2].as_ref(),
-//     //         wr1: min_value_players[3].as_ref(),
-//     //         wr2: min_value_players[4].as_ref(),
-//     //         wr3: min_value_players[5].as_ref(),
-//     //         te: min_value_players[6].as_ref(),
-//     //         flex: min_value_players[7].as_ref(),
-//     //         dst: min_value_players[8].as_ref(),
-//     //         total_price: 10,
-//     //     };
-//         // assert_eq!(max_line_up.get_ownership_score(), -1.0);
-//         // assert_eq!(min_line_up.get_ownership_score(), 0.0);
-//         assert_eq!(max_line_up.get_salary_spent_score(), 1.0);
-//         assert_eq!(min_line_up.get_salary_spent_score(), 0.0);
-//     }
-// }
