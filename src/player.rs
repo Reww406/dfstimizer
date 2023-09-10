@@ -15,6 +15,7 @@ lazy_static! {
     pub static ref RB_PROJ_CACHE: Mutex<HashMap<i16, RbProj>> = Mutex::new(HashMap::new());
     pub static ref QB_PROJ_CACHE: Mutex<HashMap<i16, QbProj>> = Mutex::new(HashMap::new());
     pub static ref DEF_PROJ_CACHE: Mutex<HashMap<i16, DefProj>> = Mutex::new(HashMap::new());
+    pub static ref KICK_PROJ_CACHE: Mutex<HashMap<i16, KickProj>> = Mutex::new(HashMap::new());
 }
 
 #[derive(Debug)]
@@ -61,29 +62,49 @@ pub struct RbProj {
     pub id: i16,
     pub team: String,
     pub opp: String,
-    pub pts: f32,
-    pub atts: f32,
-    pub tds: f32,
-    pub rush_yds: f32,
-    pub rec_yds: f32,
+    pub pts_proj: f32,
+    pub cieling_proj: f32,
+    pub floor_proj: f32,
+    pub pts_plus_minus_proj: f32,
+    pub pts_sal_proj: f32,
+    pub vegas_total: f32,
+    pub rush_yds_share: f32,
+    pub avg_att: f32,
+    pub avg_td: f32,
+    pub avg_rush_yds: f32,
+    pub avg_rec_yds: f32,
     pub salary: i32,
-    pub own_per: f32,
+    pub own_proj: f32,
+    pub rating: f32,
+    pub snaps_per: f32,
+    pub year_consistency: f32,
 }
+
 #[derive(Clone, Debug, Default)]
 pub struct QbProj {
     pub name: String,
     pub id: i16,
     pub team: String,
     pub opp: String,
-    pub pts: f32,
-    pub atts: f32,
-    pub comps: f32,
-    pub ints: f32,
-    pub pass_yds: f32,
-    pub pass_tds: f32,
-    pub rush_yds: f32,
+    pub pts_proj: f32,
+    pub cieling_proj: f32,
+    pub floor_proj: f32,
+    pub pts_plus_minus_proj: f32,
+    pub pts_sal_proj: f32,
+    pub vegas_total: f32,
+    pub avg_pass_atts: f32,
+    pub avg_pass_comps: f32,
+    pub avg_pass_yds: f32,
+    pub avg_pass_tds: f32,
+    pub avg_rush_atts: f32,
+    pub avg_long_pass_yds: f32,
+    pub pass_to_wr_per: f32,
+    pub pass_to_te_per: f32,
+    pub wind_speed: f32,
     pub salary: i32,
-    pub own_per: f32,
+    pub own_proj: f32,
+    pub rating: f32,
+    pub red_zone_op_pg: f32,
 }
 #[derive(Clone, Debug, Default)]
 pub struct RecProj {
@@ -92,14 +113,24 @@ pub struct RecProj {
     pub team: String,
     pub opp: String,
     pub pos: Pos,
-    pub pts: f32,
-    pub rec: f32,
-    pub tgts: f32,
-    pub td: f32,
-    pub rec_yds: f32,
-    pub rush_yds: f32,
+    pub pts_proj: f32,
+    pub cieling_proj: f32,
+    pub floor_proj: f32,
+    pub pts_plus_minus_proj: f32,
+    pub pts_sal_proj: f32,
+    pub vegas_total: f32,
+    pub avg_rec: f32,
+    pub avg_tgts: f32,
+    pub avg_td: f32,
+    pub avg_rec_yds: f32,
+    pub avg_rush_yds: f32,
+    pub red_zone_op_pg: f32,
+    pub rec_tgt_share: f32,
     pub salary: i32,
-    pub own_per: f32,
+    pub own_proj: f32,
+    pub rating: f32,
+    pub year_consistency: f32,
+    pub year_upside: f32,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -108,19 +139,33 @@ pub struct DefProj {
     pub id: i16,
     pub team: String,
     pub opp: String,
-    pub pts: f32,
+    pub pts_proj: f32,
+    pub cieling_proj: f32,
+    pub floor_proj: f32,
+    pub pts_plus_minus_proj: f32,
+    pub pts_sal_proj: f32,
+    pub vegas_total: f32,
     pub salary: i32,
-    pub own_per: f32,
+    pub own_proj: f32,
+    pub rating: f32,
+    pub vegas_opp_total: f32,
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct KickProj {
     pub name: String,
+    pub id: i16,
     pub team: String,
     pub opp: String,
-    pub pts: f32,
+    pub pts_proj: f32,
+    pub cieling_proj: f32,
+    pub floor_proj: f32,
+    pub pts_plus_minus_proj: f32,
+    pub pts_sal_proj: f32,
+    pub vegas_total: f32,
     pub salary: i32,
-    pub own_per: f32,
+    pub own_proj: f32,
+    pub rating: f32,
 }
 
 // Should be Enum will reduce code
@@ -139,6 +184,25 @@ impl Proj {
             Proj::RecProj(rec_proj) => return rec_proj.pos,
             Proj::RbProj(_) => return Pos::Rb,
             Proj::KickProj(_) => return Pos::K,
+        }
+    }
+    pub fn print_name(&self) {
+        match self {
+            Proj::QbProj(p) => print!("{}, {} ", p.name, p.team),
+            Proj::DefProj(p) => print!("{}, {} ", p.name, p.team),
+            Proj::RecProj(p) => print!("{}, {} ", p.name, p.team),
+            Proj::RbProj(p) => print!("{}, {} ", p.name, p.team),
+            Proj::KickProj(p) => print!("{}, {} ", p.name, p.team),
+        }
+    }
+
+    pub fn get_name(&self) -> &String {
+        match self {
+            Proj::QbProj(p) => &p.name,
+            Proj::DefProj(p) => &p.name,
+            Proj::RecProj(p) => &p.name,
+            Proj::RbProj(p) => &p.name,
+            Proj::KickProj(p) => &p.name,
         }
     }
 
@@ -201,6 +265,7 @@ impl Pos {
             Pos::Wr => Ok("WR"),
             Pos::Te => Ok("TE"),
             Pos::Rb => Ok("RB"),
+            Pos::K => Ok("K"),
             _ => Err(()),
         }
     }
@@ -260,7 +325,7 @@ pub fn query_proj(
             return Proj::RecProj(query_rec_proj_helper(player, week, season, &Pos::Te, conn))
         }
         Pos::D => return Proj::DefProj(query_def_proj_helper(player, week, season, conn)),
-        Pos::K => panic!("Shouldn't be kickers yet.."),
+        Pos::K => return Proj::KickProj(query_kick_proj_helper(player, week, season, conn)),
     }
 }
 
@@ -278,7 +343,7 @@ pub fn get_recent_stat_ceiling(
         "SELECT ({}) FROM {} WHERE season = ?1 AND week BETWEEN ?2 AND ?3 AND id = ?4",
         field, table
     );
-    let mut stmt: rusqlite::Statement<'_> = conn.prepare(query.as_str()).unwrap();
+    let mut stmt: rusqlite::CachedStatement<'_> = conn.prepare_cached(query.as_str()).unwrap();
     stmt.query_map((season, week_range_start, week, player_id), |row| {
         row.get(0)
     })
@@ -291,39 +356,6 @@ pub fn get_recent_stat_ceiling(
         }
     });
     ceiling
-}
-
-/// Gets the avg of the last 3 stat records.
-/// Panics if the player does not have 3 stats
-pub fn get_recent_avg(
-    season: i16,
-    week: i8,
-    field: &str,
-    table: &str,
-    player_id: i16,
-    conn: &Connection,
-) -> f32 {
-    let week_range_start: i8 = week - (4);
-    let query: String = format!(
-        "SELECT ({}) FROM {} WHERE season = ?1 AND week BETWEEN ?2 AND ?3 AND id = ?4",
-        field, table
-    );
-    let mut stmt: rusqlite::Statement<'_> = conn.prepare(query.as_str()).unwrap();
-
-    let mut result: Vec<f32> = stmt
-        .query_map((season, week_range_start, week, player_id), |row| {
-            row.get(0)
-        })
-        .unwrap()
-        .into_iter()
-        .map(|r| r.unwrap())
-        .collect::<Vec<f32>>();
-    if result.len() < 3 {
-        panic!("{} Doesn't have enough stats..", player_id)
-    }
-    result.sort_by(|a: &f32, b: &f32| b.partial_cmp(a).unwrap());
-    let avg: f32 = &result[0..3].iter().sum::<f32>() / 3.0;
-    avg
 }
 
 pub fn query_rec_proj_helper(
@@ -363,6 +395,25 @@ pub fn query_def_proj_helper(
     )
     .expect("Could not find DST Proj")
 }
+
+pub fn query_kick_proj_helper(
+    player: &Option<Arc<LitePlayer>>,
+    week: i8,
+    season: i16,
+    conn: &Connection,
+) -> KickProj {
+    query_kick_proj(
+        player
+            .as_ref()
+            .expect("DST was not set when trying to get Proj")
+            .id,
+        week,
+        season,
+        conn,
+    )
+    .expect("Could not find DST Proj")
+}
+
 pub fn query_rb_proj_helper(
     player: &Option<Arc<LitePlayer>>,
     week: i8,
@@ -398,14 +449,42 @@ pub fn query_qb_proj_helper(
     )
     .expect("Could not find QB when trying to get Proj")
 }
-pub fn query_kick_proj(
-    id: i16,
-    week: i8,
-    season: i16,
-    pos: &Pos,
-    conn: &Connection,
-) -> Option<KickProj> {
-    None
+pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<KickProj> {
+    if KICK_PROJ_CACHE.lock().unwrap().get(&id).is_some() {
+        let proj: KickProj = KICK_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
+        return Some(proj);
+    }
+    let mut query = conn
+        .prepare_cached("SELECT * FROM kick_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
+        .expect("Couldn't prepare query");
+    let kick_proj: Option<KickProj> = query
+        .query_row((id, week, season), |row| {
+            Ok(KickProj {
+                name: row.get(3)?,
+                id: row.get(0)?,
+                team: row.get(4)?,
+                opp: row.get(5)?,
+                pts_proj: row.get(6)?,
+                cieling_proj: row.get(7)?,
+                floor_proj: row.get(8)?,
+                pts_plus_minus_proj: row.get(9)?,
+                pts_sal_proj: row.get(10)?,
+                vegas_total: row.get(11)?,
+                salary: row.get(12)?,
+                own_proj: row.get(13)?,
+                rating: row.get(14)?,
+            })
+        })
+        .optional()
+        .unwrap();
+    if kick_proj.is_none() {
+        return None;
+    }
+    KICK_PROJ_CACHE
+        .lock()
+        .unwrap()
+        .insert(id, kick_proj.clone().unwrap());
+    kick_proj
 }
 
 pub fn query_rec_proj(
@@ -425,7 +504,7 @@ pub fn query_rec_proj(
         "te_proj"
     };
     let mut query = conn
-        .prepare(
+        .prepare_cached(
             format!(
                 "SELECT * FROM {} WHERE id = ?1 AND week = ?2 AND season = ?3",
                 table
@@ -436,23 +515,33 @@ pub fn query_rec_proj(
     let rec_proj: Option<RecProj> = query
         .query_row((id, week, season), |row| {
             Ok(RecProj {
-                name: row.get(3)?,
                 id: row.get(0)?,
+                name: row.get(3)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
                 pos: *pos,
-                pts: row.get(6)?,
-                rec: row.get(7)?,
-                tgts: row.get(8)?,
-                td: row.get(9)?,
-                rec_yds: row.get(10)?,
-                rush_yds: row.get(11)?,
-                salary: row.get(12)?,
-                own_per: row.get(13)?,
+                pts_proj: row.get(6)?,
+                cieling_proj: row.get(7)?,
+                floor_proj: row.get(8)?,
+                pts_plus_minus_proj: row.get(9)?,
+                pts_sal_proj: row.get(10)?,
+                vegas_total: row.get(11)?,
+                avg_rec: row.get(12)?,
+                avg_tgts: row.get(13)?,
+                avg_td: row.get(14)?,
+                avg_rec_yds: row.get(15)?,
+                avg_rush_yds: row.get(16)?,
+                red_zone_op_pg: row.get(17)?,
+                rec_tgt_share: row.get(18)?,
+                salary: row.get(19)?,
+                own_proj: row.get(20)?,
+                rating: row.get(21)?,
+                year_consistency: row.get(22)?,
+                year_upside: row.get(23)?,
             })
         })
         .optional()
-        .unwrap();
+        .expect("Could not get WR");
     if rec_proj.is_none() {
         return None;
     }
@@ -469,22 +558,31 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         return Some(proj);
     }
     let mut query = conn
-        .prepare("SELECT * FROM rb_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
+        .prepare_cached("SELECT * FROM rb_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
         .expect("Couldn't Prepare statement");
     let rb_proj: Option<RbProj> = query
         .query_row((id, week, season), |row| {
             Ok(RbProj {
-                name: row.get(3)?,
                 id: row.get(0)?,
+                name: row.get(3)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
-                pts: row.get(6)?,
-                atts: row.get(7)?,
-                tds: row.get(8)?,
-                rush_yds: row.get(9)?,
-                rec_yds: row.get(10)?,
-                salary: row.get(11)?,
-                own_per: row.get(12)?,
+                pts_proj: row.get(6)?,
+                cieling_proj: row.get(7)?,
+                floor_proj: row.get(8)?,
+                pts_plus_minus_proj: row.get(9)?,
+                pts_sal_proj: row.get(10)?,
+                vegas_total: row.get(11)?,
+                rush_yds_share: row.get(12)?,
+                avg_att: row.get(13)?,
+                avg_td: row.get(14)?,
+                avg_rush_yds: row.get(15)?,
+                avg_rec_yds: row.get(16)?,
+                salary: row.get(17)?,
+                own_proj: row.get(18)?,
+                rating: row.get(19)?,
+                snaps_per: row.get(20)?,
+                year_consistency: row.get(21)?,
             })
         })
         .optional()
@@ -505,24 +603,34 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         return Some(proj);
     }
     let mut query = conn
-        .prepare("SELECT * FROM qb_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
+        .prepare_cached("SELECT * FROM qb_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
         .expect("Couldn't prepare query");
     let qb_proj: Option<QbProj> = query
         .query_row((id, week, season), |row| {
             Ok(QbProj {
-                name: row.get(3)?,
                 id: row.get(0)?,
+                name: row.get(3)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
-                pts: row.get(6)?,
-                atts: row.get(7)?,
-                comps: row.get(8)?,
-                ints: row.get(9)?,
-                pass_yds: row.get(10)?,
-                pass_tds: row.get(11)?,
-                rush_yds: row.get(12)?,
-                salary: row.get(13)?,
-                own_per: row.get(14)?,
+                pts_proj: row.get(6)?,
+                cieling_proj: row.get(7)?,
+                floor_proj: row.get(8)?,
+                pts_plus_minus_proj: row.get(9)?,
+                pts_sal_proj: row.get(10)?,
+                vegas_total: row.get(11)?,
+                avg_pass_atts: row.get(12)?,
+                avg_pass_comps: row.get(13)?,
+                avg_pass_yds: row.get(14)?,
+                avg_pass_tds: row.get(15)?,
+                avg_rush_atts: row.get(16)?,
+                avg_long_pass_yds: row.get(17)?,
+                pass_to_wr_per: row.get(18)?,
+                pass_to_te_per: row.get(19)?,
+                wind_speed: row.get(20)?,
+                salary: row.get(21)?,
+                own_proj: row.get(22)?,
+                rating: row.get(23)?,
+                red_zone_op_pg: row.get(24)?,
             })
         })
         .optional()
@@ -543,18 +651,25 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
         return Some(proj);
     }
     let mut query = conn
-        .prepare("SELECT * FROM dst_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
+        .prepare_cached("SELECT * FROM dst_proj WHERE id = ?1 AND week = ?2 AND season = ?3")
         .expect("Couldn't prepare query");
     let def_proj: Option<DefProj> = query
         .query_row((id, week, season), |row| {
             Ok(DefProj {
-                name: row.get(3)?,
                 id: row.get(0)?,
+                name: row.get(3)?,
                 team: row.get(4)?,
                 opp: row.get(5)?,
-                pts: row.get(6)?,
-                salary: row.get(7)?,
-                own_per: row.get(8)?,
+                pts_proj: row.get(6)?,
+                cieling_proj: row.get(7)?,
+                floor_proj: row.get(8)?,
+                pts_plus_minus_proj: row.get(9)?,
+                pts_sal_proj: row.get(10)?,
+                vegas_total: row.get(11)?,
+                salary: row.get(12)?,
+                own_proj: row.get(13)?,
+                rating: row.get(14)?,
+                vegas_opp_total: row.get(15)?,
             })
         })
         .optional()
@@ -605,29 +720,16 @@ pub fn proj_exists(id: i16, week: i8, season: i16, pos: Pos, conn: &Connection) 
         Pos::Rb => return query_rb_proj(id, week, season, conn).is_some(),
         Pos::Te => return query_rec_proj(id, week, season, &pos, conn).is_some(),
         Pos::Wr => return query_rec_proj(id, week, season, &pos, conn).is_some(),
-        Pos::K => return query_kick_proj(id, week, season, &pos, conn).is_some(),
+        Pos::K => return query_kick_proj(id, week, season, conn).is_some(),
     }
 }
 
 // Get Player ID, Searches D, Then Exact, Then Fuzzy
 pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection) -> Option<i32> {
-    let team_conversion: Option<&&str> = NON_OFF_TO_OFF_ABBR.get(&team[..]);
-    let correct_team: &str = if team_conversion.is_some() {
-        team_conversion.unwrap().to_owned()
-    } else {
-        team
-    };
-    if pos == &Pos::D {
-        let def_select: String = format!("SELECT id FROM player WHERE team = '{}'", correct_team);
-        return conn
-            .query_row(&def_select, (), |row| row.get(0))
-            .optional()
-            .unwrap();
-    }
     // Try Exact Match
-    let select_player: &str = "SELECT id FROM player WHERE name = ?1 and pos = ?2";
+    let select_player: &str = "SELECT id FROM player WHERE name = ?1 AND pos = ?2 AND team = ?3";
     let id: Option<i32> = conn
-        .query_row(select_player, (name, pos.to_str().unwrap()), |row| {
+        .query_row(select_player, (name, pos.to_str().unwrap(), team), |row| {
             row.get(0)
         })
         .optional()
@@ -637,16 +739,18 @@ pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection)
     }
 
     // No hit on exact match
-    let fuzzy_select: &str = "SELECT id FROM player WHERE name LIKE ?1 and pos = ?2";
+    let fuzzy_select: &str = "SELECT id FROM player WHERE name LIKE ?1 and pos = ?2 AND team = ?3";
     let mut name_split: Split<'_, &str> = name.trim().split(" ");
     let first_name: &str = name_split.next().unwrap();
     let last_name: &str = name_split.next().unwrap();
     let fuzzy_name: String = first_name.chars().nth(0).unwrap().to_string() + "%" + last_name + "%";
 
     let id: Option<i32> = conn
-        .query_row(fuzzy_select, (&fuzzy_name, pos.to_str().unwrap()), |row| {
-            row.get(0)
-        })
+        .query_row(
+            fuzzy_select,
+            (&fuzzy_name, pos.to_str().unwrap(), team),
+            |row| row.get(0),
+        )
         .optional()
         .unwrap();
     return id;
@@ -661,13 +765,6 @@ mod tests {
     fn test_enum_compartor() {
         let pos: Pos = Pos::from_str("QB").unwrap();
         assert!(pos == Pos::Qb)
-    }
-
-    #[test]
-    fn test_recent_avg() {
-        let conn = Connection::open(DATABASE_FILE).unwrap();
-        let avg = get_recent_avg(2022, 18, "rz_atts", "rush_rec_stats", 9, &conn);
-        println!("{}", avg)
     }
 
     //85546-69531,Jalen Hurts,PHI,NYG,QB,9000,18.6

@@ -13,7 +13,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 // AYU DARK
-const GOOD_SALARY_USAGE: i32 = 45000;
+const GOOD_SALARY_USAGE: i32 = 56000;
 
 pub fn build_all_possible_lineups(
     players: Vec<Arc<LitePlayer>>,
@@ -34,7 +34,7 @@ pub fn build_all_possible_lineups(
         });
 
     let wrs_lineups: Vec<LineupBuilder> = add_wrs_to_lineups(&players, qb_lineups);
-
+    println!("Cooking up LINEUPS!!");
     let mut futures: Vec<_> = Vec::new();
     for wr_lp in wrs_lineups {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
@@ -42,18 +42,16 @@ pub fn build_all_possible_lineups(
         let future = async {
             let player_clone = players.clone();
             let fut_tx_result = async move {
-                println!("Start thread {:?}", std::thread::current().id());
                 let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&player_clone, &binding);
                 let te_lineups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, rbs_lineups);
                 let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&player_clone, te_lineups);
-                let filterd_lineups = filter_low_salary_cap(dst_lineups, 42000);
+                let filterd_lineups = filter_low_salary_cap(dst_lineups, 46500);
                 let no_bad_combinations = filter_bad_lineups(filterd_lineups, week, season);
                 let lineups: Vec<Lineup> =
-                    add_flex_find_top_num(&player_clone, no_bad_combinations, 500, week, season);
+                    add_flex_find_top_num(&player_clone, no_bad_combinations, 1, week, season);
                 lineups.iter().for_each(|l: &Lineup| {
                     tx.unbounded_send(l.clone()).expect("Failed to send lineup")
                 });
-                println!("Stopped thread {:?}", std::thread::current().id());
             };
 
             pool.spawn_ok(fut_tx_result);
@@ -199,7 +197,7 @@ pub fn add_flex_find_top_num(
             .filter(|p| !running_backs.contains(&&p.id))
             .filter(|p| !wide_recievers.contains(&&p.id))
             .filter(|p| (p.salary as i32 + lineup.salary_used) < SALARY_CAP)
-            .filter(|p| (p.salary as i32 + lineup.salary_used) > GOOD_SALARY_USAGE)
+            .filter(|p| (p.salary as i32 + lineup.salary_used) > MIN_SAL)
             .for_each(|flex| {
                 // should be refactored to a function
                 iterations += 1;
@@ -232,7 +230,6 @@ pub fn add_flex_find_top_num(
                 }
             });
     }
-    println!("Flex iterated {} times", iterations);
     best_lineups
 }
 
@@ -259,7 +256,6 @@ pub fn add_dst_to_lineups(
             iterations += 1;
         });
     }
-    println!("Def iterated: {} times", iterations);
     lineups_with_def
 }
 

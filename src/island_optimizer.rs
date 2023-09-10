@@ -72,14 +72,17 @@ fn build_and_score_combos(
         .filter(|p| p.id != mvp_lineup.mvp.as_ref().unwrap().id)
         .combinations(4)
     {
-        let new_lineup: IslandLineup = mvp_lineup
+        let island_lb: IslandLB = mvp_lineup
             .clone()
             .set_slot(combo[0], Slot::First)
             .set_slot(combo[1], Slot::Second)
             .set_slot(combo[2], Slot::Third)
-            .set_slot(combo[3], Slot::Fourth)
-            .build(WEEK, SEASON, &conn);
+            .set_slot(combo[3], Slot::Fourth);
+        if island_lb.salary_used > SALARY_CAP || island_lb.salary_used < MIN_SAL {
+            continue;
+        }
 
+        let new_lineup = island_lb.build(WEEK, SEASON, &conn);
         let score: f32 = new_lineup.score;
         if best_lineups.len() == amount && sorted == false {
             best_lineups.sort_by(|a, b: &IslandLineup| b.score.partial_cmp(&a.score).unwrap());
