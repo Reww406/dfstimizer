@@ -1,3 +1,6 @@
+use std::rc::Rc;
+use std::sync::Arc;
+
 use futures::channel::mpsc;
 use futures::executor;
 use futures::executor::ThreadPool;
@@ -5,39 +8,43 @@ use futures::future::join_all;
 use futures::StreamExt;
 use rusqlite::Connection;
 
+use crate::get_sunday_slate;
 use crate::lineup::*;
 use crate::player::*;
 use crate::DATABASE_FILE;
 use crate::SEASON;
 use crate::WEEK;
 use itertools::Itertools;
-use std::sync::Arc;
+// use std::sync::Rc;
 
-// We should but every player in the MVP Spot, then generate combos
-// minus that player for the rest of the positions
-pub fn build_island_lineups(
-    players: Vec<Arc<LitePlayer>>,
-    week: i8,
-    season: i16,
-) -> Vec<IslandLineup> {
-    let pool = ThreadPool::new().unwrap();
-    let mut mvp_lineups: Vec<IslandLB> = Vec::new();
+fn get_mvp_ids(players: Vec<Rc<LitePlayer>>) -> Vec<Arc<i16>> {
+    let mvp_pos = &[Pos::Qb, Pos::Rb, Pos::Wr];
+    players
+        .into_iter()
+        .filter(|p| mvp_pos.contains(&p.pos))
+        .map(|p| Arc::new(p.id))
+        .collect::<Vec<Arc<i16>>>()
+}
+
+pub fn build_island_lineups(week: i8, season: i16) -> Vec<IslandLineup> {
+    let pool: ThreadPool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<IslandLineup> = Vec::new();
-    // TODO Filter down this list Defense and stuff not needed..?
-    players.iter().for_each(|p| {
-        let mvp_lineup: IslandLB = IslandLB::new();
-        mvp_lineups.push(mvp_lineup.set_slot(&p, Slot::Mvp))
-    });
+    let players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season);
+    let ids: Vec<Arc<i16>> = get_mvp_ids(players);
     let mut futures: Vec<_> = Vec::new();
-    for lineup in mvp_lineups {
+    for id in ids {
         let (tx, rx) = mpsc::unbounded::<IslandLineup>();
-        let binding: IslandLB = lineup.clone();
         let future = async {
-            let player_clone: Vec<Arc<LitePlayer>> = players.clone();
             let fut_tx_result = async move {
-                build_and_score_combos(&binding, &player_clone, 200, week, season)
-                    .into_iter()
-                    .for_each(|l| tx.unbounded_send(l).expect("Failed to send result"))
+                let mut mvp_lineup: IslandLB = IslandLB::new();
+                let thread_players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season);
+                for player in &thread_players {
+                    if player.id == *id {
+                        mvp_lineup = mvp_lineup.set_slot(player, Slot::Mvp);
+                    }
+                }
+                let lineup = build_and_score_combos(&mvp_lineup, &thread_players);
+                tx.unbounded_send(lineup).expect("Failed to send result");
             };
 
             pool.spawn_ok(fut_tx_result);
@@ -58,14 +65,10 @@ pub fn build_island_lineups(
 
 fn build_and_score_combos(
     mvp_lineup: &IslandLB,
-    players: &Vec<Arc<LitePlayer>>,
-    amount: usize,
-    week: i8,
-    season: i16,
-) -> Vec<IslandLineup> {
+    players: &Vec<Rc<LitePlayer>>,
+) -> IslandLineup {
     let conn: Connection = Connection::open(DATABASE_FILE).expect("Couldn't Open DB File");
-    let mut best_lineups: Vec<IslandLineup> = Vec::with_capacity(amount);
-    let mut sorted: bool = false;
+    let mut best_lineup: Option<IslandLineup> = None;
     let mut lowest_score = 0.0;
     for combo in players
         .iter()
@@ -84,27 +87,29 @@ fn build_and_score_combos(
 
         let new_lineup = island_lb.build(WEEK, SEASON, &conn);
         let score: f32 = new_lineup.score;
-        if best_lineups.len() == amount && sorted == false {
-            best_lineups.sort_by(|a, b: &IslandLineup| b.score.partial_cmp(&a.score).unwrap());
-            sorted = true;
-        }
-        if best_lineups.len() < amount {
-            if score < lowest_score {
-                lowest_score = score;
-            }
-            best_lineups.push(new_lineup);
-        } else if score > lowest_score {
-            // TODO Dont need to iterate over whole list
-            for i in 0..best_lineups.len() {
-                if score > best_lineups[i].score {
-                    best_lineups[i] = new_lineup;
-                    if i == (best_lineups.len() - 1) {
-                        lowest_score = score;
-                    }
-                    break;
-                }
-            }
+        if best_lineup.is_none() {
+            best_lineup = Some(new_lineup)
+        } else if score < lowest_score {
+            lowest_score = score;
+            best_lineup = Some(new_lineup);
         }
     }
-    best_lineups
+    best_lineup.expect("Found no lineups")
 }
+//  if best_lineups.len() < amount {
+//             if score < lowest_score {
+//                 lowest_score = score;
+//             }
+//             best_lineups.push(new_lineup);
+//         } else if score > lowest_score {
+//             // TODO Dont need to iterate over whole list
+//             for i in 0..best_lineups.len() {
+//                 if score > best_lineups[i].score {
+//                     best_lineups[i] = new_lineup;
+//                     if i == (best_lineups.len() - 1) {
+//                         lowest_score = score;
+//                     }
+//                     break;
+//                 }
+//             }
+//         }

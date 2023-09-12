@@ -1,0 +1,140 @@
+Sal: 58500, Score: 4.4100113
+MVP: Josh Allen: QB
+Dalvin Cook: RB
+Michael Carter: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 58500, Score: 4.3953967
+MVP: Stefon Diggs: WR
+Josh Allen: QB
+Dalvin Cook: RB
+Michael Carter: RB
+Tyler Conklin: TE
+
+Sal: 58500, Score: 4.3775177
+MVP: Dalvin Cook: RB
+Josh Allen: QB
+Michael Carter: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 59000, Score: 4.349354
+MVP: Josh Allen: QB
+Michael Carter: RB
+Breece Hall: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 58500, Score: 4.3405323
+MVP: Michael Carter: RB
+Josh Allen: QB
+Dalvin Cook: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 59000, Score: 4.334739
+MVP: Stefon Diggs: WR
+Josh Allen: QB
+Michael Carter: RB
+Breece Hall: RB
+Tyler Conklin: TE
+
+Sal: 58000, Score: 4.3012857
+MVP: Dalvin Cook: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+Garrett Wilson: WR
+Allen Lazard: WR
+
+Sal: 59000, Score: 4.286532
+MVP: Breece Hall: RB
+Josh Allen: QB
+Michael Carter: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 58000, Score: 4.2860537
+MVP: Garrett Wilson: WR
+Dalvin Cook: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+Allen Lazard: WR
+
+Sal: 59000, Score: 4.279875
+MVP: Michael Carter: RB
+Josh Allen: QB
+Breece Hall: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 58000, Score: 4.274398
+MVP: Damien Harris: RB
+Josh Allen: QB
+Tyler Conklin: TE
+Dawson Knox: TE
+Stefon Diggs: WR
+
+Sal: 58500, Score: 4.274314
+MVP: Allen Lazard: WR
+Josh Allen: QB
+Tyler Conklin: TE
+Dawson Knox: TE
+Stefon Diggs: WR
+
+Sal: 58000, Score: 4.2739096
+MVP: Allen Lazard: WR
+Dalvin Cook: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+Garrett Wilson: WR
+
+Sal: 58000, Score: 4.252137
+MVP: Gabe Davis: WR
+Josh Allen: QB
+Michael Carter: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 58000, Score: 4.2399607
+MVP: Damien Harris: RB
+Josh Allen: QB
+Michael Carter: RB
+Stefon Diggs: WR
+Allen Lazard: WR
+
+Sal: 59000, Score: 4.2355986
+MVP: Gabe Davis: WR
+Josh Allen: QB
+Dalvin Cook: RB
+Tyler Conklin: TE
+Allen Lazard: WR
+
+Sal: 58000, Score: 4.2254524
+MVP: Garrett Wilson: WR
+Damien Harris: RB
+Breece Hall: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 58500, Score: 4.211929
+MVP: Breece Hall: RB
+Dalvin Cook: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+Gabe Davis: WR
+
+Sal: 59000, Score: 4.2016315
+MVP: M. Hardman Jr.: WR
+Josh Allen: QB
+Dalvin Cook: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+
+Sal: 59000, Score: 4.1483245
+MVP: James Cook: RB
+Dalvin Cook: RB
+Tyler Conklin: TE
+Stefon Diggs: WR
+Garrett Wilson: WR
+

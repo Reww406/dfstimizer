@@ -6,52 +6,52 @@ use futures::StreamExt;
 use itertools::Itertools;
 use rusqlite::Connection;
 
+use crate::get_sunday_slate;
+use crate::get_top_players;
 use crate::lineup::*;
 use crate::player::*;
 use crate::DATABASE_FILE;
+use crate::WR_COUNT;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::rc::Rc;
 
 // AYU DARK
-const GOOD_SALARY_USAGE: i32 = 56000;
 
-pub fn build_all_possible_lineups(
-    players: Vec<Arc<LitePlayer>>,
-    week: i8,
-    season: i16,
-) -> Vec<Lineup> {
-    let mut pool_b = ThreadPool::builder();
-    pool_b.pool_size(16);
-    let pool = pool_b.create().unwrap();
-    let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
+pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
+    let pool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<Lineup> = Vec::new();
-    players
-        .iter()
-        .filter(|player| player.pos == Pos::Qb)
-        .for_each(|qb| {
-            let lineup_builder: LineupBuilder = LineupBuilder::new();
-            qb_lineups.push(lineup_builder.set_pos(&qb, Slot::None))
-        });
+    let wr_ids: Vec<i16> = get_top_players(season, week, "wr_proj", WR_COUNT);
+    println!("Cooking up LINEUPS!! {}", wr_ids.len());
 
-    let wrs_lineups: Vec<LineupBuilder> = add_wrs_to_lineups(&players, qb_lineups);
-    println!("Cooking up LINEUPS!!");
     let mut futures: Vec<_> = Vec::new();
-    for wr_lp in wrs_lineups {
+    for wr_id in wr_ids.into_iter().combinations(3) {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
-        let binding = wr_lp.clone();
         let future = async {
-            let player_clone = players.clone();
             let fut_tx_result = async move {
-                let rbs_lineups: Vec<LineupBuilder> = add_rbs_to_lineups(&player_clone, &binding);
-                let te_lineups: Vec<LineupBuilder> = add_te_to_lineups(&player_clone, rbs_lineups);
-                let dst_lineups: Vec<LineupBuilder> = add_dst_to_lineups(&player_clone, te_lineups);
-                let filterd_lineups = filter_low_salary_cap(dst_lineups, 46500);
-                let no_bad_combinations = filter_bad_lineups(filterd_lineups, week, season);
-                let lineups: Vec<Lineup> =
-                    add_flex_find_top_num(&player_clone, no_bad_combinations, 1, week, season);
-                lineups.iter().for_each(|l: &Lineup| {
-                    tx.unbounded_send(l.clone()).expect("Failed to send lineup")
-                });
+                let thread_players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season);
+                let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
+                thread_players
+                    .iter()
+                    .filter(|player: &&Rc<LitePlayer>| player.pos == Pos::Qb)
+                    .for_each(|qb: &Rc<LitePlayer>| {
+                        let lineup_builder: LineupBuilder = LineupBuilder::new();
+                        qb_lineups.push(lineup_builder.set_pos(&qb, Slot::None))
+                    });
+                let wr_lineups: Vec<LineupBuilder> =
+                    add_wrs_to_lineups(wr_id, &thread_players, qb_lineups);
+
+                let rbs_lineups: Vec<LineupBuilder> =
+                    add_rbs_to_lineups(&thread_players, wr_lineups);
+                let te_lineups: Vec<LineupBuilder> =
+                    add_te_to_lineups(&thread_players, rbs_lineups);
+                let dst_lineups: Vec<LineupBuilder> =
+                    add_dst_to_lineups(&thread_players, te_lineups);
+                let filterd_lineups: Vec<LineupBuilder> = filter_low_salary_cap(dst_lineups, 42500);
+                let no_bad_combinations: Vec<LineupBuilder> =
+                    filter_bad_lineups(filterd_lineups, week, season);
+                let lineup: Lineup =
+                    add_flex_find_top_num(&thread_players, no_bad_combinations, 2, week, season);
+                tx.unbounded_send(lineup).expect("Failed to send lineup")
             };
 
             pool.spawn_ok(fut_tx_result);
@@ -87,7 +87,7 @@ pub fn filter_bad_lineups(
     let mut filtered_lineups: Vec<LineupBuilder> = Vec::new();
     for lineup in lineups {
         let qb = query_qb_proj_helper(&lineup.qb, week, season, &conn);
-        let d = query_def_proj_helper(&lineup.dst, week, season, &conn);
+        let d = query_def_proj_helper(&lineup.def, week, season, &conn);
         let rb1 = query_rb_proj_helper(&lineup.rb1, week, season, &conn);
         let rb2 = query_rb_proj_helper(&lineup.rb2, week, season, &conn);
         if qb.opp == d.team {
@@ -102,13 +102,41 @@ pub fn filter_bad_lineups(
 }
 // Needs to barrow players so it can be passed to the rest of the functions
 pub fn add_wrs_to_lineups(
-    players: &Vec<Arc<LitePlayer>>,
+    player_ids: Vec<i16>,
+    players: &Vec<Rc<LitePlayer>>,
     lineups: Vec<LineupBuilder>,
 ) -> Vec<LineupBuilder> {
     let mut new_lineups: Vec<LineupBuilder> = Vec::new();
-    let p_lookup: HashMap<i16, &Arc<LitePlayer>> = LitePlayer::player_lookup_map(players);
+    let p_lookup: HashMap<i16, &Rc<LitePlayer>> = LitePlayer::player_lookup_map(players);
     for lineup in &lineups {
-        for combo in players.iter().filter(|p| p.pos == Pos::Wr).combinations(3) {
+        new_lineups.push(
+            lineup
+                .clone()
+                .set_pos(
+                    *p_lookup.get(&player_ids[0]).expect("Player missing"),
+                    Slot::First,
+                )
+                .set_pos(
+                    *p_lookup.get(&player_ids[1]).expect("Missing Player"),
+                    Slot::Second,
+                )
+                .set_pos(
+                    *p_lookup.get(&player_ids[2]).expect("Missing Player"),
+                    Slot::Third,
+                ),
+        )
+    }
+    new_lineups
+}
+
+pub fn add_rbs_to_lineups(
+    players: &Vec<Rc<LitePlayer>>,
+    lineups: Vec<LineupBuilder>,
+) -> Vec<LineupBuilder> {
+    let mut new_lineups: Vec<LineupBuilder> = Vec::new();
+    let p_lookup: HashMap<i16, &Rc<LitePlayer>> = LitePlayer::player_lookup_map(&players);
+    for lineup in lineups {
+        for combo in players.iter().filter(|p| p.pos == Pos::Rb).combinations(2) {
             new_lineups.push(
                 lineup
                     .clone()
@@ -117,45 +145,18 @@ pub fn add_wrs_to_lineups(
                         Slot::First,
                     )
                     .set_pos(
-                        *p_lookup.get(&combo[1].id).expect("Missing Player"),
+                        *p_lookup.get(&combo[1].id).expect("Player Missing"),
                         Slot::Second,
-                    )
-                    .set_pos(
-                        *p_lookup.get(&combo[2].id).expect("Missing Player"),
-                        Slot::Third,
                     ),
-            )
+            );
         }
-    }
-    new_lineups
-}
-
-pub fn add_rbs_to_lineups(
-    players: &Vec<Arc<LitePlayer>>,
-    lineup: &LineupBuilder,
-) -> Vec<LineupBuilder> {
-    let mut new_lineups: Vec<LineupBuilder> = Vec::new();
-    let p_lookup: HashMap<i16, &Arc<LitePlayer>> = LitePlayer::player_lookup_map(players);
-    for combo in players.iter().filter(|p| p.pos == Pos::Rb).combinations(2) {
-        new_lineups.push(
-            lineup
-                .clone()
-                .set_pos(
-                    *p_lookup.get(&combo[0].id).expect("Player missing"),
-                    Slot::First,
-                )
-                .set_pos(
-                    *p_lookup.get(&combo[1].id).expect("Player Missing"),
-                    Slot::Second,
-                ),
-        );
     }
 
     new_lineups
 }
 
 pub fn add_te_to_lineups(
-    players: &Vec<Arc<LitePlayer>>,
+    players: &Vec<Rc<LitePlayer>>,
     lineups: Vec<LineupBuilder>,
 ) -> Vec<LineupBuilder> {
     let mut lineups_with_te: Vec<LineupBuilder> = Vec::with_capacity(lineups.len());
@@ -169,15 +170,15 @@ pub fn add_te_to_lineups(
 
 // WR2 And QB are most correlated, than 3 than 2
 pub fn add_flex_find_top_num(
-    players: &Vec<Arc<LitePlayer>>,
+    players: &Vec<Rc<LitePlayer>>,
     lineups: Vec<LineupBuilder>,
     lineup_cap: usize,
     week: i8,
     season: i16,
-) -> Vec<Lineup> {
+) -> Lineup {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let flex_pos: [Pos; 2] = [Pos::Wr, Pos::Rb];
-    let mut best_lineups: Vec<Lineup> = Vec::with_capacity(lineup_cap);
+    let mut best_lineup: Option<Lineup> = None;
     let mut lowest_score: f32 = 0.0;
     let mut sorted: bool = false;
     let mut iterations: i64 = 0;
@@ -199,53 +200,25 @@ pub fn add_flex_find_top_num(
             .filter(|p| (p.salary as i32 + lineup.salary_used) < SALARY_CAP)
             .filter(|p| (p.salary as i32 + lineup.salary_used) > MIN_SAL)
             .for_each(|flex| {
-                // should be refactored to a function
-                iterations += 1;
                 let finished_lineup = lineup
                     .clone()
                     .set_pos(&flex, Slot::Flex)
                     .build(week, season, &conn)
                     .expect("Failed to build lineup..");
                 let score: f32 = finished_lineup.score();
-                if best_lineups.len() == lineup_cap && sorted == false {
-                    best_lineups
-                        .sort_by(|a, b: &Lineup| b.score().partial_cmp(&a.score()).unwrap());
-                    sorted = true;
-                }
-                if best_lineups.len() < lineup_cap {
-                    if score < lowest_score {
-                        lowest_score = score;
-                    }
-                    best_lineups.push(finished_lineup);
-                } else if score > lowest_score {
-                    for i in 0..best_lineups.len() {
-                        if score > best_lineups[i].score() {
-                            best_lineups[i] = finished_lineup;
-                            if i == (best_lineups.len() - 1) {
-                                lowest_score = score;
-                            }
-                            break;
-                        }
-                    }
+                if best_lineup.is_none() {
+                    best_lineup = Some(finished_lineup)
+                } else if score < lowest_score {
+                    lowest_score = score;
+                    best_lineup = Some(finished_lineup)
                 }
             });
     }
-    best_lineups
-}
-
-pub fn insert_value_sorted(lineups: &mut Vec<Lineup>, new_lineup: Lineup) -> (&Vec<Lineup>, bool) {
-    let pos = lineups
-        .binary_search_by(|probe| new_lineup.score().total_cmp(&probe.score()))
-        .expect("Failed to find value");
-    lineups[pos] = new_lineup;
-    if pos == (lineups.len() - 1) {
-        return (lineups, true);
-    }
-    (lineups, false)
+    best_lineup.expect("Didn't generate a lineup")
 }
 
 pub fn add_dst_to_lineups(
-    players: &Vec<Arc<LitePlayer>>,
+    players: &Vec<Rc<LitePlayer>>,
     lineups: Vec<LineupBuilder>,
 ) -> Vec<LineupBuilder> {
     let mut lineups_with_def: Vec<LineupBuilder> = Vec::new();
@@ -287,39 +260,4 @@ mod tests {
             salary_used: price,
         }
     }
-
-    // #[test]
-    // fn test_insert_sorted_val() {
-    //     let mut lineups: Vec<Lineup> = vec![
-    //         create_test_lineup(1030),
-    //         create_test_lineup(1030),
-    //         create_test_lineup(1050),
-    //     ];
-    //     lineups
-    //         .iter()
-    //         .for_each(|l| println!("Current {:?}", l.score()));
-    //     let new_lineup = create_test_lineup(5500);
-    //     println!("new score {}", new_lineup);
-    //     let value = insert_value_sorted(&mut lineups, new_lineup);
-    //     value.0.iter().for_each(|l| println!("New {:?}", l.score()));
-    // }
-
-    // #[test]
-    // fn test_max_score() {
-    //     let lineup: Lineup = create_test_lineup(MIN_AVG_OWNERSHIP, 6666);
-    //     assert_eq!(lineup.score, 1.0)
-    // }
-
-    // #[test]
-    // // fn test_min_score() {
-    //     let lineup: Lineup = create_test_lineup(MAX_AVG_OWNERHSIP, 0);
-    //     assert_eq!(lineup.score, -1.0);
-    // }
-
-    // #[test]
-    // fn test_scoring() {
-    //     let lineup: Lineup = create_test_lineup(20.0, 4000);
-    //     let lineup1: Lineup = create_test_lineup(19.8, 4005);
-    //     assert!(lineup.score < lineup1.score);
-    // }
 }

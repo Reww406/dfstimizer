@@ -1,8 +1,7 @@
 use crate::{player::*, DATABASE_FILE};
 
-use csv::StringRecord;
 use lazy_static::lazy_static;
-use rusqlite::{params, Connection, Result};
+use rusqlite::{params, Connection};
 use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
@@ -106,11 +105,6 @@ pub struct ProjRecord {
     // Load in month year stats when they exist...
 }
 
-struct IdAndOwnership {
-    id: i32,
-    own_per: f32,
-}
-
 pub fn load_in_proj(path: &str, season: i16, week: i8, pos: &Pos) {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut reader: csv::Reader<&[u8]> = csv::ReaderBuilder::new()
@@ -134,36 +128,39 @@ pub fn load_in_proj(path: &str, season: i16, week: i8, pos: &Pos) {
     }
 }
 
-fn get_id_ownership(
-    name: &String,
-    team: &String,
-    pos: &Pos,
-    week: i8,
-    season: i16,
-    conn: &Connection,
-) -> Option<IdAndOwnership> {
-    let id: i32 = get_player_id_create_if_missing(name, team, pos, conn);
-    let own_per: Option<f32> = query_own_per(id, week, season, conn);
-    if own_per.is_none() {
-        println!("Player has no ownership: {}", name);
-        return None;
+pub fn load_in_anyflex(path: &str, season: i16, week: i8) {
+    let contents: String = fs::read_to_string(path).expect("Failed to read in file");
+    let mut reader: csv::Reader<&[u8]> = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .flexible(true)
+        .from_reader(contents.as_bytes());
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    for res in reader.deserialize() {
+        let rec: ProjRecord = res.unwrap();
+        let pos: Pos = Pos::from_string_ref(rec.pos.as_ref().unwrap()).unwrap();
+        match pos {
+            Pos::Qb => store_qb_proj(&rec, season, week, &conn),
+            Pos::D => store_dst_proj(&rec, season, week, &conn),
+            Pos::Rb => store_rb_proj(&rec, season, week, &conn),
+            Pos::Te => store_rec_proj(&rec, season, week, Pos::Te, &conn),
+            Pos::Wr => store_rec_proj(&rec, season, week, Pos::Wr, &conn),
+            Pos::K => store_kick_proj(&rec, season, week, &conn),
+            _ => println!("Pos missing"),
+        }
     }
-    Some(IdAndOwnership {
-        id: id,
-        own_per: own_per.unwrap(),
-    })
 }
 
 // TODO This should use the player object so changes are more obvious
 fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week);
     let qb_in: &str =
-        "INSERT INTO qb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, pts_sal_proj,
-            vegas_total, avg_pass_atts, avg_pass_comps, avg_pass_yds, avg_pass_tds, avg_rush_atts,
+        "INSERT INTO qb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
+            pts_sal_proj, vegas_total, avg_pass_atts, avg_pass_comps, avg_pass_yds, avg_pass_tds, avg_rush_atts,
             avg_long_pass_yds, pass_to_wr_per, pass_to_te_per, wind_speed, salary, own_proj, rating, red_zone_op_pg) 
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25)";
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, 
+                ?23, ?24, ?25)";
     conn.execute(
         qb_in,
         params![
@@ -199,11 +196,12 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
 
 fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos not set")).unwrap();
-    let id = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week);
     let rb_in: &str =
-        "INSERT INTO rb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, pts_sal_proj,
-            vegas_total, rush_yds_share, avg_atts, avg_td, avg_rush_yds, avg_rec_yds, salary, own_proj, rating, snaps_per, year_consistency) 
+        "INSERT INTO rb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj,
+            pts_sal_proj, vegas_total, rush_yds_share, avg_atts, avg_td, avg_rush_yds, avg_rec_yds, salary, own_proj,
+            rating, snaps_per, year_consistency) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)";
 
     conn.execute(
@@ -238,14 +236,15 @@ fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
 
 fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, pos: Pos, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week);
     let table: &str = if pos == Pos::Wr { "wr_proj" } else { "te_proj" };
     let rec_in: String = format!(
-        "INSERT INTO {} (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, pts_sal_proj,
-            vegas_total, avg_recp, avg_tgts, avg_td, avg_rec_yds, avg_rush_yds, red_zone_op_pg, rec_tgt_share,
-            salary, own_proj, rating, year_consistency, year_upside) 
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24)",
+        "INSERT INTO {} (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
+            pts_sal_proj, vegas_total, avg_recp, avg_tgts, avg_td, avg_rec_yds, avg_rush_yds, red_zone_op_pg, 
+            rec_tgt_share, salary, own_proj, rating, year_consistency, year_upside) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, 
+                ?23, ?24)",
         table
     );
     conn.execute(
@@ -282,7 +281,7 @@ fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, pos: Pos, conn: &Conn
 
 fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week);
     let dst_in: &str = "INSERT INTO kick_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj,
          pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating) 
@@ -312,7 +311,7 @@ fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
 
 fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week);
     let dst_in: &str = "INSERT INTO dst_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, 
         pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, vegas_opp_total) 
@@ -339,30 +338,6 @@ fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
         ),
     )
     .expect("Failed to insert Defense into database");
-}
-
-// Could change ownership to serde?
-fn create_ownership(
-    rec: StringRecord,
-    season: i16,
-    week: i8,
-    conn: &Connection,
-) -> Option<Ownership> {
-    let name = rec[1].to_string();
-    let team = rec[2].to_string();
-    let pos = Pos::from_str(&rec[4].to_string()).expect("Couldn't get pos");
-    let id: i32 = get_player_id_create_if_missing(&name, &team, &pos, conn);
-    Some(Ownership {
-        id: id as i16,
-        season,
-        week,
-        name,
-        team,
-        opp: rec[3].to_string(),
-        pos: pos.to_str().unwrap().to_string(),
-        salary: rec[5].parse::<i32>().expect("Salary is not a number"),
-        own_per: rec[6].parse::<f32>().expect("Could not parse ownership"),
-    })
 }
 
 // Load ownership stats

@@ -1,12 +1,11 @@
-use std::{fs, sync::Arc};
+use std::{fs, rc::Rc};
 
 use lazy_static::lazy_static;
-use num_bigint::{BigInt, BigUint, ToBigInt, ToBigUint};
-use rusqlite::{params, Connection, Params};
+use num_bigint::{BigUint, ToBigUint};
+use rusqlite::{params, Connection};
 
 use crate::player::*;
 
-use itertools::Itertools;
 pub mod data_loader;
 pub mod island_optimizer;
 pub mod lineup;
@@ -15,106 +14,111 @@ pub mod player;
 pub mod tables;
 
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
-const SEASON: i16 = 2023;
-const WEEK: i8 = 1;
-const STAT_SEASON: i16 = 2022;
-const STAT_WEEK: i8 = 18;
+pub const SEASON: i16 = 2023;
+pub const WEEK: i8 = 1;
 
-pub const WR_COUNT: i8 = 35;
-pub const QB_COUNT: i8 = 10;
-pub const TE_COUNT: i8 = 10;
-pub const RB_COUNT: i8 = 25;
-pub const D_COUNT: i8 = 8;
+pub const WR_COUNT: i8 = 20;
+pub const QB_COUNT: i8 = 12;
+pub const TE_COUNT: i8 = 12;
+pub const RB_COUNT: i8 = 20;
+pub const D_COUNT: i8 = 10;
 
 lazy_static! {
-    // TODO Move to map - Proj
-    pub static ref QB_RUSH_ATT_FILLER: f32 = get_field_filler(SEASON, WEEK, "avg_rush_atts", "qb_proj");
-    pub static ref QB_RUSH_ATT_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "avg_rush_atts", "qb_proj");
-    pub static ref QB_AVG_RZ_OP_FILLER: f32 = get_field_filler(SEASON, WEEK, "red_zone_op_pg", "qb_proj");
-    pub static ref QB_AVG_RZ_OP_MAX_MIN: (f32, f32) = get_max_min(SEASON,WEEK, "red_zone_op_pg", "qb_proj");
-    pub static ref QB_OWN_PROJ_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "own_proj", "qb_proj");
-    pub static ref QB_WR_PASS_PER_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "pass_to_wr_per", "qb_proj");
-    pub static ref QB_VEGAS_TOTAL_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "vegas_total", "qb_proj");
-    pub static ref QB_TE_PASS_PER_MEDIAN: f32 = get_field_median(SEASON, WEEK, "pass_to_te_per", "qb_proj", QB_COUNT);
+    // QB Stats
+    pub static ref QB_RUSH_ATT_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "avg_rush_atts", "qb_proj");
+    pub static ref QB_RUSH_ATT_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "avg_rush_atts", "qb_proj");
+    pub static ref QB_AVG_RZ_OP_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "red_zone_op_pg", "qb_proj");
+    pub static ref QB_AVG_RZ_OP_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "red_zone_op_pg", "qb_proj");
+    pub static ref QB_OWN_PROJ_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "own_proj", "qb_proj");
+    pub static ref QB_WR_PASS_PER_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "pass_to_wr_per", "qb_proj");
+    pub static ref QB_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "vegas_total", "qb_proj");
+    pub static ref QB_TE_PASS_PER_MEDIAN: f32 =
+        get_field_median(SEASON, WEEK, "pass_to_te_per", "qb_proj", QB_COUNT);
 
-    pub static ref RB_ATTS_FILLER: f32 = get_field_filler(SEASON,WEEK, "avg_atts", "rb_proj");
+    // RB Stats
+    pub static ref RB_ATTS_FILLER: f32 = get_field_filler(SEASON, WEEK, "avg_atts", "rb_proj");
     pub static ref RB_ATTS_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "avg_atts", "rb_proj");
-    pub static ref RB_SNAPS_PER_FILLER: f32 = get_field_filler(SEASON,WEEK, "snaps_per", "rb_proj");
-    pub static ref RB_SNAPS_PER_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "snaps_per", "rb_proj");
+    pub static ref RB_SNAPS_PER_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "snaps_per", "rb_proj");
+    pub static ref RB_SNAPS_PER_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "snaps_per", "rb_proj");
     pub static ref RB_AVG_REC_YDS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_rec_yds", "rb_proj");
-    pub static ref RB_OWN_PROJ_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "own_proj", "rb_proj");
-    pub static ref RB_PTS_PER_SALARY_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "pts_per_sal", "rb_proj");
-    pub static ref RB_VEGAS_TOTAL_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "vegas_total", "rb_proj");
-    pub static ref RB_YEAR_CONSISTENCY_FILLER: f32 = get_field_filler(SEASON,WEEK, "year_consistency", "rb_proj");
-    pub static ref RB_YEAR_CONSISTENCY_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "year_consistency", "rb_proj");
+    pub static ref RB_OWN_PROJ_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "own_proj", "rb_proj");
+    pub static ref RB_PTS_PER_SALARY_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "pts_per_sal", "rb_proj");
+    pub static ref RB_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "vegas_total", "rb_proj");
+    pub static ref RB_YEAR_CONSISTENCY_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "year_consistency", "rb_proj");
+    pub static ref RB_YEAR_CONSISTENCY_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "year_consistency", "rb_proj");
 
-    pub static ref WR_TGT_SHARE_FILLER: f32 = get_field_filler(SEASON,WEEK, "rec_tgt_share", "wr_proj");
-    pub static ref WR_TGT_SHARE_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "rec_tgt_share", "wr_proj");
-    pub static ref WR_RED_ZONE_FILLER: f32 = get_field_filler(SEASON, WEEK, "red_zone_op_pg", "wr_proj");
-    pub static ref WR_RED_ZONE_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "red_zone_op_pg", "wr_proj");
-    pub static ref WR_OWN_PROJ_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "own_proj", "wr_proj");
-    pub static ref WR_VEGAS_TOTAL_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "vegas_total", "wr_proj");
-    pub static ref WR_YEAR_CONSISTENCY_FILLER: f32 = get_field_filler(SEASON,WEEK, "year_consistency", "wr_proj");
-    pub static ref WR_YEAR_CONSISTENCY_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "year_consistency", "wr_proj");
-    pub static ref WR_YEAR_UPSIDE_FILLER: f32 = get_field_filler(SEASON,WEEK, "year_upside", "wr_proj");
-    pub static ref WR_YEAR_UPSIDE_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "year_upside", "wr_proj");
-    pub static ref WR_SALARY_MEDIAN: f32 = get_field_median(SEASON, WEEK, "salary", "wr_proj", WR_COUNT);
+    // WR Stats
+    pub static ref WR_TGT_SHARE_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "rec_tgt_share", "wr_proj");
+    pub static ref WR_TGT_SHARE_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "rec_tgt_share", "wr_proj");
+    pub static ref WR_RED_ZONE_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "red_zone_op_pg", "wr_proj");
+    pub static ref WR_RED_ZONE_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "red_zone_op_pg", "wr_proj");
+    pub static ref WR_OWN_PROJ_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "own_proj", "wr_proj");
+    pub static ref WR_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "vegas_total", "wr_proj");
+    pub static ref WR_YEAR_CONSISTENCY_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "year_consistency", "wr_proj");
+    pub static ref WR_YEAR_CONSISTENCY_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "year_consistency", "wr_proj");
+    pub static ref WR_YEAR_UPSIDE_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "year_upside", "wr_proj");
+    pub static ref WR_YEAR_UPSIDE_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "year_upside", "wr_proj");
+    pub static ref WR_SALARY_MEDIAN: f32 =
+        get_field_median(SEASON, WEEK, "salary", "wr_proj", WR_COUNT);
 
-    pub static ref TE_REC_TGT_FILLER: f32 = get_field_filler(SEASON, WEEK, "rec_tgt_share", "te_proj");
-    pub static ref TE_REC_TGT_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "rec_tgt_share", "te_proj");
-    pub static ref TE_RED_ZONE_FILLER: f32 = get_field_filler(SEASON, WEEK, "red_zone_op_pg", "te_proj");
-    pub static ref TE_RED_ZONE_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "red_zone_op_pg", "te_proj");
-    pub static ref TE_OWN_PROJ_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "own_proj", "te_proj");
-    pub static ref TE_VEGAS_TOTAL_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "vegas_total", "vegas_total");
+    // TE Stats
+    pub static ref TE_REC_TGT_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "rec_tgt_share", "te_proj");
+    pub static ref TE_REC_TGT_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "rec_tgt_share", "te_proj");
+    pub static ref TE_RED_ZONE_FILLER: f32 =
+        get_field_filler(SEASON, WEEK, "red_zone_op_pg", "te_proj");
+    pub static ref TE_RED_ZONE_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "red_zone_op_pg", "te_proj");
+    pub static ref TE_OWN_PROJ_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "own_proj", "te_proj");
+    pub static ref TE_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "vegas_total", "vegas_total");
 
+    // ALL Proj
     pub static ref ALL_PTS_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "pts_proj");
     pub static ref ALL_FLOOR_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "floor_proj");
     pub static ref ALL_CIELING_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "cieling_proj");
     pub static ref ALL_PTS_SAL_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "pts_sal_proj");
+    pub static ref ALL_PTS_PLUS_MINS_MAX_MIN: (f32, f32) =
+        get_max_min_all(SEASON, WEEK, "pts_plus_minus_proj");
 
+    // DST Stats
     pub static ref DST_RATING_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "rating", "dst_proj");
-    pub static ref DST_OWN_PROJ_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "own_proj", "dst_proj");
-    pub static ref DST_VEGAS_OPP_TOTAL: (f32, f32) = get_max_min(SEASON, WEEK, "vegas_opp_total", "dst_proj");
-
-    pub static ref OWN_PER_MAX_MIN: (f32, f32) = get_max_min_ownership(SEASON, WEEK);
-}
-
-fn get_own_per(query: &str, pos: &Pos, conn: &Connection) -> f32 {
-    conn.query_row(query, params![pos.to_str().unwrap()], |r| r.get(0))
-        .unwrap()
-}
-
-// TODO Does not work
-fn get_max_min_ownership(season: i16, week: i8) -> (f32, f32) {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
-    let max_query = format!(
-        "SELECT MAX(own_per) FROM ownership WHERE pos = ?1 AND week = {} AND season = {} ORDER BY rating DESC LIMIT 10",
-        week, season
-    );
-    let min_query = format!(
-        "SELECT MIN(own_per) FROM ownership WHERE pos = ?1 AND week = {} AND season = {}",
-        week, season
-    );
-    let max_positions = &[&Pos::Qb, &Pos::Wr, &Pos::Te, &Pos::Rb];
-    let min_positions = &[&Pos::K, &Pos::Te, &Pos::D];
-
-    let max_sum: f32 = max_positions
-        .iter()
-        .map(|x| get_own_per(&max_query, x, &conn))
-        .sum();
-    let min_sum: f32 = min_positions
-        .iter()
-        .map(|x| get_own_per(&min_query, x, &conn))
-        .sum();
-    let own_max_avg = max_sum / 4.0;
-    let own_min_avg = 4.1;
-    (own_max_avg, own_min_avg)
+    pub static ref DST_OWN_PROJ_MAX_MIN: (f32, f32) =
+        get_max_min(SEASON, WEEK, "own_proj", "dst_proj");
+    pub static ref DST_VEGAS_OPP_TOTAL: (f32, f32) =
+        get_max_min(SEASON, WEEK, "vegas_opp_total", "dst_proj");
 }
 
 /// Returns tuple of (max: f32,min: f32)
 fn get_max_min(season: i16, week: i8, field: &str, table: &str) -> (f32, f32) {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
-    let mut max_statement = conn
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    let mut max_statement: rusqlite::CachedStatement<'_> = conn
         .prepare_cached(
             format!(
                 "SELECT MAX({}) FROM {} WHERE week = ?1 AND season = ?2",
@@ -123,7 +127,7 @@ fn get_max_min(season: i16, week: i8, field: &str, table: &str) -> (f32, f32) {
             .as_str(),
         )
         .expect("Couldn't prepare statement..");
-    let mut min_statement = conn
+    let mut min_statement: rusqlite::CachedStatement<'_> = conn
         .prepare_cached(
             format!(
                 "SELECT MIN({}) FROM {} WHERE week = ?1 AND season = ?2",
@@ -150,7 +154,7 @@ fn get_max_min(season: i16, week: i8, field: &str, table: &str) -> (f32, f32) {
 }
 
 fn get_field_filler(season: i16, week: i8, field: &str, table: &str) -> f32 {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let mut avg_statement = conn
         .prepare_cached(
             format!(
@@ -164,8 +168,7 @@ fn get_field_filler(season: i16, week: i8, field: &str, table: &str) -> f32 {
     let avg: f32 = avg_statement
         .query_row((week, season, field), |r| r.get(0))
         .unwrap();
-    let sub_amt = avg * 0.20;
-    avg - sub_amt
+    avg - (avg * 0.20)
 }
 
 // Avoid the clone by passing a mutable reference
@@ -185,8 +188,8 @@ fn get_median(vec: &mut Vec<f32>) -> f32 {
 }
 
 fn get_field_median(season: i16, week: i8, field: &str, table: &str, limit: i8) -> f32 {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
-    let mut avg_statement = conn
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    let mut avg_statement: rusqlite::CachedStatement<'_> = conn
         .prepare_cached(
             format!(
                 "SELECT {} FROM {} WHERE week = ?1 AND season = ?2 AND ?3 > 0.0 ORDER BY rating DESC LIMIT ?4",
@@ -202,18 +205,15 @@ fn get_field_median(season: i16, week: i8, field: &str, table: &str, limit: i8) 
         .into_iter()
         .map(|p| p.unwrap())
         .collect::<Vec<f32>>();
-    return get_median(&mut values);
+    get_median(&mut values)
 }
 
 fn get_max_min_all(season: i16, week: i8, field: &str) -> (f32, f32) {
-    let tables: [&str; 5] = [
-        "dst_proj", // "kick_proj",
-        "qb_proj", "rb_proj", "te_proj", "wr_proj",
-    ];
+    let tables: [&str; 5] = ["dst_proj", "qb_proj", "rb_proj", "te_proj", "wr_proj"];
     let mut max: f32 = 0.0;
     let mut min: f32 = 200.0;
     for table in tables {
-        let max_min = get_max_min(season, week, field, table);
+        let max_min: (f32, f32) = get_max_min(season, week, field, table);
         if max_min.0 > max {
             max = max_min.0
         }
@@ -224,61 +224,80 @@ fn get_max_min_all(season: i16, week: i8, field: &str) -> (f32, f32) {
     (max, min)
 }
 
-pub fn get_all_active_players_pos(pos: &Pos, week: i8) -> Vec<Arc<LitePlayer>> {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
-    let query = "SELECT * FROM ownership WHERE pos = ?1 AND week = ?2";
-    let mut stmt = conn.prepare_cached(query).unwrap();
-    stmt.query_map(params![pos.to_str().unwrap(), week], |row| {
-        Ok(Arc::new(LitePlayer {
-            id: row.get(0).unwrap(),
-            salary: row.get(7).unwrap(),
-            pos: Pos::from_string(row.get(6).unwrap()).unwrap(),
-        }))
-    })
-    .unwrap()
-    .into_iter()
-    .map(|p| p.unwrap())
-    .collect::<Vec<Arc<LitePlayer>>>()
-}
-
-pub fn get_all_active_players(week: i8) -> Vec<Arc<LitePlayer>> {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
-    let query = "SELECT * FROM ownership WHERE week = ?1";
-    let mut stmt = conn.prepare_cached(query).unwrap();
-    stmt.query_map(params![week], |row| {
-        Ok(Arc::new(LitePlayer {
-            id: row.get(0).unwrap(),
-            salary: row.get(7).unwrap(),
-            pos: Pos::from_string(row.get(6).unwrap()).unwrap(),
-        }))
-    })
-    .unwrap()
-    .into_iter()
-    .map(|p| p.unwrap())
-    .collect::<Vec<Arc<LitePlayer>>>()
-}
-
-pub fn get_players_by_ids(week: i8, ids: &[f32]) -> Vec<Arc<LitePlayer>> {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
-    let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2";
-    let mut stmt = conn.prepare_cached(query).unwrap();
-    let mut players = Vec::new();
-    for id in ids {
-        players.push(
-            stmt.query_row(params![week, id], |row| {
-                Ok(Arc::new(LitePlayer {
-                    id: row.get(0).unwrap(),
-                    salary: row.get(7).unwrap(),
-                    pos: Pos::from_string(row.get(6).unwrap()).unwrap(),
-                }))
-            })
-            .unwrap(),
-        );
+// TODO could put tables in list and than iterate through that
+pub fn get_sunday_slate(week: i8, season: i16) -> Vec<Rc<LitePlayer>> {
+    let mut players: Vec<Rc<LitePlayer>> = Vec::new();
+    let top_qb: Vec<i16> = get_top_players(season, week, "qb_proj", QB_COUNT);
+    let top_rb: Vec<i16> = get_top_players(season, week, "rb_proj", RB_COUNT);
+    let top_wr: Vec<i16> = get_top_players(season, week, "wr_proj", WR_COUNT);
+    let top_te: Vec<i16> = get_top_players(season, week, "te_proj", TE_COUNT);
+    let top_d: Vec<i16> = get_top_players(season, week, "dst_proj", D_COUNT);
+    let top_ids: [Vec<i16>; 5] = [top_qb, top_rb, top_d, top_te, top_wr];
+    for ids in top_ids {
+        players.extend(get_players_by_ids(week, season, &ids))
     }
     players
 }
 
-pub fn get_top_players(season: i16, week: i8, table: &str, count: i8) -> Vec<f32> {
+// Active player by pos
+pub fn get_all_active_players_pos(pos: &Pos, week: i8) -> Vec<Rc<LitePlayer>> {
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    let query: &str = "SELECT * FROM ownership WHERE pos = ?1 AND week = ?2";
+    let mut stmt: rusqlite::CachedStatement<'_> = conn.prepare_cached(query).unwrap();
+    stmt.query_map(params![pos.to_str().unwrap(), week], |row| {
+        Ok(Rc::new(LitePlayer {
+            id: row.get(0).unwrap(),
+            salary: row.get(7).unwrap(),
+            pos: Pos::from_string(row.get(6).unwrap()).unwrap(),
+        }))
+    })
+    .unwrap()
+    .into_iter()
+    .map(|p| p.unwrap())
+    .collect::<Vec<Rc<LitePlayer>>>()
+}
+
+/// Get all active players
+pub fn get_all_active_players(week: i8) -> Vec<Rc<LitePlayer>> {
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    let query: &str = "SELECT * FROM ownership WHERE week = ?1";
+    let mut stmt = conn.prepare_cached(query).unwrap();
+    stmt.query_map(params![week], |row| {
+        Ok(Rc::new(LitePlayer {
+            id: row.get(0).unwrap(),
+            salary: row.get(7).unwrap(),
+            pos: Pos::from_string(row.get(6).unwrap()).unwrap(),
+        }))
+    })
+    .unwrap()
+    .into_iter()
+    .map(|p| p.unwrap())
+    .collect::<Vec<Rc<LitePlayer>>>()
+}
+
+pub fn get_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<Rc<LitePlayer>> {
+    let conn = Connection::open(DATABASE_FILE).unwrap();
+    let mut players = Vec::new();
+    for id in ids {
+        players.push(get_player_by_id(week, *id, season, &conn));
+    }
+    players
+}
+
+pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Rc<LitePlayer> {
+    let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2 AND season = ?3";
+    let mut stmt = conn.prepare_cached(query).unwrap();
+    stmt.query_row(params![week, id, season], |row| {
+        Ok(Rc::new(LitePlayer {
+            id: row.get(0).unwrap(),
+            salary: row.get(7).unwrap(),
+            pos: Pos::from_string(row.get(6).unwrap()).unwrap(),
+        }))
+    })
+    .unwrap()
+}
+
+pub fn get_top_players(season: i16, week: i8, table: &str, count: i8) -> Vec<i16> {
     let conn = Connection::open(DATABASE_FILE).unwrap();
     let mut query = conn
         .prepare(
@@ -289,12 +308,12 @@ pub fn get_top_players(season: i16, week: i8, table: &str, count: i8) -> Vec<f32
             .as_str(),
         )
         .unwrap();
-    let ids: Vec<f32> = query
+    let ids: Vec<i16> = query
         .query_map((week, season, count), |r| r.get(0))
         .unwrap()
         .into_iter()
         .map(|p| p.unwrap())
-        .collect::<Vec<f32>>();
+        .collect::<Vec<i16>>();
     return ids;
 }
 
@@ -312,11 +331,11 @@ pub fn load_in_ownership(
     week: i8,
     season: i16,
     teams: &[String],
-) -> Vec<Arc<LitePlayer>> {
+) -> Vec<Rc<LitePlayer>> {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
-    let mut players: Vec<Arc<LitePlayer>> = Vec::new();
+    let mut players: Vec<Rc<LitePlayer>> = Vec::new();
     for record in rdr.records() {
         // This can be refactored into xor I think
         let mut skip = false;
@@ -333,16 +352,16 @@ pub fn load_in_ownership(
         let lite_player: LitePlayer = LitePlayer::new(record, &conn);
         if proj_exists(lite_player.id, week, season, lite_player.pos, &conn) {
             println!("Removing Player: {}", lite_player.id);
-            players.push(Arc::new(lite_player));
+            players.push(Rc::new(lite_player));
         }
     }
     players
 }
 
 pub fn return_if_field_exits(
-    field: Option<Arc<LitePlayer>>,
-    set_to: &Arc<LitePlayer>,
-) -> Arc<LitePlayer> {
+    field: Option<Rc<LitePlayer>>,
+    set_to: &Rc<LitePlayer>,
+) -> Rc<LitePlayer> {
     if field.is_some() {
         panic!("Tried to set {:?} when one already exits", set_to.pos);
     }
@@ -375,14 +394,6 @@ mod tests {
 
     use super::*;
     // Helper function for creating line ups
-
-    // #[test]
-    // fn test_team_fitler() {
-    //     let players: Vec<PlayerOwn> = load_in_ownership("fd-ownership.csv", &[String::from("PIT")]);
-    //     for player in players {
-    //         assert_eq!(player.team_id, "PIT");
-    //     }
-    // }
 
     #[test]
     fn test_slice_iter() {
@@ -428,9 +439,9 @@ mod tests {
 
     #[test]
     fn test_gen_flat_comb() {
-        let mut lite_players: Vec<Arc<LitePlayer>> = Vec::new();
+        let mut lite_players: Vec<Rc<LitePlayer>> = Vec::new();
         for i in 0..4 {
-            lite_players.push(Arc::new(LitePlayer {
+            lite_players.push(Rc::new(LitePlayer {
                 id: i,
                 pos: Pos::Wr,
                 salary: 100,
@@ -447,11 +458,6 @@ mod tests {
         for player in get_all_active_players_pos(&Pos::Qb, 18) {
             println!("{:?}", player)
         }
-    }
-
-    #[test]
-    fn test_max_min_own_per() {
-        println!("{:?}", get_max_min_ownership(2023, 1));
     }
 
     #[test]

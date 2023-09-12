@@ -1,9 +1,11 @@
 use csv::Error;
+use dfstimizer::data_loader::load_in_anyflex;
 use dfstimizer::data_loader::load_in_proj;
 use dfstimizer::data_loader::store_ownership;
 use dfstimizer::get_all_active_players;
 use dfstimizer::get_all_active_players_pos;
 use dfstimizer::get_players_by_ids;
+use dfstimizer::get_sunday_slate;
 use dfstimizer::get_top_players;
 use dfstimizer::island_optimizer::*;
 use dfstimizer::lineup::*;
@@ -15,13 +17,15 @@ use dfstimizer::total_comb;
 use dfstimizer::D_COUNT;
 use dfstimizer::QB_COUNT;
 use dfstimizer::RB_COUNT;
+use dfstimizer::SEASON;
 use dfstimizer::TE_COUNT;
+use dfstimizer::WEEK;
 use dfstimizer::WR_COUNT;
 use itertools::Itertools;
 
 use std::fs::File;
 use std::io::Write;
-use std::sync::Arc;
+use std::rc::Rc;
 use std::time::Instant;
 
 // TODO Points per Dollar
@@ -34,7 +38,7 @@ use std::time::Instant;
 
 // TODO Def Vs Pos https://www.pro-football-reference.com/years/2022/fantasy-points-against-RB.htm
 
-fn count_player_type(players: &Vec<Arc<LitePlayer>>, pos: Pos) -> i32 {
+fn count_player_type(players: &Vec<Rc<LitePlayer>>, pos: Pos) -> i32 {
     let mut count: i32 = 0;
     for player in players {
         if player.pos == pos {
@@ -46,36 +50,22 @@ fn count_player_type(players: &Vec<Arc<LitePlayer>>, pos: Pos) -> i32 {
 
 fn load_in_stats() {
     init_tables();
-    load_in_proj("d-1.csv", 2023, 1, &Pos::D);
-    load_in_proj("qb-1.csv", 2023, 1, &Pos::Qb);
-    load_in_proj("rb-1.csv", 2023, 1, &Pos::Rb);
-    load_in_proj("te-1.csv", 2023, 1, &Pos::Te);
-    load_in_proj("wr-1.csv", 2023, 1, &Pos::Wr);
-}
-
-fn get_sunday_slate() -> Vec<Arc<LitePlayer>> {
-    let mut players = Vec::new();
-    let top_qb = get_top_players(2023, 1, "qb_proj", QB_COUNT);
-    let top_rb = get_top_players(2023, 1, "rb_proj", RB_COUNT);
-    let top_wr = get_top_players(2023, 1, "wr_proj", WR_COUNT);
-    let top_te = get_top_players(2023, 1, "te_proj", TE_COUNT);
-    let top_d = get_top_players(2023, 1, "dst_proj", D_COUNT);
-    let top_ids = [top_qb, top_rb, top_d, top_te, top_wr];
-    for ids in top_ids {
-        players.extend(get_players_by_ids(1, &ids))
-    }
-    players
+    // load_in_anyflex("monday-1.csv", SEASON, WEEK);
+    load_in_proj("d-1.csv", SEASON, WEEK, &Pos::D);
+    load_in_proj("qb-1.csv", SEASON, WEEK, &Pos::Qb);
+    load_in_proj("rb-1.csv", SEASON, WEEK, &Pos::Rb);
+    load_in_proj("te-1.csv", SEASON, WEEK, &Pos::Te);
+    load_in_proj("wr-1.csv", SEASON, WEEK, &Pos::Wr);
 }
 
 fn main() -> Result<(), Error> {
     let start: Instant = Instant::now();
-    // load_in_stats();
-    // let players: Vec<Arc<LitePlayer>> = get_all_active_players(1);
-    let players = get_sunday_slate();
+    load_in_stats();
+    // let players: Vec<Rc<LitePlayer>> = get_all_active_players(1);
     // for play in players {
     //     println!("{:?}", play)
     // }
-
+    let players: Vec<std::rc::Rc<LitePlayer>> = get_sunday_slate(WEEK, SEASON);
     // let island_combos = total_comb(players.len(), 5);
     let qb: u32 = count_player_type(&players, Pos::Qb) as u32;
     let wr_count: u32 = count_player_type(&players, Pos::Wr) as u32;
@@ -89,7 +79,8 @@ fn main() -> Result<(), Error> {
     // println!("Total Players: {}", players.len());
     println!("Max Iterations: {}", total);
     // println!("Totals: {} {} {} {} {} {}", qb, wr, rb, te, d, flex);
-    let lineups: Vec<Lineup> = build_all_possible_lineups(players.clone(), 1, 2023);
+    let lineups: Vec<Lineup> = build_all_possible_lineups(1, SEASON);
+    // let lineups: Vec<IslandLineup> = build_island_lineups(WEEK, SEASON);
     // println!("Total lineup count {}", lineups.len());
     println!("Elapsed: {:?}", start.elapsed());
     // for lineup in &lineups[0..10] {
@@ -102,8 +93,10 @@ fn main() -> Result<(), Error> {
     //     lineup.fourth.print_name();
     //     println!("")
     // }
-    let mut file = File::create("Lineups.txt").unwrap();
-    for lineup in &lineups[0..120] {
+    let mut file = File::create("lineups.txt").unwrap();
+
+    println!("{}", lineups.len());
+    for lineup in &lineups[0..20] {
         file.write_all(lineup.lineup_str().as_bytes())?;
     }
 

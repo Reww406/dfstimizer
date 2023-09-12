@@ -1,0 +1,2200 @@
+
+Salary: 59900 Score: 6.544123
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5365396
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.535764
+QB: Jalen Hurts Team: PHI Score: 0.7798309Fa
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59600 Score: 6.535728
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.5340924
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5286274
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.528604
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.526969
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.5228286
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5211935
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5203705
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5196285
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.519595
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.517739
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.5157056
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.5145206
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5140705
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5135365
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5124583
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.510696
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: James Conner Team: ARI Score: 0.63114136
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.5082107
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59700 Score: 6.506813
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59500 Score: 6.5062737
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.5049925
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.504847
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.50484
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59400 Score: 6.5047727
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59700 Score: 6.504638
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5044518
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.5034423
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.5031376
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59300 Score: 6.503108
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.502562
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.502273
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Davante Adams Team: LV Score: 0.74539566
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.501596
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.501569
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.5014725
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.501168
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: James Conner Team: ARI Score: 0.63114136
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4989915
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.498963
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59800 Score: 6.497413
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4972973
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.496986
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.495565
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.495351
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4953117
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59300 Score: 6.4950733
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.4943957
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Davante Adams Team: LV Score: 0.74539566
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4939294
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.493914
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59600 Score: 6.4933753
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4932103
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: A.J. Brown Team: PHI Score: 0.64524883
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.493034
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.4927607
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Davante Adams Team: LV Score: 0.74539566
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4920406
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4919486
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4917397
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4910793
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4906435
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.49029
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4901047
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.489863
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.489773
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59900 Score: 6.489663
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.488678
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.488469
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4882693
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: James Conner Team: ARI Score: 0.63114136
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4882274
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4881377
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59300 Score: 6.4879313
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.487769
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59600 Score: 6.4875317
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Seattle Defense Team: SEA Score: 0.9665888
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.487078
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59900 Score: 6.486457
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4864125
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Romeo Doubs Team: GB Score: 0.6093009
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.486392
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4862957
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59300 Score: 6.4859996
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.485427
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4853244
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Davante Adams Team: LV Score: 0.74539566
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Dalton Schultz Team: HOU Score: 0.5498691
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.484816
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4843645
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59200 Score: 6.48381
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.483682
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: A.J. Brown Team: PHI Score: 0.64524883
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.4824204
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59400 Score: 6.482175
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4821205
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59200 Score: 6.4817085
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Drake London Team: ATL Score: 0.65549684
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.481355
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.480388
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.480135
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59400 Score: 6.4800735
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Drake London Team: ATL Score: 0.65549684
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.4798317
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.479385
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4793572
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59600 Score: 6.479219
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Davante Adams Team: LV Score: 0.74539566
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4789968
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59300 Score: 6.4788766
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4787526
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.477722
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59400 Score: 6.4776917
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4775834
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Davante Adams Team: LV Score: 0.74539566
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.477241
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4769287
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4769034
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.476864
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4768577
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4767833
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.476582
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Jakobi Meyers Team: LV Score: 0.66130674
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59600 Score: 6.4760566
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4749465
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Jakobi Meyers Team: LV Score: 0.66130674
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59900 Score: 6.4748044
+QB: Tua Tagovailoa Team: MIA Score: 0.69565964
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Tyreek Hill Team: MIA Score: 0.694493
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4747252
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4725924
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59700 Score: 6.472532
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Seattle Defense Team: SEA Score: 0.9665888
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.472355
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Seattle Defense Team: SEA Score: 0.9665888
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59300 Score: 6.4717064
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59300 Score: 6.4708233
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.4703417
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Seattle Defense Team: SEA Score: 0.9665888
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.469896
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.4694686
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4693494
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: Amari Cooper Team: CLE Score: 0.6945159
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4691877
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4684987
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59700 Score: 6.4679594
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.4675317
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4673676
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: A.J. Brown Team: PHI Score: 0.64524883
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.467255
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.4669347
+QB: Tua Tagovailoa Team: MIA Score: 0.69565964
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Tyreek Hill Team: MIA Score: 0.694493
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59400 Score: 6.466784
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DK Metcalf Team: SEA Score: 0.66805625
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.466459
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59900 Score: 6.466324
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4658966
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4656405
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.465197
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59600 Score: 6.4651484
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DK Metcalf Team: SEA Score: 0.66805625
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4648232
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59800 Score: 6.464748
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59600 Score: 6.4643574
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: George Pickens Team: PIT Score: 0.63589114
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59900 Score: 6.46382
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.463764
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59300 Score: 6.4637
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4635787
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59800 Score: 6.463539
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Amari Cooper Team: CLE Score: 0.6945159
+WR3: Zay Jones Team: JAX Score: 0.67420536
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4635124
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Raheem Mostert Team: MIA Score: 0.5799077
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.463327
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: James Conner Team: ARI Score: 0.63114136
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.463097
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Seattle Defense Team: SEA Score: 0.9665888
+TE: David Njoku Team: CLE Score: 0.58852524
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.4630036
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Seattle Defense Team: SEA Score: 0.9665888
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.46282
+QB: Kirk Cousins Team: MIN Score: 0.6446139
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4627223
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: George Pickens Team: PIT Score: 0.63589114
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59400 Score: 6.462515
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4622264
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4620643
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4619436
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59500 Score: 6.4614053
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Romeo Doubs Team: GB Score: 0.6093009
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59700 Score: 6.4613957
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4610586
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DK Metcalf Team: SEA Score: 0.66805625
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.46088
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.460614
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Davante Adams Team: LV Score: 0.74539566
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.460288
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: James Conner Team: ARI Score: 0.63114136
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Amari Cooper Team: CLE Score: 0.6945159
+WR3: Zay Jones Team: JAX Score: 0.67420536
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.4598684
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: J. Smith-Schuster Team: NE Score: 0.5812386
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4597697
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Romeo Doubs Team: GB Score: 0.6093009
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Zay Jones Team: JAX Score: 0.67420536
+
+Salary: 59900 Score: 6.4595485
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4594235
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DK Metcalf Team: SEA Score: 0.66805625
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4593105
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Van Jefferson Team: LA Score: 0.575578
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.4591813
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Amari Cooper Team: CLE Score: 0.6945159
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59600 Score: 6.4589715
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: A.J. Brown Team: PHI Score: 0.64524883
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59300 Score: 6.4583945
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59300 Score: 6.4582834
+QB: Tua Tagovailoa Team: MIA Score: 0.69565964
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Tyreek Hill Team: MIA Score: 0.694493
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4582667
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: A.J. Brown Team: PHI Score: 0.64524883
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.4578395
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Najee Harris Team: PIT Score: 0.65381604
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: A.J. Brown Team: PHI Score: 0.64524883
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59500 Score: 6.457501
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Drake London Team: ATL Score: 0.65549684
+WR3: DeVonta Smith Team: PHI Score: 0.6641217
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.457355
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Seattle Defense Team: SEA Score: 0.9665888
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4573364
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: A.J. Brown Team: PHI Score: 0.64524883
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.456827
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Amari Cooper Team: CLE Score: 0.6945159
+WR3: Zay Jones Team: JAX Score: 0.67420536
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59500 Score: 6.456759
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Drake London Team: ATL Score: 0.65549684
+WR2: George Pickens Team: PIT Score: 0.63589114
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4563813
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: A.J. Brown Team: PHI Score: 0.64524883
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4561896
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Puka Nacua Team: LA Score: 0.5270962
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59700 Score: 6.4547462
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: A.J. Brown Team: PHI Score: 0.64524883
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.454719
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: George Pickens Team: PIT Score: 0.63589114
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59300 Score: 6.4546347
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4545546
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Puka Nacua Team: LA Score: 0.5270962
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59900 Score: 6.4543567
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.454292
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Davante Adams Team: LV Score: 0.74539566
+WR3: Romeo Doubs Team: GB Score: 0.6093009
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59800 Score: 6.454236
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59500 Score: 6.4542074
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Van Jefferson Team: LA Score: 0.575578
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4538856
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DK Metcalf Team: SEA Score: 0.66805625
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.453356
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59700 Score: 6.453292
+QB: Kirk Cousins Team: MIN Score: 0.6446139
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Justin Jefferson Team: MIN Score: 0.75007516
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59900 Score: 6.453116
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Curtis Samuel Team: WAS Score: 0.6244776
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4529996
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.4528337
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DeVonta Smith Team: PHI Score: 0.6641217
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.4525723
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Van Jefferson Team: LA Score: 0.575578
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Jakobi Meyers Team: LV Score: 0.66130674
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59800 Score: 6.4524736
+QB: Tua Tagovailoa Team: MIA Score: 0.69565964
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Tyreek Hill Team: MIA Score: 0.694493
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: Drake London Team: ATL Score: 0.65549684
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59700 Score: 6.45225
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: DK Metcalf Team: SEA Score: 0.66805625
+WR2: Jakobi Meyers Team: LV Score: 0.66130674
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59500 Score: 6.451784
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Antonio Gibson Team: WAS Score: 0.60668546
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Amari Cooper Team: CLE Score: 0.6945159
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: DK Metcalf Team: SEA Score: 0.66805625
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4517207
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: Romeo Doubs Team: GB Score: 0.6093009
+WR3: Curtis Samuel Team: WAS Score: 0.6244776
+DST: Baltimore Defense Team: BAL Score: 1.0287384
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DeVonta Smith Team: PHI Score: 0.73829585
+
+Salary: 59900 Score: 6.451719
+QB: Justin Fields Team: CHI Score: 0.71407604
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: Antonio Gibson Team: WAS Score: 0.60668546
+WR1: Chris Olave Team: NO Score: 0.66163206
+WR2: Amari Cooper Team: CLE Score: 0.6945159
+WR3: DJ Moore Team: CHI Score: 0.67782754
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137
+
+Salary: 59900 Score: 6.4515133
+QB: Trevor Lawrence Team: JAX Score: 0.68238795
+RB1: Austin Ekeler Team: LAC Score: 0.7347967
+RB2: C. McCaffrey Team: SF Score: 0.7637481
+WR1: Courtland Sutton Team: DEN Score: 0.6078271
+WR2: Zay Jones Team: JAX Score: 0.67420536
+WR3: George Pickens Team: PIT Score: 0.63589114
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: DJ Moore Team: CHI Score: 0.7265134
+
+Salary: 59700 Score: 6.451385
+QB: Jalen Hurts Team: PHI Score: 0.7798309
+RB1: R. Stevenson Team: NE Score: 0.6491695
+RB2: Najee Harris Team: PIT Score: 0.65381604
+WR1: Zay Jones Team: JAX Score: 0.67420536
+WR2: DeVonta Smith Team: PHI Score: 0.6641217
+WR3: DK Metcalf Team: SEA Score: 0.66805625
+DST: Minnesota Defense Team: MIN Score: 1.0303738
+TE: Tyler Higbee Team: LA Score: 0.5957699
+FWR: Diontae Johnson Team: PIT Score: 0.73604137

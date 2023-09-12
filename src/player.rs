@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
+use std::rc::Rc;
 use std::str::Split;
-use std::sync::{Arc, Mutex};
+use std::sync::{Mutex};
 use std::{collections::HashMap, error::Error, hash::Hash};
 
 use rusqlite::{Connection, OptionalExtension};
@@ -258,6 +259,21 @@ impl Pos {
         }
     }
 
+    pub fn from_string_ref(input: &String) -> Result<Pos, ()> {
+        let input = input.to_uppercase();
+
+        match input.as_str() {
+            "QB" => Ok(Pos::Qb),
+            "RB" => Ok(Pos::Rb),
+            "WR" => Ok(Pos::Wr),
+            "TE" => Ok(Pos::Te),
+            "D" => Ok(Pos::D),
+            "DST" => Ok(Pos::D),
+            "K" => Ok(Pos::K),
+            _ => Err(()),
+        }
+    }
+
     pub fn to_str(&self) -> Result<&str, ()> {
         match self {
             Pos::D => Ok("D"),
@@ -300,7 +316,7 @@ impl LitePlayer {
     }
 
     // Could make this a singleton so it's only generated once
-    pub fn player_lookup_map(players: &[Arc<LitePlayer>]) -> HashMap<i16, &Arc<LitePlayer>> {
+    pub fn player_lookup_map(players: &[Rc<LitePlayer>]) -> HashMap<i16, &Rc<LitePlayer>> {
         let mut lookup_map = HashMap::new();
         players.iter().for_each(|p| {
             lookup_map.insert(p.id, p);
@@ -310,7 +326,7 @@ impl LitePlayer {
 }
 
 pub fn query_proj(
-    player: &Option<Arc<LitePlayer>>,
+    player: &Option<Rc<LitePlayer>>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -359,7 +375,7 @@ pub fn get_recent_stat_ceiling(
 }
 
 pub fn query_rec_proj_helper(
-    player: &Option<Arc<LitePlayer>>,
+    player: &Option<Rc<LitePlayer>>,
     week: i8,
     season: i16,
     pos: &Pos,
@@ -379,7 +395,7 @@ pub fn query_rec_proj_helper(
 }
 
 pub fn query_def_proj_helper(
-    player: &Option<Arc<LitePlayer>>,
+    player: &Option<Rc<LitePlayer>>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -397,7 +413,7 @@ pub fn query_def_proj_helper(
 }
 
 pub fn query_kick_proj_helper(
-    player: &Option<Arc<LitePlayer>>,
+    player: &Option<Rc<LitePlayer>>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -415,7 +431,7 @@ pub fn query_kick_proj_helper(
 }
 
 pub fn query_rb_proj_helper(
-    player: &Option<Arc<LitePlayer>>,
+    player: &Option<Rc<LitePlayer>>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -433,7 +449,7 @@ pub fn query_rb_proj_helper(
 }
 
 pub fn query_qb_proj_helper(
-    player: &Option<Arc<LitePlayer>>,
+    player: &Option<Rc<LitePlayer>>,
     week: i8,
     season: i16,
     conn: &Connection,
