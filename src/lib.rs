@@ -390,7 +390,7 @@ mod tests {
     use itertools::Itertools;
     use num_bigint::ToBigUint;
 
-    use crate::lineup::get_normalized_score;
+    use crate::lineup::{get_normalized_score, Lineup};
 
     use super::*;
     // Helper function for creating line ups
@@ -431,6 +431,29 @@ mod tests {
         )
     }
 
+    #[test]
+    fn score_winning_lineup() {
+        let conn = Connection::open(DATABASE_FILE).unwrap();
+        let week: i8 = 1;
+        let season: i16 = 2023;
+        let lineup = Lineup {
+            qb: query_qb_proj(27, 1, 2023, &conn).expect(""),
+            rb1: query_rb_proj(53, week, season, &conn).unwrap(),
+            rb2: query_rb_proj(62, week, season, &conn).unwrap(),
+            wr1: query_rec_proj(142, week, season, &Pos::Wr, &conn).unwrap(),
+            wr2: query_rec_proj(184, week, season, &Pos::Wr, &conn).unwrap(),
+            wr3: query_rec_proj(161, week, season, &Pos::Wr, &conn).unwrap(),
+            te: query_rec_proj(139, week, season, &Pos::Te, &conn).unwrap(),
+            flex: FlexProj {
+                pos: Pos::Wr,
+                rec_proj: Some(query_rec_proj(141, week, season, &Pos::Wr, &conn).unwrap()),
+                rb_proj: None,
+            },
+            def: query_def_proj(21, week, season, &conn).unwrap(),
+            salary_used: 60000,
+        };
+        println!("{}", lineup.lineup_str());
+    }
     #[test]
     fn test_mean() {
         let mean = mean(&[1.0, 2.0, 3.0, 4.0, 5.0]);
