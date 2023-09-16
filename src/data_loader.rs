@@ -1,18 +1,44 @@
-use crate::{player::*, DATABASE_FILE};
+use crate::{player::*, Day, DATABASE_FILE};
 
 use lazy_static::lazy_static;
-use rusqlite::{params, Connection};
+use rusqlite::{params, Connection, Error};
 use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
 lazy_static! {
-    pub static ref NON_OFF_TO_OFF_ABBR: HashMap<&'static str, &'static str> = HashMap::from([
-        // ("ARI", "ARZ"),
-        // ("BAL", "BLT"),
-        // ("CLE", "CLV"),
-        // ("HOU", "HST"),
-        // ("JAC", "JAX"),
-        // ("LAR", "LA")
+    pub static ref TEAM_NAME_TO_ABV: HashMap<&'static str, &'static str> = HashMap::from([
+        ("Los Angeles Chargers", "LAC"),
+        ("Philadelphia Eagles", "PHI"),
+        ("Chicago Bears", "CHI"),
+        ("Miami Dolphins", "MIA"),
+        ("Jacksonville Jaguars", "JAX"),
+        ("Cincinnati Bengals", "CIN"),
+        ("Detroit Lions", "DET"),
+        ("Indianapolis Colts", "IND"),
+        ("Pittsburgh Steelers", "PIT"),
+        ("Tampa Bay Buccaneers", "TB"),
+        ("Minnesota Vikings", "MIN"),
+        ("Arizona Cardinals", "ARI"),
+        ("Las Vegas Raiders", "LV"),
+        ("Denver Broncos", "DEN"),
+        ("Tennessee Titans", "TEN"),
+        ("Green Bay Packers", "GB"),
+        ("Seattle Seahawks", "SEA"),
+        ("Kansas City Chiefs", "KC"),
+        ("New England Patriots", "NE"),
+        ("Baltimore Ravens", "BAL"),
+        ("San Francisco 49ers", "SF"),
+        ("Los Angeles Rams", "LA"),
+        ("New York Jets", "NYJ"),
+        ("Buffalo Bills", "BUF"),
+        ("Carolina Panthers", "CAR"),
+        ("Atlanta Falcons", "ATL"),
+        ("Houston Texans", "HOU"),
+        ("New York Giants", "NYG"),
+        ("Dallas Cowboys", "DAL"),
+        ("Cleveland Browns", "CLE"),
+        ("New Orleans Saints", "NO"),
+        ("Washington Commanders", "WAS")
     ]);
 }
 
@@ -104,8 +130,50 @@ pub struct ProjRecord {
     year_upside: f32,
     // Load in month year stats when they exist...
 }
+// TODO get specific stats per pos
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct RecDefVsPos {
+    team: String,
+    #[serde(alias = "fdPtsPg")]
+    pts_pg: Option<f32>,
+}
 
-pub fn load_in_proj(path: &str, season: i16, week: i8, pos: &Pos) {
+/// Get def id just using team name
+fn get_def_id(team: &String, conn: &Connection) -> Result<i32, Error> {
+    let select_player: &str = "SELECT id FROM player WHERE pos = 'D' AND team = ?1";
+    conn.query_row(
+        select_player,
+        (TEAM_NAME_TO_ABV.get(team.as_str()).unwrap(),),
+        |row| row.get(0),
+    )
+}
+
+/// Load def vs pos stats into sqlite
+pub fn load_in_def_vs_pos(path: &str, table: &str) {
+    let contents: String = fs::read_to_string(path).expect("Failed to read in file");
+    let mut reader: csv::Reader<&[u8]> = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .flexible(true)
+        .from_reader(contents.as_bytes());
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    let insert: String = format!(
+        "INSERT INTO {} (id, team_name, pts_given_pg) VALUES (?1, ?2, ?3)",
+        table
+    );
+    for res in reader.deserialize() {
+        let rec: RecDefVsPos = res.unwrap();
+        let def_id = get_def_id(&rec.team, &conn);
+        if def_id.is_err() || rec.pts_pg.is_none() {
+            continue;
+        }
+        conn.execute(insert.as_str(), (def_id.unwrap(), rec.team, rec.pts_pg))
+            .expect("Failed to insert D vs Pos");
+    }
+}
+
+/// Load in proj for Sunday Slate
+pub fn load_in_proj(path: &str, season: i16, week: i8, pos: &Pos, day: &Day) {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut reader: csv::Reader<&[u8]> = csv::ReaderBuilder::new()
         .has_headers(true)
@@ -114,21 +182,20 @@ pub fn load_in_proj(path: &str, season: i16, week: i8, pos: &Pos) {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     for res in reader.deserialize() {
         let mut rec: ProjRecord = res.unwrap();
-        // let pos: Result<Pos, ()> = Pos::from_str(&rec.pos);
         rec.pos = Some(pos.to_str().unwrap().to_owned());
         match pos {
-            Pos::Qb => store_qb_proj(&rec, season, week, &conn),
-            Pos::D => store_dst_proj(&rec, season, week, &conn),
-            Pos::Rb => store_rb_proj(&rec, season, week, &conn),
-            Pos::Te => store_rec_proj(&rec, season, week, Pos::Te, &conn),
-            Pos::Wr => store_rec_proj(&rec, season, week, Pos::Wr, &conn),
-            Pos::K => store_kick_proj(&rec, season, week, &conn),
-            _ => println!("Pos missing {:?}", pos),
+            Pos::Qb => store_qb_proj(&rec, season, week, day, &conn),
+            Pos::D => store_dst_proj(&rec, season, week, day, &conn),
+            Pos::Rb => store_rb_proj(&rec, season, week, day, &conn),
+            Pos::Te => store_rec_proj(&rec, season, week, day, &conn),
+            Pos::Wr => store_rec_proj(&rec, season, week, day, &conn),
+            Pos::K => store_kick_proj(&rec, season, week, day, &conn),
         }
     }
 }
 
-pub fn load_in_anyflex(path: &str, season: i16, week: i8) {
+/// Load in any flex projects for Monday, Thu
+pub fn load_in_anyflex(path: &str, season: i16, week: i8, day: &Day) {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
     let mut reader: csv::Reader<&[u8]> = csv::ReaderBuilder::new()
         .has_headers(true)
@@ -139,22 +206,20 @@ pub fn load_in_anyflex(path: &str, season: i16, week: i8) {
         let rec: ProjRecord = res.unwrap();
         let pos: Pos = Pos::from_string_ref(rec.pos.as_ref().unwrap()).unwrap();
         match pos {
-            Pos::Qb => store_qb_proj(&rec, season, week, &conn),
-            Pos::D => store_dst_proj(&rec, season, week, &conn),
-            Pos::Rb => store_rb_proj(&rec, season, week, &conn),
-            Pos::Te => store_rec_proj(&rec, season, week, Pos::Te, &conn),
-            Pos::Wr => store_rec_proj(&rec, season, week, Pos::Wr, &conn),
-            Pos::K => store_kick_proj(&rec, season, week, &conn),
-            _ => println!("Pos missing"),
+            Pos::Qb => store_qb_proj(&rec, season, week, day, &conn),
+            Pos::D => store_dst_proj(&rec, season, week, day, &conn),
+            Pos::Rb => store_rb_proj(&rec, season, week, day, &conn),
+            Pos::Te => store_rec_proj(&rec, season, week, day, &conn),
+            Pos::Wr => store_rec_proj(&rec, season, week, day, &conn),
+            Pos::K => store_kick_proj(&rec, season, week, day, &conn),
         }
     }
 }
 
-// TODO This should use the player object so changes are more obvious
-fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
+fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
     let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
-    store_ownership(&rec, id, season, week);
+    store_ownership(&rec, id, season, week, day);
     let qb_in: &str =
         "INSERT INTO qb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
             pts_sal_proj, vegas_total, avg_pass_atts, avg_pass_comps, avg_pass_yds, avg_pass_tds, avg_rush_atts,
@@ -194,10 +259,10 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     .expect("Failed to insert Quarter Back into database");
 }
 
-fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
+fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos not set")).unwrap();
     let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
-    store_ownership(&rec, id, season, week);
+    store_ownership(&rec, id, season, week, day);
     let rb_in: &str =
         "INSERT INTO rb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj,
             pts_sal_proj, vegas_total, rush_yds_share, avg_atts, avg_td, avg_rush_yds, avg_rec_yds, salary, own_proj,
@@ -234,10 +299,10 @@ fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     .expect("Failed to insert Rb into database");
 }
 
-fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, pos: Pos, conn: &Connection) {
+fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
     let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
-    store_ownership(&rec, id, season, week);
+    store_ownership(&rec, id, season, week, day);
     let table: &str = if pos == Pos::Wr { "wr_proj" } else { "te_proj" };
     let rec_in: String = format!(
         "INSERT INTO {} (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
@@ -279,10 +344,10 @@ fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, pos: Pos, conn: &Conn
     .expect("Failed to insert Wide Reciever into database");
 }
 
-fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
+fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
     let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
-    store_ownership(&rec, id, season, week);
+    store_ownership(&rec, id, season, week, day);
     let dst_in: &str = "INSERT INTO kick_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj,
          pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)";
@@ -309,10 +374,10 @@ fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     .expect("Failed to insert Defense into database");
 }
 
-fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
+fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
     let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
-    store_ownership(&rec, id, season, week);
+    store_ownership(&rec, id, season, week, day);
     let dst_in: &str = "INSERT INTO dst_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, 
         pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, vegas_opp_total) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)";
@@ -340,12 +405,12 @@ fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, conn: &Connection) {
     .expect("Failed to insert Defense into database");
 }
 
-// Load ownership stats
-pub fn store_ownership(rec: &ProjRecord, id: i32, season: i16, week: i8) {
+/// Load ownership stats
+pub fn store_ownership(rec: &ProjRecord, id: i32, season: i16, week: i8, day: &Day) {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let ownership_in: &str =
-        "INSERT INTO ownership (id, season, week, name, team, opp, pos, salary, own_per) 
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)";
+        "INSERT INTO ownership (id, season, week, day, name, team, opp, pos, salary, own_per) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)";
 
     conn.execute(
         ownership_in,
@@ -353,6 +418,7 @@ pub fn store_ownership(rec: &ProjRecord, id: i32, season: i16, week: i8) {
             id,
             season,
             week,
+            day.to_str(),
             &rec.player,
             &rec.team,
             &rec.opp,
@@ -362,23 +428,6 @@ pub fn store_ownership(rec: &ProjRecord, id: i32, season: i16, week: i8) {
         ),
     )
     .expect("Failed to insert Ownership into database");
-}
-
-fn get_player_from_record(record: ProjRecord, pos: Pos) -> Player {
-    if pos == Pos::D {
-        return Player {
-            id: 0,
-            name: record.player,
-            team: record.team,
-            pos: pos,
-        };
-    }
-    Player {
-        id: 0,
-        name: record.player,
-        team: record.team,
-        pos: pos,
-    }
 }
 
 // Create player Id Record
@@ -401,23 +450,6 @@ pub fn load_player_id(player: Player, conn: &Connection) -> i32 {
         conn,
     )
     .expect("Just loaded player but cannot find him.");
-}
-
-// Iterate through all projections and add player Ids if missing
-pub fn load_all_player_ids(path: &str) {
-    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
-    let contents: String = fs::read_to_string(path).expect("Failed to read file");
-    let mut rdr: csv::Reader<&[u8]> = csv::Reader::from_reader(contents.as_bytes());
-    for rec in rdr.deserialize() {
-        let record: ProjRecord = rec.unwrap();
-        let pos: Pos = Pos::from_str(&record.pos.as_ref().expect("Pos missing")).unwrap();
-        let player: Player = get_player_from_record(record, pos);
-        if get_player_id(&player.name, &player.team, &pos, &conn).is_some() {
-            // Player already exists
-            continue;
-        }
-        load_player_id(player, &conn);
-    }
 }
 
 #[cfg(test)]

@@ -188,6 +188,7 @@ pub fn init_tables() {
             id INTEGER NOT NULL,
             season INTEGER NOT NULL,
             week INTEGER NOT NULL,
+            day TEXT NOT NULL,
             name TEXT NOT NULL,
             team TEXT NOT NULL,
             opp TEXT NOT NULL,
@@ -199,8 +200,56 @@ pub fn init_tables() {
         )
     ";
 
-    let tables: [&str; 8] = [
-        player, qb_proj, wr_proj, dst_proj, te_proj, rb_proj, ownership, kick_proj,
+    let def_vs_qb: &str = "
+        CREATE TABLE IF NOT EXISTS def_vs_qb (
+            id INTEGER NOT NULL,
+            team_name TEXT NOT NULL,
+            pts_given_pg REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id) on CONFLICT REPLACE 
+        )
+    ";
+    let def_vs_te: &str = "
+        CREATE TABLE IF NOT EXISTS def_vs_te (
+            id INTEGER NOT NULL,
+            team_name TEXT NOT NULL,
+            pts_given_pg REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id) on CONFLICT REPLACE 
+        )
+    ";
+    let def_vs_wr: &str = "
+        CREATE TABLE IF NOT EXISTS def_vs_wr (
+            id INTEGER NOT NULL,
+            team_name TEXT NOT NULL,
+            pts_given_pg REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id) on CONFLICT REPLACE 
+        )
+    ";
+    let def_vs_rb: &str = "
+        CREATE TABLE IF NOT EXISTS def_vs_rb (
+            id INTEGER NOT NULL,
+            team_name TEXT NOT NULL,
+            pts_given_pg REAL NOT NULL,
+            FOREIGN key(id) REFERENCES player(id),
+            UNIQUE(id) on CONFLICT REPLACE 
+        )
+    ";
+
+    let max_score: &str = "
+        CREATE TABLE IF NOT EXISTS max_score (
+            pos TEXT NOT NULL,
+            week INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            score REAL NOT NULL,
+            UNIQUE(pos, week, season) on CONFLICT REPLACE 
+        )
+    ";
+
+    let tables: [&str; 13] = [
+        player, qb_proj, wr_proj, dst_proj, te_proj, rb_proj, ownership, kick_proj, def_vs_qb,
+        def_vs_rb, def_vs_te, def_vs_wr, max_score,
     ];
     for table in tables {
         conn.execute(table, ()).expect("Could not create table");

@@ -6,8 +6,8 @@ use futures::StreamExt;
 use itertools::Itertools;
 use rusqlite::Connection;
 
+use crate::get_active_players;
 use crate::get_sunday_slate;
-use crate::get_top_players;
 use crate::lineup::*;
 use crate::player::*;
 use crate::DATABASE_FILE;
@@ -20,7 +20,7 @@ use std::rc::Rc;
 pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
     let pool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<Lineup> = Vec::new();
-    let wr_ids: Vec<i16> = get_top_players(season, week, "wr_proj", WR_COUNT);
+    let wr_ids: Vec<i16> = get_active_players(season, week, &Pos::Wr, WR_COUNT);
     println!("Cooking up LINEUPS!! {}", wr_ids.len());
 
     let mut futures: Vec<_> = Vec::new();
@@ -28,7 +28,7 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
         let future = async {
             let fut_tx_result = async move {
-                let thread_players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season);
+                let thread_players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season, true);
                 let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
                 thread_players
                     .iter()

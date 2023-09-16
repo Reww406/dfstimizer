@@ -1,22 +1,27 @@
 use lazy_static::lazy_static;
 use std::rc::Rc;
 use std::str::Split;
-use std::sync::{Mutex};
+use std::sync::{Mutex, RwLock, RwLockReadGuard};
 use std::{collections::HashMap, error::Error, hash::Hash};
 
-use rusqlite::{Connection, OptionalExtension};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
-use crate::data_loader::NON_OFF_TO_OFF_ABBR;
 use crate::lineup::LineupBuilder;
 use crate::{data_loader::*, DATABASE_FILE};
 
+// TODO! Should populate all of these first so read writes are not blocked
 lazy_static! {
-    pub static ref REC_PROJ_CACHE: Mutex<HashMap<i16, RecProj>> = Mutex::new(HashMap::new());
-    pub static ref RB_PROJ_CACHE: Mutex<HashMap<i16, RbProj>> = Mutex::new(HashMap::new());
-    pub static ref QB_PROJ_CACHE: Mutex<HashMap<i16, QbProj>> = Mutex::new(HashMap::new());
-    pub static ref DEF_PROJ_CACHE: Mutex<HashMap<i16, DefProj>> = Mutex::new(HashMap::new());
-    pub static ref KICK_PROJ_CACHE: Mutex<HashMap<i16, KickProj>> = Mutex::new(HashMap::new());
+    pub static ref REC_PROJ_CACHE: RwLock<HashMap<i16, RecProj>> = RwLock::new(HashMap::new());
+    pub static ref RB_PROJ_CACHE: RwLock<HashMap<i16, RbProj>> = RwLock::new(HashMap::new());
+    pub static ref QB_PROJ_CACHE: RwLock<HashMap<i16, QbProj>> = RwLock::new(HashMap::new());
+    pub static ref DEF_PROJ_CACHE: RwLock<HashMap<i16, DefProj>> = RwLock::new(HashMap::new());
+    pub static ref KICK_PROJ_CACHE: RwLock<HashMap<i16, KickProj>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_QB_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_RB_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_WR_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_TE_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_ID_CACHE: RwLock<HashMap<String, i16>> = RwLock::new(HashMap::new());
 }
 
 #[derive(Debug)]
@@ -169,6 +174,14 @@ pub struct KickProj {
     pub rating: f32,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct DefVsPos {
+    pub id: i16,
+    pub team_name: String,
+    pub pts_given_pg: f32,
+    pub pos: Pos,
+}
+
 // Should be Enum will reduce code
 #[derive(Debug, Clone, Default)]
 pub struct FlexProj {
@@ -241,6 +254,27 @@ impl Pos {
             "DST" => Ok(Pos::D),
             "K" => Ok(Pos::K),
             _ => Err(()),
+        }
+    }
+
+    pub fn get_proj_table(&self) -> &str {
+        match self {
+            Pos::Qb => "qb_proj",
+            Pos::Rb => "rb_proj",
+            Pos::Wr => "wr_proj",
+            Pos::Te => "te_proj",
+            Pos::D => "dst_proj",
+            Pos::K => "kick_proj",
+        }
+    }
+
+    pub fn get_def_table(&self) -> &str {
+        match self {
+            Pos::Qb => "def_vs_qb",
+            Pos::Rb => "def_vs_rb",
+            Pos::Wr => "def_vs_wr",
+            Pos::Te => "def_vs_te",
+            _ => panic!("No Def table for this pos"),
         }
     }
 
@@ -323,6 +357,114 @@ impl LitePlayer {
         });
         lookup_map
     }
+}
+
+pub fn get_def_table_for_pos(pos: &Pos) -> &str {
+    return match pos {
+        Pos::Qb => "def_vs_qb",
+        Pos::Rb => "def_vs_rb",
+        Pos::Wr => "def_vs_wr",
+        Pos::Te => "def_vs_te",
+        _ => panic!("No Def Vs For Pos for that Pos"),
+    };
+}
+
+fn add_def_to_cache(def_vs_pos: DefVsPos) {
+    match def_vs_pos.pos {
+        Pos::Qb => DEF_VS_QB_CACHE
+            .write()
+            .unwrap()
+            .insert(def_vs_pos.id, def_vs_pos.clone()),
+        Pos::Rb => DEF_VS_RB_CACHE
+            .write()
+            .unwrap()
+            .insert(def_vs_pos.id, def_vs_pos.clone()),
+        Pos::Wr => DEF_VS_WR_CACHE
+            .write()
+            .unwrap()
+            .insert(def_vs_pos.id, def_vs_pos.clone()),
+        Pos::Te => DEF_VS_TE_CACHE
+            .write()
+            .unwrap()
+            .insert(def_vs_pos.id, def_vs_pos.clone()),
+        _ => panic!("No Def Vs Pos"),
+    };
+}
+
+pub fn get_opp_player_id(opp: String, conn: &Connection) -> i16 {
+    let opp_no_at = opp.replace("@", "");
+    if DEF_ID_CACHE.read().unwrap().get(&opp_no_at).is_some() {
+        let id: i16 = DEF_ID_CACHE
+            .read()
+            .unwrap()
+            .get(&opp_no_at)
+            .unwrap()
+            .clone();
+        return id;
+    }
+    let select_player: &str = "SELECT id FROM player WHERE team = ?1 AND pos = D";
+    let id: i16 = conn
+        .query_row(select_player, params![opp_no_at], |row| row.get(0))
+        .unwrap();
+    DEF_ID_CACHE.write().unwrap().insert(opp_no_at, id);
+
+    id
+}
+
+pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPos {
+    let cache_hit: Option<DefVsPos> = match player_pos {
+        Pos::Qb => {
+            if DEF_VS_QB_CACHE.read().unwrap().get(&id).is_some() {
+                Some(DEF_VS_QB_CACHE.read().unwrap().get(&id).unwrap().clone())
+            } else {
+                None
+            }
+        }
+        Pos::Rb => {
+            if DEF_VS_RB_CACHE.read().unwrap().get(&id).is_some() {
+                Some(DEF_VS_RB_CACHE.read().unwrap().get(&id).unwrap().clone())
+            } else {
+                None
+            }
+        }
+        Pos::Wr => {
+            if DEF_VS_WR_CACHE.read().unwrap().get(&id).is_some() {
+                Some(DEF_VS_WR_CACHE.read().unwrap().get(&id).unwrap().clone())
+            } else {
+                None
+            }
+        }
+        Pos::Te => {
+            if DEF_VS_TE_CACHE.read().unwrap().get(&id).is_some() {
+                Some(DEF_VS_TE_CACHE.read().unwrap().get(&id).unwrap().clone())
+            } else {
+                None
+            }
+        }
+        _ => panic!("No Def Vs For Pos for that Pos"),
+    };
+
+    if cache_hit.is_some() {
+        return cache_hit.unwrap().to_owned();
+    }
+
+    let table = get_def_table_for_pos(player_pos);
+    let mut stmt = conn
+        .prepare(format!("SELECT FROM {} WHERE id = ?1", table).as_str())
+        .unwrap();
+
+    let def_vs_pos: DefVsPos = stmt
+        .query_row(params![id], |row| {
+            Ok(DefVsPos {
+                id: row.get(0).unwrap(),
+                team_name: row.get(1).unwrap(),
+                pts_given_pg: row.get(2).unwrap(),
+                pos: player_pos.clone(),
+            })
+        })
+        .unwrap();
+    add_def_to_cache(def_vs_pos.clone());
+    def_vs_pos
 }
 
 pub fn query_proj(
@@ -465,9 +607,11 @@ pub fn query_qb_proj_helper(
     )
     .expect("Could not find QB when trying to get Proj")
 }
+
+//TODO Refactor all of these into options
 pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<KickProj> {
-    if KICK_PROJ_CACHE.lock().unwrap().get(&id).is_some() {
-        let proj: KickProj = KICK_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
+    if KICK_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: KickProj = KICK_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
     let mut query = conn
@@ -497,7 +641,7 @@ pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opt
         return None;
     }
     KICK_PROJ_CACHE
-        .lock()
+        .write()
         .unwrap()
         .insert(id, kick_proj.clone().unwrap());
     kick_proj
@@ -510,8 +654,8 @@ pub fn query_rec_proj(
     pos: &Pos,
     conn: &Connection,
 ) -> Option<RecProj> {
-    if REC_PROJ_CACHE.lock().unwrap().get(&id).is_some() {
-        let proj: RecProj = REC_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
+    if REC_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: RecProj = REC_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
     let table = if pos == &Pos::Wr {
@@ -562,15 +706,15 @@ pub fn query_rec_proj(
         return None;
     }
     REC_PROJ_CACHE
-        .lock()
+        .write()
         .unwrap()
         .insert(id, rec_proj.clone().unwrap());
     rec_proj
 }
 
 pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<RbProj> {
-    if RB_PROJ_CACHE.lock().unwrap().get(&id).is_some() {
-        let proj: RbProj = RB_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
+    if RB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: RbProj = RB_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
     let mut query = conn
@@ -607,15 +751,15 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         return None;
     }
     RB_PROJ_CACHE
-        .lock()
+        .write()
         .unwrap()
         .insert(id, rb_proj.clone().unwrap());
     rb_proj
 }
 
 pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<QbProj> {
-    if QB_PROJ_CACHE.lock().unwrap().get(&id).is_some() {
-        let proj: QbProj = QB_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
+    if QB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: QbProj = QB_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
     let mut query = conn
@@ -655,15 +799,15 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         return None;
     }
     QB_PROJ_CACHE
-        .lock()
+        .write()
         .unwrap()
         .insert(id, qb_proj.clone().unwrap());
     qb_proj
 }
 
 pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<DefProj> {
-    if DEF_PROJ_CACHE.lock().unwrap().get(&id).is_some() {
-        let proj: DefProj = DEF_PROJ_CACHE.lock().unwrap().get(&id).unwrap().clone();
+    if DEF_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: DefProj = DEF_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
         return Some(proj);
     }
     let mut query = conn
@@ -694,7 +838,7 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
         return None;
     }
     DEF_PROJ_CACHE
-        .lock()
+        .write()
         .unwrap()
         .insert(id, def_proj.clone().unwrap());
     def_proj

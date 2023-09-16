@@ -4,16 +4,17 @@ use std::vec;
 use rusqlite::Connection;
 
 use crate::{
-    player::*, return_if_field_exits, ALL_CIELING_MAX_MIN, 
-    ALL_PTS_MAX_MIN, ALL_PTS_PLUS_MINS_MAX_MIN, ALL_PTS_SAL_MAX_MIN, DST_RATING_MAX_MIN,
-    QB_AVG_RZ_OP_FILLER, QB_AVG_RZ_OP_MAX_MIN, QB_OWN_PROJ_MAX_MIN, QB_RUSH_ATT_FILLER,
-    QB_RUSH_ATT_MAX_MIN, QB_VEGAS_TOTAL_MAX_MIN, QB_WR_PASS_PER_MAX_MIN,
-    RB_OWN_PROJ_MAX_MIN, RB_SNAPS_PER_FILLER, RB_VEGAS_TOTAL_MAX_MIN,
-    RB_YEAR_CONSISTENCY_FILLER, RB_YEAR_CONSISTENCY_MAX_MIN, TE_REC_TGT_FILLER, 
-    WR_OWN_PROJ_MAX_MIN, WR_RED_ZONE_FILLER, WR_RED_ZONE_MAX_MIN,
+    player::*, return_if_field_exits, ALL_CIELING_MAX_MIN, ALL_PTS_MAX_MIN,
+    ALL_PTS_PLUS_MINS_MAX_MIN, ALL_PTS_SAL_MAX_MIN, DATABASE_FILE, DST_RATING_MAX_MIN,
+    DST_VEGAS_OPP_TOTAL, QB_AVG_RZ_OP_FILLER, QB_AVG_RZ_OP_MAX_MIN, QB_CIELING, QB_COUNT,
+    QB_OWN_PROJ_MAX_MIN, QB_PTS_PER_SAL, QB_RUSH_ATT_FILLER, QB_RUSH_ATT_MAX_MIN,
+    QB_VEGAS_TOTAL_MAX_MIN, QB_WR_PASS_PER_MAX_MIN, RB_AVG_REC_YDS, RB_AVG_REC_YDS_FILLER,
+    RB_OWN_PROJ_MAX_MIN, RB_PTS_PLUS_MINUS, RB_SNAPS_PER_FILLER, RB_VEGAS_TOTAL_MAX_MIN,
+    RB_YEAR_CONSISTENCY_FILLER, RB_YEAR_CONSISTENCY_MAX_MIN, TE_OWN_PROJ_MAX_MIN,
+    TE_REC_TGT_FILLER, WR_OWN_PROJ_MAX_MIN, WR_RED_ZONE_FILLER, WR_RED_ZONE_MAX_MIN,
     WR_SALARY_MEDIAN, WR_TGT_SHARE_FILLER, WR_TGT_SHARE_MAX_MIN, WR_VEGAS_TOTAL_MAX_MIN,
     WR_YEAR_CONSISTENCY_FILLER, WR_YEAR_CONSISTENCY_MAX_MIN, WR_YEAR_UPSIDE_FILLER,
-    WR_YEAR_UPSIDE_MAX_MIN, DATABASE_FILE,
+    WR_YEAR_UPSIDE_MAX_MIN,
 };
 use crate::{RB_SNAPS_PER_MAX_MIN, TE_REC_TGT_MAX_MIN};
 
@@ -84,50 +85,52 @@ pub fn rb_score(rbs: &[&RbProj]) -> f32 {
     let mut score = 0.0;
     rbs.iter().for_each(|rb| {
         let mut inside_score = 0.0;
-        inside_score += get_normalized_score(rb.vegas_total, *RB_VEGAS_TOTAL_MAX_MIN);
         inside_score += get_normalized_score_with_filler(
             rb.snaps_per,
             *RB_SNAPS_PER_MAX_MIN,
             *RB_SNAPS_PER_FILLER,
-        );
-        // inside_score += get_normalized_score(rb.avg_rec_yds, *RB_AVG_REC_YDS);
-        inside_score += get_normalized_score(rb.pts_sal_proj, *ALL_PTS_SAL_MAX_MIN);
+        ) * 2.75; // Max 1.5
         inside_score += get_normalized_score_with_filler(
-            rb.year_consistency,
-            *RB_YEAR_CONSISTENCY_MAX_MIN,
-            *RB_YEAR_CONSISTENCY_FILLER,
-        );
-        inside_score += -0.5 * get_normalized_score(rb.own_proj, *RB_OWN_PROJ_MAX_MIN);
-        score += get_normalized_score(inside_score, (4.0, 0.0))
+            rb.avg_rec_yds,
+            *RB_AVG_REC_YDS,
+            *RB_AVG_REC_YDS_FILLER,
+        ) * 1.75; // Max 0.5
+        inside_score += get_normalized_score(rb.pts_plus_minus_proj, *RB_PTS_PLUS_MINUS) * 6.75; // Max 2
+        inside_score += get_normalized_score(-1.0 * rb.own_proj, *RB_OWN_PROJ_MAX_MIN) * 3.75;
+        score += get_normalized_score(inside_score, (15.0, 0.0));
     });
     score
 }
 
-pub fn qb_score(qb: &QbProj, wr_teamates: &[&RecProj]) -> f32 {
+pub fn qb_score(qb: &QbProj) -> f32 {
     let mut score = 0.0;
     score += get_normalized_score_with_filler(
         qb.avg_rush_atts,
         *QB_RUSH_ATT_MAX_MIN,
         *QB_RUSH_ATT_FILLER,
-    );
+    ) * 1.5;
     score += get_normalized_score_with_filler(
         qb.red_zone_op_pg,
         *QB_AVG_RZ_OP_MAX_MIN,
         *QB_AVG_RZ_OP_FILLER,
-    );
-    score += get_normalized_score(qb.vegas_total, *QB_VEGAS_TOTAL_MAX_MIN);
-    score += get_normalized_score(qb.cieling_proj, *ALL_CIELING_MAX_MIN);
-    let wr_passing_score: f32 = get_normalized_score(qb.pass_to_wr_per, *QB_WR_PASS_PER_MAX_MIN);
+    ) * 1.5;
+    score += get_normalized_score(qb.vegas_total, *QB_VEGAS_TOTAL_MAX_MIN) * 3.5;
+    score += get_normalized_score(qb.cieling_proj, *QB_CIELING) * 3.5;
+    score += get_normalized_score(qb.pts_sal_proj, *QB_PTS_PER_SAL) * 3.5;
 
-    for wr in wr_teamates {
-        if wr.team == qb.team {
-            score += 1.0 + wr_passing_score;
-            break;
-        }
-    }
-    score += get_normalized_score(qb.pts_sal_proj, *ALL_PTS_SAL_MAX_MIN);
-    score += -1.0 * get_normalized_score(qb.own_proj, *QB_OWN_PROJ_MAX_MIN);
-    get_normalized_score(score, (7.0, 0.0))
+    // let wr_passing_score: f32 = get_normalized_score(qb.pass_to_wr_per, *QB_WR_PASS_PER_MAX_MIN);
+    // // TODO move this out.
+    // for wr in wr_teamates {
+    //     if wr.team == qb.team {
+    //         score += 1.5 + wr_passing_score;
+    //         break;
+    //     }
+    // }
+    score += get_normalized_score(-1.0 * qb.own_proj, *QB_OWN_PROJ_MAX_MIN) * 1.5;
+
+    // score += -4.5 * get_normalized_score(qb.own_proj, *QB_OWN_PROJ_MAX_MIN);
+    let new_score = get_normalized_score(score, (15.0, 0.0));
+    new_score
 }
 
 pub fn wr_stud_score(wr: &RecProj) -> f32 {
@@ -136,45 +139,27 @@ pub fn wr_stud_score(wr: &RecProj) -> f32 {
         wr.rec_tgt_share,
         *WR_TGT_SHARE_MAX_MIN,
         *WR_TGT_SHARE_FILLER,
-    );
+    ) * 2.0;
     score += get_normalized_score_with_filler(
         wr.red_zone_op_pg,
         *WR_RED_ZONE_MAX_MIN,
         *WR_RED_ZONE_FILLER,
-    );
-    score += get_normalized_score(wr.cieling_proj, *ALL_CIELING_MAX_MIN);
+    ) * 2.0;
+    score += get_normalized_score(wr.cieling_proj, *ALL_CIELING_MAX_MIN) * 5.0;
     // score += get_normalized_score(wr.pts_sal_proj, *ALL_PTS_SAL_MAX_MIN);
-    score += get_normalized_score(wr.vegas_total, *WR_VEGAS_TOTAL_MAX_MIN);
-    score += get_normalized_score_with_filler(
-        wr.year_upside,
-        *WR_YEAR_UPSIDE_MAX_MIN,
-        *WR_YEAR_UPSIDE_FILLER,
-    );
-    score += -0.5 * get_normalized_score(wr.own_proj, *WR_OWN_PROJ_MAX_MIN);
-    get_normalized_score(score, (5.0, 0.0))
-}
-
-pub fn wr_value_score(wr: &RecProj) -> f32 {
-    let mut score = 0.0;
-    score += get_normalized_score_with_filler(
-        wr.rec_tgt_share,
-        *WR_TGT_SHARE_MAX_MIN,
-        *WR_TGT_SHARE_FILLER,
-    );
-    score += get_normalized_score(wr.pts_sal_proj, *ALL_PTS_SAL_MAX_MIN);
-    score += get_normalized_score(wr.vegas_total, *WR_VEGAS_TOTAL_MAX_MIN);
-    score += get_normalized_score_with_filler(
-        wr.year_consistency,
-        *WR_YEAR_CONSISTENCY_MAX_MIN,
-        *WR_YEAR_CONSISTENCY_FILLER,
-    );
-    score += -1.0 * get_normalized_score(wr.own_proj, *WR_OWN_PROJ_MAX_MIN);
-    get_normalized_score(score, (4.0, 0.0))
+    score += get_normalized_score(wr.vegas_total, *WR_VEGAS_TOTAL_MAX_MIN) * 5.0;
+    // score += get_normalized_score_with_filler(
+    //     wr.year_upside,
+    //     *WR_YEAR_UPSIDE_MAX_MIN,
+    //     *WR_YEAR_UPSIDE_FILLER,
+    // );
+    score += get_normalized_score(-1.0 * wr.own_proj, *WR_OWN_PROJ_MAX_MIN) * 1.0;
+    get_normalized_score(score, (15.0, 0.0))
 }
 
 fn flex_score(flex: &FlexProj) -> f32 {
     match flex.pos {
-        Pos::Wr => return wr_value_score(flex.rec_proj.as_ref().unwrap()),
+        Pos::Wr => return wr_stud_score(flex.rec_proj.as_ref().unwrap()),
         Pos::Rb => return rb_score(&[flex.rb_proj.as_ref().unwrap()]),
         _ => {
             panic!("Wrong Flex Pos..");
@@ -182,37 +167,27 @@ fn flex_score(flex: &FlexProj) -> f32 {
     }
 }
 
-fn score_kicker(proj: &KickProj) -> f32 {
-    let pts_score = get_normalized_score(proj.pts_plus_minus_proj, *ALL_PTS_MAX_MIN);
-    pts_score
+pub fn score_kicker(proj: &KickProj) -> f32 {
+    let pts_score = get_normalized_score(proj.pts_plus_minus_proj, *ALL_PTS_MAX_MIN) * 15.0;
+    get_normalized_score(pts_score, (15.0, 0.0))
 }
 
 pub fn te_score(te: &RecProj) -> f32 {
-    // return get_normalized_score(self.te.tgts, *TE_TGTS_MAX_MIN);
     let mut score = 0.0;
     score +=
-        get_normalized_score_with_filler(te.rec_tgt_share, *TE_REC_TGT_MAX_MIN, *TE_REC_TGT_FILLER);
-    // score += get_normalized_score_with_filler(
-    //     te.red_zone_op_pg,
-    //     *TE_RED_ZONE_MAX_MIN,
-    //     *TE_RED_ZONE_FILLER,
-    // );
-    // if qb.pass_to_te_per > *QB_TE_PASS_PER_MEDIAN {
-    //     if te.team == qb.team {
-    //         score += 0.5;
-    //     }
-    // }
-    score += get_normalized_score(te.pts_sal_proj, *ALL_PTS_SAL_MAX_MIN);
-    get_normalized_score(score, (2.0, 0.0))
+        get_normalized_score_with_filler(te.rec_tgt_share, *TE_REC_TGT_MAX_MIN, *TE_REC_TGT_FILLER)
+            * 5.0;
+    score += get_normalized_score(te.pts_sal_proj, *ALL_PTS_SAL_MAX_MIN) * 7.0;
+    score += get_normalized_score(-1.0 * te.own_proj, *TE_OWN_PROJ_MAX_MIN) * 3.0;
+    get_normalized_score(score, (15.0, 0.0))
 }
 
 // Points
 pub fn dst_score(def: &DefProj) -> f32 {
     let mut score = 0.0;
-    score += get_normalized_score(def.rating, *DST_RATING_MAX_MIN);
-    score += get_normalized_score(def.pts_plus_minus_proj, *ALL_PTS_PLUS_MINS_MAX_MIN);
-    // get_normalized_score(score, (2.0, 0.0))
-    0.0
+    score += get_normalized_score(def.vegas_opp_total, *DST_VEGAS_OPP_TOTAL) * 7.5;
+    score += get_normalized_score(def.pts_plus_minus_proj, *ALL_PTS_PLUS_MINS_MAX_MIN) * 7.5;
+    get_normalized_score(score, (15.0, 0.0))
 }
 
 /// Takes tuple of max: f32, min: f32
@@ -283,7 +258,7 @@ impl IslandLB {
 
     fn get_proj_score(proj: &Proj, players: &[&Proj]) -> f32 {
         let score = match proj {
-            Proj::QbProj(qb_proj) => qb_score(qb_proj, &Self::get_wr_from_flex(players)),
+            Proj::QbProj(qb_proj) => qb_score(qb_proj),
             Proj::RecProj(rec_proj) => match rec_proj.pos {
                 Pos::Wr => wr_stud_score(rec_proj),
                 Pos::Te => te_score(rec_proj),
@@ -293,6 +268,9 @@ impl IslandLB {
             Proj::DefProj(def_proj) => dst_score(def_proj),
             Proj::KickProj(kick_proj) => score_kicker(kick_proj),
         };
+        // TODO Cum Ownership
+        // Stacking
+
         score
     }
 
@@ -357,20 +335,22 @@ impl Lineup {
             Self::wr_scores(&[&self.wr1, &self.wr2, &self.wr3]),
             te_score(&self.te),
             dst_score(&self.def),
-            qb_score(&self.qb, &[&self.wr1, &self.wr2, &self.wr3]),
+            qb_score(&self.qb),
             flex_score(&self.flex),
         ];
+        // TODO Cum ownership
+        // TODO stacking
         scores.iter().sum()
     }
 
     pub fn wr_scores(wrs: &[&RecProj]) -> f32 {
         let mut score: f32 = 0.0;
         wrs.iter().for_each(|wr| {
-            if wr.salary as f32 > *WR_SALARY_MEDIAN {
-                score += wr_stud_score(wr);
-            } else {
-                score += wr_value_score(wr);
-            }
+            // if wr.salary as f32 > *WR_SALARY_MEDIAN {
+            score += wr_stud_score(wr);
+            // } else {
+            //     score += wr_value_score(wr);
+            // }
         });
         score
     }
@@ -384,7 +364,7 @@ impl Lineup {
                 "QB: {} Team: {} Score: {}",
                 self.qb.name,
                 self.qb.team,
-                qb_score(&self.qb, &[&self.wr1, &self.wr2, &self.wr3])
+                qb_score(&self.qb)
             ),
             format!(
                 "RB1: {} Team: {} Score: {}",
@@ -452,7 +432,7 @@ impl Lineup {
             "QB: {} Team: {} Score: {}",
             self.qb.name,
             self.qb.team,
-            qb_score(&self.qb, &[&self.wr1, &self.wr2, &self.wr3])
+            qb_score(&self.qb)
         );
         println!(
             "RB1: {} Team: {} Score: {}",
