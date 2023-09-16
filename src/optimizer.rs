@@ -7,10 +7,13 @@ use itertools::Itertools;
 use rusqlite::Connection;
 
 use crate::get_active_players;
-use crate::get_sunday_slate;
+use crate::get_slate;
+use crate::get_top_players_by_pos;
 use crate::lineup::*;
 use crate::player::*;
+use crate::Day;
 use crate::DATABASE_FILE;
+use crate::OWN_CUM_CUTOFF;
 use crate::WR_COUNT;
 use std::collections::HashMap;
 use std::rc::Rc;
@@ -20,7 +23,7 @@ use std::rc::Rc;
 pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
     let pool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<Lineup> = Vec::new();
-    let wr_ids: Vec<i16> = get_active_players(season, week, &Pos::Wr, WR_COUNT);
+    let wr_ids: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, &Day::Sun);
     println!("Cooking up LINEUPS!! {}", wr_ids.len());
 
     let mut futures: Vec<_> = Vec::new();
@@ -28,7 +31,7 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
         let future = async {
             let fut_tx_result = async move {
-                let thread_players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season, true);
+                let thread_players: Vec<Rc<LitePlayer>> = get_slate(week, season, &Day::Sun, true);
                 let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
                 thread_players
                     .iter()
@@ -180,8 +183,6 @@ pub fn add_flex_find_top_num(
     let flex_pos: [Pos; 2] = [Pos::Wr, Pos::Rb];
     let mut best_lineup: Option<Lineup> = None;
     let mut lowest_score: f32 = 0.0;
-    let mut sorted: bool = false;
-    let mut iterations: i64 = 0;
     for lineup in &lineups {
         let running_backs: [&i16; 2] = [
             &lineup.rb1.as_ref().unwrap().id,
@@ -206,11 +207,15 @@ pub fn add_flex_find_top_num(
                     .build(week, season, &conn)
                     .expect("Failed to build lineup..");
                 let score: f32 = finished_lineup.score();
-                if best_lineup.is_none() {
-                    best_lineup = Some(finished_lineup)
-                } else if score < lowest_score {
-                    lowest_score = score;
-                    best_lineup = Some(finished_lineup)
+                if finished_lineup.get_cum_ownership() <= *OWN_CUM_CUTOFF {
+                    if best_lineup.is_none() {
+                        best_lineup = Some(finished_lineup)
+                    } else if score < lowest_score {
+                        lowest_score = score;
+                        best_lineup = Some(finished_lineup)
+                    }
+                } else {
+                    println!("Missed own cut off.")
                 }
             });
     }

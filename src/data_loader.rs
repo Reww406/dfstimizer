@@ -139,16 +139,6 @@ pub struct RecDefVsPos {
     pts_pg: Option<f32>,
 }
 
-/// Get def id just using team name
-fn get_def_id(team: &String, conn: &Connection) -> Result<i32, Error> {
-    let select_player: &str = "SELECT id FROM player WHERE pos = 'D' AND team = ?1";
-    conn.query_row(
-        select_player,
-        (TEAM_NAME_TO_ABV.get(team.as_str()).unwrap(),),
-        |row| row.get(0),
-    )
-}
-
 /// Load def vs pos stats into sqlite
 pub fn load_in_def_vs_pos(path: &str, table: &str) {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
@@ -163,7 +153,7 @@ pub fn load_in_def_vs_pos(path: &str, table: &str) {
     );
     for res in reader.deserialize() {
         let rec: RecDefVsPos = res.unwrap();
-        let def_id = get_def_id(&rec.team, &conn);
+        let def_id = query_def_id(&rec.team, &conn);
         if def_id.is_err() || rec.pts_pg.is_none() {
             continue;
         }

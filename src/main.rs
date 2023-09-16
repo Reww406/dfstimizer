@@ -1,17 +1,17 @@
 use csv::Error;
 use dfstimizer::data_loader::load_in_anyflex;
 use dfstimizer::data_loader::load_in_def_vs_pos;
-use dfstimizer::data_loader::load_in_max_pos_scores;
 use dfstimizer::data_loader::load_in_proj;
 use dfstimizer::data_loader::store_ownership;
 use dfstimizer::get_active_players;
-use dfstimizer::get_sunday_slate;
+use dfstimizer::get_slate;
 use dfstimizer::island_optimizer::*;
 use dfstimizer::lineup::*;
 use dfstimizer::optimizer::*;
 use dfstimizer::player::*;
 use dfstimizer::tables::init_tables;
 use dfstimizer::total_comb;
+use dfstimizer::Day;
 use dfstimizer::D_COUNT;
 use dfstimizer::QB_COUNT;
 use dfstimizer::RB_COUNT;
@@ -36,7 +36,6 @@ use std::time::Instant;
 
 // TODO Def Vs Pos https://www.pro-football-reference.com/years/2022/fantasy-points-against-RB.htm
 
-
 fn count_player_type(players: &Vec<Rc<LitePlayer>>, pos: Pos) -> i32 {
     let mut count: i32 = 0;
     for player in players {
@@ -50,12 +49,12 @@ fn count_player_type(players: &Vec<Rc<LitePlayer>>, pos: Pos) -> i32 {
 fn load_in_stats() {
     init_tables();
     // load_in_max_pos_scores(SEASON, WEEK);
-    load_in_anyflex("flex-2-thu.csv", 2023, 2);
-    load_in_proj("d-1.csv", 2023, 1, &Pos::D);
-    load_in_proj("qb-1.csv", 2023, 1, &Pos::Qb);
-    load_in_proj("rb-1.csv", 2023, 1, &Pos::Rb);
-    load_in_proj("te-1.csv", 2023, 1, &Pos::Te);
-    load_in_proj("wr-1.csv", 2023, 1, &Pos::Wr);
+    load_in_anyflex("flex-2-thu.csv", 2023, 2, &Day::Thu);
+    load_in_proj("d-1.csv", 2023, 1, &Pos::D, &Day::Sun);
+    load_in_proj("qb-1.csv", 2023, 1, &Pos::Qb, &Day::Sun);
+    load_in_proj("rb-1.csv", 2023, 1, &Pos::Rb, &Day::Sun);
+    load_in_proj("te-1.csv", 2023, 1, &Pos::Te, &Day::Sun);
+    load_in_proj("wr-1.csv", 2023, 1, &Pos::Wr, &Day::Sun);
     load_in_def_vs_pos("def-vs-qb.csv", "def_vs_qb");
     load_in_def_vs_pos("def-vs-rb.csv", "def_vs_rb");
     load_in_def_vs_pos("def-vs-te.csv", "def_vs_te");
@@ -69,7 +68,7 @@ fn main() -> Result<(), Error> {
     // for play in players {
     //     println!("{:?}", play)
     // }
-    let players: Vec<std::rc::Rc<LitePlayer>> = get_sunday_slate(WEEK, SEASON, true);
+    let players: Vec<std::rc::Rc<LitePlayer>> = get_slate(WEEK, SEASON, &Day::Sun, true);
     // let island_combos = total_comb(players.len(), 5);
     let qb: u32 = count_player_type(&players, Pos::Qb) as u32;
     let wr_count: u32 = count_player_type(&players, Pos::Wr) as u32;
@@ -84,7 +83,7 @@ fn main() -> Result<(), Error> {
     println!("Max Iterations: {}", total);
     // println!("Totals: {} {} {} {} {} {}", qb, wr, rb, te, d, flex);
     // let lineups: Vec<Lineup> = build_all_possible_lineups(1, SEASON);
-    let lineups: Vec<IslandLineup> = build_island_lineups(WEEK, SEASON);
+    // let lineups: Vec<IslandLineup> = build_island_lineups(WEEK, SEASON, &Day::Mon);
     // println!("Total lineup count {}", lineups.len());
     println!("Elapsed: {:?}", start.elapsed());
     // for lineup in &lineups[0..10] {
@@ -97,12 +96,12 @@ fn main() -> Result<(), Error> {
     //     lineup.fourth.print_name();
     //     println!("")
     // }
-    let mut file = File::create("island-lineups.txt").unwrap();
+    // let mut file = File::create("island-lineups.txt").unwrap();
 
-    println!("{}", lineups.len());
-    for lineup in &lineups[0..10] {
-        file.write_all(lineup.lineup_str().as_bytes())?;
-    }
+    // println!("{}", lineups.len());
+    // for lineup in &lineups[0..10] {
+    //     file.write_all(lineup.lineup_str().as_bytes())?;
+    // }
 
     // println!("Max island iterations: {}", island_combos);
 

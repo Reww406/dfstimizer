@@ -8,9 +8,10 @@ use futures::future::join_all;
 use futures::StreamExt;
 use rusqlite::Connection;
 
-use crate::get_sunday_slate;
+use crate::get_slate;
 use crate::lineup::*;
 use crate::player::*;
+use crate::Day;
 use crate::DATABASE_FILE;
 use crate::SEASON;
 use crate::WEEK;
@@ -26,10 +27,10 @@ fn get_mvp_ids(players: Vec<Rc<LitePlayer>>) -> Vec<Arc<i16>> {
         .collect::<Vec<Arc<i16>>>()
 }
 
-pub fn build_island_lineups(week: i8, season: i16) -> Vec<IslandLineup> {
+pub fn build_island_lineups(week: i8, season: i16, day: &Day) -> Vec<IslandLineup> {
     let pool: ThreadPool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<IslandLineup> = Vec::new();
-    let players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season, false);
+    let players: Vec<Rc<LitePlayer>> = get_slate(week, season, day, false);
     let ids: Vec<Arc<i16>> = get_mvp_ids(players);
     let mut futures: Vec<_> = Vec::new();
     for id in ids {
@@ -37,7 +38,8 @@ pub fn build_island_lineups(week: i8, season: i16) -> Vec<IslandLineup> {
         let future = async {
             let fut_tx_result = async move {
                 let mut mvp_lineup: IslandLB = IslandLB::new();
-                let thread_players: Vec<Rc<LitePlayer>> = get_sunday_slate(week, season, false);
+                // TODO How to pass dAy in without borrow checker crying
+                let thread_players: Vec<Rc<LitePlayer>> = get_slate(week, season, &Day::Mon, false);
                 for player in &thread_players {
                     if player.id == *id {
                         mvp_lineup = mvp_lineup.set_slot(player, Slot::Mvp);

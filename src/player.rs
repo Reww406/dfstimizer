@@ -200,6 +200,24 @@ impl Proj {
             Proj::KickProj(_) => return Pos::K,
         }
     }
+    pub fn get_proj_own(&self) -> f32 {
+        match self {
+            Proj::QbProj(qb) => return qb.own_proj,
+            Proj::DefProj(def) => return def.own_proj,
+            Proj::RecProj(rec) => return rec.own_proj,
+            Proj::RbProj(rb) => return rb.own_proj,
+            Proj::KickProj(k) => return k.own_proj,
+        }
+    }
+    pub fn get_proj_id(&self) -> i16 {
+        match self {
+            Proj::QbProj(qb) => return qb.id,
+            Proj::DefProj(def) => return def.id,
+            Proj::RecProj(rec) => return rec.id,
+            Proj::RbProj(rb) => return rb.id,
+            Proj::KickProj(k) => return k.id,
+        }
+    }
     pub fn print_name(&self) {
         match self {
             Proj::QbProj(p) => print!("{}, {} ", p.name, p.team),
@@ -349,6 +367,27 @@ impl LitePlayer {
         }
     }
 
+    /// WARNING This liteplayer has no salary
+    pub fn ids_to_liteplayer(ids: &[i16], conn: &Connection) -> Vec<Self> {
+        let mut players: Vec<LitePlayer> = Vec::new();
+        for id in ids {
+            players.push(LitePlayer::id_to_liteplayer(id, conn));
+        }
+        players
+    }
+
+    pub fn id_to_liteplayer(id: &i16, conn: &Connection) -> Self {
+        let query = "SELECT * FROM player WHERE id = ?1";
+        conn.query_row(query, params![id], |row| {
+            Ok(LitePlayer {
+                id: *id,
+                pos: Pos::from_string(row.get(3).unwrap()).expect("Pos is not valid."),
+                salary: 0,
+            })
+        })
+        .unwrap()
+    }
+
     // Could make this a singleton so it's only generated once
     pub fn player_lookup_map(players: &[Rc<LitePlayer>]) -> HashMap<i16, &Rc<LitePlayer>> {
         let mut lookup_map = HashMap::new();
@@ -357,16 +396,6 @@ impl LitePlayer {
         });
         lookup_map
     }
-}
-
-pub fn get_def_table_for_pos(pos: &Pos) -> &str {
-    return match pos {
-        Pos::Qb => "def_vs_qb",
-        Pos::Rb => "def_vs_rb",
-        Pos::Wr => "def_vs_wr",
-        Pos::Te => "def_vs_te",
-        _ => panic!("No Def Vs For Pos for that Pos"),
-    };
 }
 
 fn add_def_to_cache(def_vs_pos: DefVsPos) {
@@ -410,6 +439,15 @@ pub fn get_opp_player_id(opp: String, conn: &Connection) -> i16 {
 
     id
 }
+/// Get def id just using team name
+pub fn query_def_id(team: &String, conn: &Connection) -> Result<i16, rusqlite::Error> {
+    let select_player: &str = "SELECT id FROM player WHERE pos = 'D' AND team = ?1";
+    conn.query_row(
+        select_player,
+        (TEAM_NAME_TO_ABV.get(team.as_str()).unwrap(),),
+        |row| row.get(0),
+    )
+}
 
 pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPos {
     let cache_hit: Option<DefVsPos> = match player_pos {
@@ -448,9 +486,8 @@ pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPo
         return cache_hit.unwrap().to_owned();
     }
 
-    let table = get_def_table_for_pos(player_pos);
     let mut stmt = conn
-        .prepare(format!("SELECT FROM {} WHERE id = ?1", table).as_str())
+        .prepare(format!("SELECT FROM {} WHERE id = ?1", player_pos.get_def_table()).as_str())
         .unwrap();
 
     let def_vs_pos: DefVsPos = stmt
