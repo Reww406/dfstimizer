@@ -1,4 +1,4 @@
-use std::{cmp::min, fs, rc::Rc};
+use std::{cmp::min, fs, rc::Rc, time::Instant};
 
 use itertools::Itertools;
 use lazy_static::lazy_static;
@@ -17,18 +17,18 @@ pub mod tables;
 
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
 pub const SEASON: i16 = 2023;
-pub const WEEK: i8 = 2;
+pub const WEEK: i8 = 1;
 
-pub const OWNERSHIP_CUTOFF_PER: f32 = 0.20;
+pub const OWNERSHIP_CUTOFF_PER: f32 = 0.10;
 
 pub const FILTER_TOP_QB: i8 = 3;
 pub const FILTER_TOP_RB: i8 = 2;
 
-// pub const WR_COUNT: i8 = 20;
+// pub const WR_COUNT: i8 = 30;
 // pub const QB_COUNT: i8 = 12;
 // pub const TE_COUNT: i8 = 12;
 // pub const RB_COUNT: i8 = 20;
-// pub const D_COUNT: i8 = 10;
+// pub const D_COUNT: i8 = 6;
 pub const WR_COUNT: i8 = 10;
 pub const QB_COUNT: i8 = 10;
 pub const TE_COUNT: i8 = 10;
@@ -303,18 +303,9 @@ fn get_max_min_flex(season: i16, week: i8, field: &str, positions: &[Pos]) -> (f
 
 // TODO this will not get kickers
 // These Ids should be cached in an option.
-pub fn get_slate(week: i8, season: i16, day: &Day, filter_top: bool) -> Vec<Rc<LitePlayer>> {
-    if SLATE_CACHE.read().unwrap().len() > 0 {
-        return SLATE_CACHE
-            .read()
-            .unwrap()
-            .clone()
-            .into_iter()
-            .map(|lp| Rc::new(lp))
-            .collect::<Vec<Rc<LitePlayer>>>();
-    }
 
-    let mut players: Vec<LitePlayer> = Vec::new();
+pub fn get_slate(week: i8, season: i16, day: &Day, filter_top: bool) -> Vec<Rc<LitePlayer>> {
+    let mut players: Vec<Rc<LitePlayer>> = Vec::new();
     let top_qb: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Qb, QB_COUNT, day);
     let top_rb: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Rb, RB_COUNT, day);
     let top_wr: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, day);
@@ -327,17 +318,11 @@ pub fn get_slate(week: i8, season: i16, day: &Day, filter_top: bool) -> Vec<Rc<L
     if filter_top {
         players = filter_top_players(players, day);
     }
-
-    SLATE_CACHE.write().unwrap().extend(players.clone());
-
     players
-        .into_iter()
-        .map(|lp| Rc::new(lp))
-        .collect::<Vec<Rc<LitePlayer>>>()
 }
 
-fn should_filter_top_player(lp: &LitePlayer, conn: &Connection, filter_ids: &Vec<i16>) -> bool {
-    let proj = query_proj(&Some(Rc::new(*lp)), WEEK, SEASON, conn);
+fn should_filter_top_player(lp: Rc<LitePlayer>, conn: &Connection, filter_ids: &Vec<i16>) -> bool {
+    let proj = query_proj(&Some(lp), WEEK, SEASON, conn);
     match proj {
         Proj::QbProj(qb) => {
             if !filter_ids.contains(&qb.id) {
@@ -387,20 +372,20 @@ fn should_filter_top_player(lp: &LitePlayer, conn: &Connection, filter_ids: &Vec
     }
 }
 
-fn filter_top_players(players: Vec<LitePlayer>, day: &Day) -> Vec<LitePlayer> {
+fn filter_top_players(players: Vec<Rc<LitePlayer>>, day: &Day) -> Vec<Rc<LitePlayer>> {
     let conn = Connection::open(DATABASE_FILE).unwrap();
-    let mut filtered: Vec<LitePlayer> = Vec::new();
+    let mut filtered: Vec<Rc<LitePlayer>> = Vec::new();
     let top_qbs = get_top_salary(SEASON, WEEK, &Pos::Qb, day, 3);
     let top_rbs = get_top_salary(SEASON, WEEK, &Pos::Rb, day, 2);
     for player in &players {
         match player.pos {
             Pos::Qb => {
-                if !should_filter_top_player(player, &conn, &top_qbs) {
+                if !should_filter_top_player(player.clone(), &conn, &top_qbs) {
                     filtered.push(player.clone())
                 }
             }
             Pos::Rb => {
-                if !should_filter_top_player(player, &conn, &top_rbs) {
+                if !should_filter_top_player(player.clone(), &conn, &top_rbs) {
                     filtered.push(player.clone())
                 }
             }
@@ -410,48 +395,13 @@ fn filter_top_players(players: Vec<LitePlayer>, day: &Day) -> Vec<LitePlayer> {
     filtered
 }
 
-pub fn get_rc_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<Rc<LitePlayer>> {
-    let conn = Connection::open(DATABASE_FILE).unwrap();
-    let mut players = Vec::new();
-    for id in ids {
-        players.push(get_rc_player_by_id(week, *id, season, &conn));
-    }
-    players
-}
-
-pub fn get_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<LitePlayer> {
+pub fn get_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<Rc<LitePlayer>> {
     let conn = Connection::open(DATABASE_FILE).unwrap();
     let mut players = Vec::new();
     for id in ids {
         players.push(get_player_by_id(week, *id, season, &conn));
     }
     players
-}
-
-pub fn get_rc_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Rc<LitePlayer> {
-    let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2 AND season = ?3";
-    let mut stmt = conn.prepare_cached(query).unwrap();
-    stmt.query_row(params![week, id, season], |row| {
-        Ok(Rc::new(LitePlayer {
-            id: row.get(0).unwrap(),
-            salary: row.get(8).unwrap(),
-            pos: Pos::from_string(row.get(7).unwrap()).unwrap(),
-        }))
-    })
-    .unwrap()
-}
-
-pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> LitePlayer {
-    let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2 AND season = ?3";
-    let mut stmt = conn.prepare_cached(query).unwrap();
-    stmt.query_row(params![week, id, season], |row| {
-        Ok(LitePlayer {
-            id: row.get(0).unwrap(),
-            salary: row.get(8).unwrap(),
-            pos: Pos::from_string(row.get(7).unwrap()).unwrap(),
-        })
-    })
-    .unwrap()
 }
 
 pub fn get_active_players(season: i16, week: i8, day: &Day) -> Vec<i16> {
@@ -741,8 +691,6 @@ mod tests {
         println!("{}", get_normalized_score(-10.0, (0.0, -11.0)));
         println!("{}", get_normalized_score(-1.0, (0.0, -11.0)));
     }
-
-
 
     #[test]
     fn test_mean() {

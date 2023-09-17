@@ -21,8 +21,12 @@ lazy_static! {
     pub static ref DEF_VS_WR_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
     pub static ref DEF_VS_TE_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
     pub static ref DEF_ID_CACHE: RwLock<HashMap<String, i16>> = RwLock::new(HashMap::new());
+    /// ID = name-pos-team
+    pub static ref PLAYER_ID_CACHE: RwLock<HashMap<String, i16>> = RwLock::new(HashMap::new());
+    pub static ref ID_LITEPLAYER_CACHE: RwLock<HashMap<i16, LitePlayer>> = RwLock::new(HashMap::new());
+    pub static ref ID_LITEPLAYER_NO_SAL_CACHE: RwLock<HashMap<i16, LitePlayer>> = RwLock::new(HashMap::new());
+    // pub static ref SLATE_CACHE: RwLock<Vec<LitePlayer>> = RwLock::new(Vec::new());
 
-    pub static ref SLATE_CACHE: RwLock<Vec<LitePlayer>> = RwLock::new(Vec::new());
 }
 
 #[derive(Clone, Debug)]
@@ -198,7 +202,7 @@ impl Proj {
             Proj::KickProj(k) => return k.id,
         }
     }
-    
+
     pub fn get_proj_salary(&self) -> i32 {
         match self {
             Proj::QbProj(qb) => return qb.salary,
@@ -339,6 +343,34 @@ impl Pos {
     }
 }
 
+pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Rc<LitePlayer> {
+    if ID_LITEPLAYER_CACHE.read().unwrap().get(&id).is_some() {
+        return Rc::new(
+            ID_LITEPLAYER_CACHE
+                .read()
+                .unwrap()
+                .get(&id)
+                .unwrap()
+                .clone(),
+        );
+    }
+
+    let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2 AND season = ?3";
+    let mut stmt = conn.prepare_cached(query).unwrap();
+    let player: LitePlayer = stmt
+        .query_row(params![week, id, season], |row| {
+            Ok(LitePlayer {
+                id: row.get(0).unwrap(),
+                salary: row.get(8).unwrap(),
+                pos: Pos::from_string(row.get(7).unwrap()).unwrap(),
+            })
+        })
+        .unwrap();
+
+    ID_LITEPLAYER_CACHE.write().unwrap().insert(id, player);
+    Rc::new(player)
+}
+
 // Can we do just ID
 #[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub struct LitePlayer {
@@ -377,15 +409,30 @@ impl LitePlayer {
     }
 
     pub fn id_to_liteplayer(id: &i16, conn: &Connection) -> Self {
+        if ID_LITEPLAYER_NO_SAL_CACHE.read().unwrap().get(id).is_some() {
+            return ID_LITEPLAYER_NO_SAL_CACHE
+                .read()
+                .unwrap()
+                .get(id)
+                .unwrap()
+                .clone();
+        }
+
         let query = "SELECT * FROM player WHERE id = ?1";
-        conn.query_row(query, params![id], |row| {
-            Ok(LitePlayer {
-                id: *id,
-                pos: Pos::from_string(row.get(3).unwrap()).expect("Pos is not valid."),
-                salary: 0,
+        let player: LitePlayer = conn
+            .query_row(query, params![id], |row| {
+                Ok(LitePlayer {
+                    id: *id,
+                    pos: Pos::from_string(row.get(3).unwrap()).expect("Pos is not valid."),
+                    salary: 0,
+                })
             })
-        })
-        .unwrap()
+            .unwrap();
+        ID_LITEPLAYER_NO_SAL_CACHE
+            .write()
+            .unwrap()
+            .insert(*id, player);
+        player
     }
 
     // Could make this a singleton so it's only generated once
@@ -420,25 +467,33 @@ fn add_def_to_cache(def_vs_pos: DefVsPos) {
     };
 }
 
-pub fn get_opp_player_id(opp: String, conn: &Connection) -> i16 {
-    let opp_no_at = opp.replace("@", "");
-    if DEF_ID_CACHE.read().unwrap().get(&opp_no_at).is_some() {
-        let id: i16 = *DEF_ID_CACHE.read().unwrap().get(&opp_no_at).unwrap();
-        return id;
-    }
-    let select_player: &str = "SELECT id FROM player WHERE team = ?1 AND pos = D";
-    let id: i16 = conn
-        .query_row(select_player, params![opp_no_at], |row| row.get(0))
-        .unwrap();
-    DEF_ID_CACHE.write().unwrap().insert(opp_no_at, id);
+// pub fn get_opp_player_id(opp: String, conn: &Connection) -> i16 {
+//     let opp_no_at = opp.replace("@", "");
+//     if DEF_ID_CACHE.read().unwrap().get(&opp_no_at).is_some() {
+//         let id: i16 = *DEF_ID_CACHE.read().unwrap().get(&opp_no_at).unwrap();
+//         return id;
+//     }
+//     let select_player: &str = "SELECT id FROM player WHERE team = ?1 AND pos = D";
+//     let id: i16 = conn
+//         .query_row(select_player, params![opp_no_at], |row| row.get(0))
+//         .unwrap();
+//     DEF_ID_CACHE.write().unwrap().insert(opp_no_at, id);
 
-    id
-}
+//     id
+// }
 
 pub fn query_def_id(opp: &String, conn: &Connection) -> Result<i16, rusqlite::Error> {
+    if DEF_ID_CACHE.read().unwrap().get(opp).is_some() {
+        return Ok(DEF_ID_CACHE.read().unwrap().get(opp).unwrap().clone());
+    }
+
     let select_player: &str = "SELECT id FROM player WHERE pos = 'D' AND team = ?1";
     let no_at = opp.replace("@", "");
-    conn.query_row(select_player, params![no_at], |row| row.get(0))
+    let id: i16 = conn.query_row(select_player, params![no_at], |row| row.get(0))?;
+
+    println!("Cache miss");
+    DEF_ID_CACHE.write().unwrap().insert(opp.clone(), id);
+    Ok(id)
 }
 
 pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPos {
@@ -492,6 +547,7 @@ pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPo
         })
         .unwrap();
     add_def_to_cache(def_vs_pos.clone());
+    println!("Cache miss");
     def_vs_pos
 }
 
@@ -643,6 +699,7 @@ pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opt
         .write()
         .unwrap()
         .insert(id, kick_proj.clone().unwrap());
+    println!("Cache miss");
     kick_proj
 }
 
@@ -708,6 +765,7 @@ pub fn query_rec_proj(
         .write()
         .unwrap()
         .insert(id, rec_proj.clone().unwrap());
+    println!("Cache miss");
     rec_proj
 }
 
@@ -753,6 +811,7 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .write()
         .unwrap()
         .insert(id, rb_proj.clone().unwrap());
+    println!("Cache miss");
     rb_proj
 }
 
@@ -801,6 +860,7 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .write()
         .unwrap()
         .insert(id, qb_proj.clone().unwrap());
+    println!("Cache miss");
     qb_proj
 }
 
@@ -840,17 +900,8 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
         .write()
         .unwrap()
         .insert(id, def_proj.clone().unwrap());
+    println!("Cache miss");
     def_proj
-}
-
-pub fn query_own_per(id: i32, week: i8, season: i16, conn: &Connection) -> Option<f32> {
-    let select_ownership: &str =
-        "SELECT own_per FROM ownership WHERE id = ?1 AND week = ?2 AND season = ?3";
-    let own_per: Option<f32> = conn
-        .query_row(select_ownership, (id, week, season), |row| row.get(0))
-        .optional()
-        .unwrap();
-    return own_per;
 }
 
 pub fn get_player_id_create_if_missing(
@@ -858,8 +909,8 @@ pub fn get_player_id_create_if_missing(
     team: &String,
     pos: &Pos,
     conn: &Connection,
-) -> i32 {
-    let id: Option<i32> = get_player_id(name, team, pos, conn);
+) -> i16 {
+    let id: Option<i16> = get_player_id(name, team, pos, conn);
     if id.is_some() {
         return id.unwrap();
     }
@@ -884,16 +935,22 @@ pub fn proj_exists(id: i16, week: i8, season: i16, pos: Pos, conn: &Connection) 
 }
 
 // Get Player ID, Searches D, Then Exact, Then Fuzzy
-pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection) -> Option<i32> {
+pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection) -> Option<i16> {
     // Try Exact Match
+    let key = format!("{}-{}-{}", name, team, pos.to_str().unwrap());
+    if PLAYER_ID_CACHE.read().unwrap().get(&key).is_some() {
+        return Some(PLAYER_ID_CACHE.read().unwrap().get(&key).unwrap().clone());
+    }
+
     let select_player: &str = "SELECT id FROM player WHERE name = ?1 AND pos = ?2 AND team = ?3";
-    let id: Option<i32> = conn
+    let id: Option<i16> = conn
         .query_row(select_player, (name, pos.to_str().unwrap(), team), |row| {
             row.get(0)
         })
         .optional()
         .unwrap();
     if id.is_some() {
+        PLAYER_ID_CACHE.write().unwrap().insert(key, id.unwrap());
         return id;
     }
 
@@ -904,7 +961,7 @@ pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection)
     let last_name: &str = name_split.next().unwrap();
     let fuzzy_name: String = first_name.chars().nth(0).unwrap().to_string() + "%" + last_name + "%";
 
-    let id: Option<i32> = conn
+    let id: Option<i16> = conn
         .query_row(
             fuzzy_select,
             (&fuzzy_name, pos.to_str().unwrap(), team),
@@ -912,7 +969,10 @@ pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection)
         )
         .optional()
         .unwrap();
-    return id;
+    if id.is_some() {
+        PLAYER_ID_CACHE.write().unwrap().insert(key, id.unwrap());
+    }
+    id
 }
 
 #[cfg(test)]

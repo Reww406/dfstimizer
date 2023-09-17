@@ -42,19 +42,19 @@ fn count_player_type(players: &Vec<Rc<LitePlayer>>, pos: Pos) -> i32 {
 fn load_in_stats() {
     init_tables();
     // load_in_max_pos_scores(SEASON, WEEK);
-    load_in_anyflex("flex/flex-1.csv", 2023, 1, &Day::Thu);
-    load_in_anyflex("flex/flex-2-thu.csv", 2023, 2, &Day::Thu);
-    load_in_anyflex("flex/monday-1.csv", 2023, 1, &Day::Mon);
-    load_in_proj("sun-proj/d-1.csv", 2023, 1, &Pos::D, &Day::Sun);
-    load_in_proj("sun-proj/qb-1.csv", 2023, 1, &Pos::Qb, &Day::Sun);
-    load_in_proj("sun-proj/rb-1.csv", 2023, 1, &Pos::Rb, &Day::Sun);
-    load_in_proj("sun-proj/te-1.csv", 2023, 1, &Pos::Te, &Day::Sun);
-    load_in_proj("sun-proj/wr-1.csv", 2023, 1, &Pos::Wr, &Day::Sun);
-    load_in_proj("sun-proj/d-2.csv", 2023, 2, &Pos::D, &Day::Sun);
-    load_in_proj("sun-proj/qb-2.csv", 2023, 2, &Pos::Qb, &Day::Sun);
-    load_in_proj("sun-proj/rb-2.csv", 2023, 2, &Pos::Rb, &Day::Sun);
-    load_in_proj("sun-proj/te-2.csv", 2023, 2, &Pos::Te, &Day::Sun);
-    load_in_proj("sun-proj/wr-2.csv", 2023, 2, &Pos::Wr, &Day::Sun);
+    // load_in_anyflex("flex/flex-1.csv", 2023, 1, &Day::Thu);
+    // load_in_anyflex("flex/flex-2-thu.csv", 2023, 2, &Day::Thu);
+    // load_in_anyflex("flex/monday-1.csv", 2023, 1, &Day::Mon);
+    // load_in_proj("sun-proj/d-1.csv", 2023, 1, &Pos::D, &Day::Sun);
+    // load_in_proj("sun-proj/qb-1.csv", 2023, 1, &Pos::Qb, &Day::Sun);
+    // load_in_proj("sun-proj/rb-1.csv", 2023, 1, &Pos::Rb, &Day::Sun);
+    // load_in_proj("sun-proj/te-1.csv", 2023, 1, &Pos::Te, &Day::Sun);
+    // load_in_proj("sun-proj/wr-1.csv", 2023, 1, &Pos::Wr, &Day::Sun);
+    load_in_proj("sun-proj/d-2.csv", 2023, 1, &Pos::D, &Day::Sun);
+    load_in_proj("sun-proj/qb-2.csv", 2023, 1, &Pos::Qb, &Day::Sun);
+    load_in_proj("sun-proj/rb-2.csv", 2023, 1, &Pos::Rb, &Day::Sun);
+    load_in_proj("sun-proj/te-2.csv", 2023, 1, &Pos::Te, &Day::Sun);
+    load_in_proj("sun-proj/wr-2.csv", 2023, 1, &Pos::Wr, &Day::Sun);
     load_in_def_vs_pos("def/def-vs-qb.csv", "def_vs_qb");
     load_in_def_vs_pos("def/def-vs-rb.csv", "def_vs_rb");
     load_in_def_vs_pos("def/def-vs-te.csv", "def_vs_te");
@@ -63,7 +63,7 @@ fn load_in_stats() {
 
 fn main() -> Result<(), Error> {
     let start: Instant = Instant::now();
-    // load_in_stats();
+    load_in_stats();
     let players: Vec<std::rc::Rc<LitePlayer>> = get_slate(WEEK, SEASON, &Day::Sun, true);
     let qb: u32 = count_player_type(&players, Pos::Qb) as u32;
     let wr_count: u32 = count_player_type(&players, Pos::Wr) as u32;
@@ -76,6 +76,7 @@ fn main() -> Result<(), Error> {
     let total: u128 = qb as u128 * wr as u128 * rb as u128 * te as u128 * d as u128 * flex as u128;
     // println!("Total Players: {}", players.len());
     println!("Max Iterations: {}", total);
+    println!("WR Combos: {}", total_comb(wr_count as usize, 3));
     let lineups: Vec<Lineup> = build_all_possible_lineups(WEEK, SEASON);
     // let lineups: Vec<IslandLineup> = build_island_lineups(WEEK, SEASON, &Day::Mon);
 

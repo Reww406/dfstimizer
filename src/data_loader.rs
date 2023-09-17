@@ -218,7 +218,7 @@ pub fn load_in_anyflex(path: &str, season: i16, week: i8, day: &Day) {
 
 fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let qb_in: &str =
         "INSERT INTO qb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
@@ -261,7 +261,7 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
 
 fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos not set")).unwrap();
-    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let rb_in: &str =
         "INSERT INTO rb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj,
@@ -301,7 +301,7 @@ fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
 
 fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let table: &str = if pos == Pos::Wr { "wr_proj" } else { "te_proj" };
     let rec_in: String = format!(
@@ -346,7 +346,7 @@ fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Con
 
 fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let dst_in: &str = "INSERT INTO kick_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj,
          pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating) 
@@ -376,7 +376,7 @@ fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Co
 
 fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i32 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let dst_in: &str = "INSERT INTO dst_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, 
         pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, vegas_opp_total) 
@@ -406,7 +406,7 @@ fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Con
 }
 
 /// Load ownership stats
-pub fn store_ownership(rec: &ProjRecord, id: i32, season: i16, week: i8, day: &Day) {
+pub fn store_ownership(rec: &ProjRecord, id: i16, season: i16, week: i8, day: &Day) {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let ownership_in: &str =
         "INSERT INTO ownership (id, season, week, day, name, team, opp, pos, salary, own_per) 
@@ -431,7 +431,7 @@ pub fn store_ownership(rec: &ProjRecord, id: i32, season: i16, week: i8, day: &D
 }
 
 // Create player Id Record
-pub fn load_player_id(player: &Player, conn: &Connection) -> i32 {
+pub fn load_player_id(player: &Player, conn: &Connection) -> i16 {
     let player_in: &str = "INSERT INTO player (name, team , pos) VALUES (?1, ?2, ?3)";
     conn.execute(
         player_in,
@@ -458,7 +458,7 @@ mod tests {
     #[test]
     fn test_get_player_id() {
         let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
-        let id: i32 = get_player_id(
+        let id: i16 = get_player_id(
             &String::from("Isaiah Hodgins"),
             &String::from("NYG"),
             &Pos::Wr,

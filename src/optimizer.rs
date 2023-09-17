@@ -17,6 +17,8 @@ use crate::OWN_CUM_CUTOFF;
 use crate::WR_COUNT;
 use std::collections::HashMap;
 use std::rc::Rc;
+use std::sync::Mutex;
+use std::time::Instant;
 
 const BUILD_DAY: Day = Day::Sun;
 
@@ -25,12 +27,12 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
     let mut finished_lineups: Vec<Lineup> = Vec::new();
     let wr_ids: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, &BUILD_DAY);
     println!("Cooking up LINEUPS!! {} WRs", wr_ids.len());
-
     let mut futures: Vec<_> = Vec::new();
     for wr_id in wr_ids.into_iter().combinations(3) {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
         let future = async {
             let fut_tx_result = async move {
+                let start: Instant = Instant::now();
                 let thread_players: Vec<Rc<LitePlayer>> = get_slate(week, season, &BUILD_DAY, true);
                 let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
                 thread_players
@@ -48,15 +50,17 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
                     add_te_to_lineups(&thread_players, rbs_lineups);
                 let dst_lineups: Vec<LineupBuilder> =
                     add_dst_to_lineups(&thread_players, te_lineups);
-                let filterd_lineups: Vec<LineupBuilder> = filter_low_salary_cap(dst_lineups, 42500);
+                let filterd_lineups: Vec<LineupBuilder> = filter_low_salary_cap(dst_lineups, 49500);
                 let no_bad_combinations: Vec<LineupBuilder> =
                     filter_bad_lineups(filterd_lineups, week, season);
+                println!("{:?}", no_bad_combinations.len());
                 let lineup: Option<Lineup> =
                     add_flex_find_top_num(&thread_players, no_bad_combinations, week, season);
                 if lineup.is_some() {
                     tx.unbounded_send(lineup.unwrap())
                         .expect("Failed to send lineup")
                 }
+                println!("Finished thread in {:?}", start.elapsed());
             };
             pool.spawn_ok(fut_tx_result);
 
@@ -204,7 +208,9 @@ pub fn add_flex_find_top_num(
                     .set_pos(&flex, Slot::Flex)
                     .build(week, season, &conn)
                     .expect("Failed to build lineup..");
-                if finished_lineup.fits_own_brackets() {
+
+
+                if finished_lineup.fits_own_brackets() && finished_lineup.get_cum_ownership() < *OWN_CUM_CUTOFF {
                     let score: f32 = finished_lineup.score();
                     if best_lineup.is_none() {
                         best_lineup = Some(finished_lineup)

@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::time::Instant;
 use std::vec;
 
 use rusqlite::Connection;
@@ -17,7 +18,7 @@ use crate::{
 use crate::{RB_WR_FLEX_CIELING, TE_REC_TGT};
 
 pub const SALARY_CAP: i32 = 60000;
-pub const MIN_SAL: i32 = 59200;
+pub const MIN_SAL: i32 = 59500;
 
 // first name is min, next number is max
 pub const OWN_COUNT_RANGE_3: OwnBracket = OwnBracket {
@@ -363,17 +364,17 @@ impl Lineup {
     pub fn fits_own_brackets(&self) -> bool {
         let ownerships = self.get_ownership_arr();
         for bracket in &OWN_BRACKETS {
-            if !Self::fits_own_bracket(bracket, ownerships) {
+            if !Self::fits_own_bracket(bracket, &ownerships) {
                 return false;
             }
         }
         true
     }
 
-    fn fits_own_bracket(bracket: &OwnBracket, ownerships: [f32; 9]) -> bool {
+    fn fits_own_bracket(bracket: &OwnBracket, ownerships: &[f32; 9]) -> bool {
         let mut count = 0;
         for own in ownerships {
-            if own < bracket.own {
+            if own < &bracket.own {
                 count += 1;
             }
         }
