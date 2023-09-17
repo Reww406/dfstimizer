@@ -6,9 +6,9 @@ use futures::StreamExt;
 use itertools::Itertools;
 use rusqlite::Connection;
 
-use crate::get_active_players;
 use crate::get_slate;
 use crate::get_top_players_by_pos;
+use crate::lineup;
 use crate::lineup::*;
 use crate::player::*;
 use crate::Day;
@@ -18,20 +18,20 @@ use crate::WR_COUNT;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-// AYU DARK
+const BUILD_DAY: Day = Day::Sun;
 
 pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
     let pool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<Lineup> = Vec::new();
-    let wr_ids: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, &Day::Sun);
-    println!("Cooking up LINEUPS!! {}", wr_ids.len());
+    let wr_ids: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, &BUILD_DAY);
+    println!("Cooking up LINEUPS!! {} WRs", wr_ids.len());
 
     let mut futures: Vec<_> = Vec::new();
     for wr_id in wr_ids.into_iter().combinations(3) {
         let (tx, rx) = mpsc::unbounded::<Lineup>();
         let future = async {
             let fut_tx_result = async move {
-                let thread_players: Vec<Rc<LitePlayer>> = get_slate(week, season, &Day::Sun, true);
+                let thread_players: Vec<Rc<LitePlayer>> = get_slate(week, season, &BUILD_DAY, true);
                 let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
                 thread_players
                     .iter()
@@ -42,7 +42,6 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
                     });
                 let wr_lineups: Vec<LineupBuilder> =
                     add_wrs_to_lineups(wr_id, &thread_players, qb_lineups);
-
                 let rbs_lineups: Vec<LineupBuilder> =
                     add_rbs_to_lineups(&thread_players, wr_lineups);
                 let te_lineups: Vec<LineupBuilder> =
@@ -52,11 +51,13 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
                 let filterd_lineups: Vec<LineupBuilder> = filter_low_salary_cap(dst_lineups, 42500);
                 let no_bad_combinations: Vec<LineupBuilder> =
                     filter_bad_lineups(filterd_lineups, week, season);
-                let lineup: Lineup =
-                    add_flex_find_top_num(&thread_players, no_bad_combinations, 2, week, season);
-                tx.unbounded_send(lineup).expect("Failed to send lineup")
+                let lineup: Option<Lineup> =
+                    add_flex_find_top_num(&thread_players, no_bad_combinations, week, season);
+                if lineup.is_some() {
+                    tx.unbounded_send(lineup.unwrap())
+                        .expect("Failed to send lineup")
+                }
             };
-
             pool.spawn_ok(fut_tx_result);
 
             let future = rx.collect::<Vec<Lineup>>();
@@ -65,8 +66,8 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
         futures.push(future);
     }
     let futures_join = join_all(futures);
-    let test = executor::block_on(futures_join);
-    for future in test {
+    let done_futures = executor::block_on(futures_join);
+    for future in done_futures {
         finished_lineups.extend(future);
     }
     finished_lineups.sort_by(|a, b: &Lineup| b.score().partial_cmp(&a.score()).unwrap());
@@ -154,7 +155,6 @@ pub fn add_rbs_to_lineups(
             );
         }
     }
-
     new_lineups
 }
 
@@ -171,14 +171,12 @@ pub fn add_te_to_lineups(
     lineups_with_te
 }
 
-// WR2 And QB are most correlated, than 3 than 2
 pub fn add_flex_find_top_num(
     players: &Vec<Rc<LitePlayer>>,
     lineups: Vec<LineupBuilder>,
-    lineup_cap: usize,
     week: i8,
     season: i16,
-) -> Lineup {
+) -> Option<Lineup> {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let flex_pos: [Pos; 2] = [Pos::Wr, Pos::Rb];
     let mut best_lineup: Option<Lineup> = None;
@@ -206,20 +204,18 @@ pub fn add_flex_find_top_num(
                     .set_pos(&flex, Slot::Flex)
                     .build(week, season, &conn)
                     .expect("Failed to build lineup..");
-                let score: f32 = finished_lineup.score();
-                if finished_lineup.get_cum_ownership() <= *OWN_CUM_CUTOFF {
+                if finished_lineup.fits_own_brackets() {
+                    let score: f32 = finished_lineup.score();
                     if best_lineup.is_none() {
                         best_lineup = Some(finished_lineup)
                     } else if score < lowest_score {
                         lowest_score = score;
                         best_lineup = Some(finished_lineup)
                     }
-                } else {
-                    println!("Missed own cut off.")
                 }
             });
     }
-    best_lineup.expect("Didn't generate a lineup")
+    best_lineup
 }
 
 pub fn add_dst_to_lineups(

@@ -1,13 +1,12 @@
 use lazy_static::lazy_static;
+use std::collections::HashMap;
 use std::rc::Rc;
 use std::str::Split;
-use std::sync::{Mutex, RwLock, RwLockReadGuard};
-use std::{collections::HashMap, error::Error, hash::Hash};
+use std::sync::RwLock;
 
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
-use crate::lineup::LineupBuilder;
 use crate::{data_loader::*, DATABASE_FILE};
 
 // TODO! Should populate all of these first so read writes are not blocked
@@ -22,25 +21,8 @@ lazy_static! {
     pub static ref DEF_VS_WR_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
     pub static ref DEF_VS_TE_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
     pub static ref DEF_ID_CACHE: RwLock<HashMap<String, i16>> = RwLock::new(HashMap::new());
-}
 
-#[derive(Debug)]
-pub enum Proj {
-    QbProj(QbProj),
-    RecProj(RecProj),
-    RbProj(RbProj),
-    DefProj(DefProj),
-    KickProj(KickProj),
-}
-
-#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Copy)]
-pub enum Pos {
-    Qb = 0,
-    Rb = 1,
-    Wr = 2,
-    Te = 3,
-    D = 4,
-    K = 5,
+    pub static ref SLATE_CACHE: RwLock<Vec<LitePlayer>> = RwLock::new(Vec::new());
 }
 
 #[derive(Clone, Debug)]
@@ -49,17 +31,6 @@ pub struct Player {
     pub name: String,
     pub team: String,
     pub pos: Pos,
-}
-pub struct Ownership {
-    pub id: i16,
-    pub season: i16,
-    pub week: i8,
-    pub name: String,
-    pub team: String,
-    pub opp: String,
-    pub pos: String,
-    pub salary: i32,
-    pub own_per: f32,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -190,6 +161,15 @@ pub struct FlexProj {
     pub rb_proj: Option<RbProj>,
 }
 
+#[derive(Debug)]
+pub enum Proj {
+    QbProj(QbProj),
+    RecProj(RecProj),
+    RbProj(RbProj),
+    DefProj(DefProj),
+    KickProj(KickProj),
+}
+
 impl Proj {
     pub fn get_proj_pos(&self) -> Pos {
         match self {
@@ -216,6 +196,16 @@ impl Proj {
             Proj::RecProj(rec) => return rec.id,
             Proj::RbProj(rb) => return rb.id,
             Proj::KickProj(k) => return k.id,
+        }
+    }
+    
+    pub fn get_proj_salary(&self) -> i32 {
+        match self {
+            Proj::QbProj(qb) => return qb.salary,
+            Proj::DefProj(def) => return def.salary,
+            Proj::RecProj(rec) => return rec.salary,
+            Proj::RbProj(rb) => return rb.salary,
+            Proj::KickProj(k) => return k.salary,
         }
     }
     pub fn print_name(&self) {
@@ -251,6 +241,16 @@ impl Proj {
             _ => panic!("Not a WR Proj"),
         }
     }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, PartialEq, Copy)]
+pub enum Pos {
+    Qb = 0,
+    Rb = 1,
+    Wr = 2,
+    Te = 3,
+    D = 4,
+    K = 5,
 }
 
 impl Default for Pos {
@@ -340,7 +340,7 @@ impl Pos {
 }
 
 // Can we do just ID
-#[derive(Debug, Deserialize, Serialize, Clone)]
+#[derive(Debug, Deserialize, Serialize, Clone, Copy)]
 pub struct LitePlayer {
     pub id: i16,
     pub pos: Pos,
@@ -423,12 +423,7 @@ fn add_def_to_cache(def_vs_pos: DefVsPos) {
 pub fn get_opp_player_id(opp: String, conn: &Connection) -> i16 {
     let opp_no_at = opp.replace("@", "");
     if DEF_ID_CACHE.read().unwrap().get(&opp_no_at).is_some() {
-        let id: i16 = DEF_ID_CACHE
-            .read()
-            .unwrap()
-            .get(&opp_no_at)
-            .unwrap()
-            .clone();
+        let id: i16 = *DEF_ID_CACHE.read().unwrap().get(&opp_no_at).unwrap();
         return id;
     }
     let select_player: &str = "SELECT id FROM player WHERE team = ?1 AND pos = D";
@@ -439,14 +434,11 @@ pub fn get_opp_player_id(opp: String, conn: &Connection) -> i16 {
 
     id
 }
-/// Get def id just using team name
-pub fn query_def_id(team: &String, conn: &Connection) -> Result<i16, rusqlite::Error> {
+
+pub fn query_def_id(opp: &String, conn: &Connection) -> Result<i16, rusqlite::Error> {
     let select_player: &str = "SELECT id FROM player WHERE pos = 'D' AND team = ?1";
-    conn.query_row(
-        select_player,
-        (TEAM_NAME_TO_ABV.get(team.as_str()).unwrap(),),
-        |row| row.get(0),
-    )
+    let no_at = opp.replace("@", "");
+    conn.query_row(select_player, params![no_at], |row| row.get(0))
 }
 
 pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPos {
@@ -487,9 +479,8 @@ pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPo
     }
 
     let mut stmt = conn
-        .prepare(format!("SELECT FROM {} WHERE id = ?1", player_pos.get_def_table()).as_str())
+        .prepare(format!("SELECT * FROM {} WHERE id = ?1", player_pos.get_def_table()).as_str())
         .unwrap();
-
     let def_vs_pos: DefVsPos = stmt
         .query_row(params![id], |row| {
             Ok(DefVsPos {
@@ -522,35 +513,6 @@ pub fn query_proj(
         Pos::D => return Proj::DefProj(query_def_proj_helper(player, week, season, conn)),
         Pos::K => return Proj::KickProj(query_kick_proj_helper(player, week, season, conn)),
     }
-}
-
-pub fn get_recent_stat_ceiling(
-    season: i16,
-    week: i8,
-    field: &str,
-    table: &str,
-    player_id: i16,
-    conn: &Connection,
-) -> f32 {
-    let week_range_start: i8 = week - (2);
-    let mut ceiling: f32 = 0.0;
-    let query: String = format!(
-        "SELECT ({}) FROM {} WHERE season = ?1 AND week BETWEEN ?2 AND ?3 AND id = ?4",
-        field, table
-    );
-    let mut stmt: rusqlite::CachedStatement<'_> = conn.prepare_cached(query.as_str()).unwrap();
-    stmt.query_map((season, week_range_start, week, player_id), |row| {
-        row.get(0)
-    })
-    .unwrap()
-    .into_iter()
-    .for_each(|row| {
-        let value: f32 = row.unwrap();
-        if value > ceiling {
-            ceiling = value
-        }
-    });
-    ceiling
 }
 
 pub fn query_rec_proj_helper(
@@ -907,7 +869,7 @@ pub fn get_player_id_create_if_missing(
         team: team.clone(),
         pos: pos.clone(),
     };
-    return load_player_id(player, conn);
+    return load_player_id(&player, conn);
 }
 
 pub fn proj_exists(id: i16, week: i8, season: i16, pos: Pos, conn: &Connection) -> bool {

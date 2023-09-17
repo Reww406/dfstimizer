@@ -1,5 +1,6 @@
 use std::{cmp::min, fs, rc::Rc};
 
+use itertools::Itertools;
 use lazy_static::lazy_static;
 use lineup::{dst_score, qb_score, rb_score, score_kicker, te_score, wr_stud_score, LineupBuilder};
 use num_bigint::{BigUint, ToBigUint};
@@ -16,98 +17,93 @@ pub mod tables;
 
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
 pub const SEASON: i16 = 2023;
-pub const WEEK: i8 = 1;
+pub const WEEK: i8 = 2;
 
 pub const OWNERSHIP_CUTOFF_PER: f32 = 0.20;
 
 pub const FILTER_TOP_QB: i8 = 3;
 pub const FILTER_TOP_RB: i8 = 2;
 
-pub const WR_COUNT: i8 = 20;
-pub const QB_COUNT: i8 = 12;
-pub const TE_COUNT: i8 = 12;
-pub const RB_COUNT: i8 = 20;
+// pub const WR_COUNT: i8 = 20;
+// pub const QB_COUNT: i8 = 12;
+// pub const TE_COUNT: i8 = 12;
+// pub const RB_COUNT: i8 = 20;
+// pub const D_COUNT: i8 = 10;
+pub const WR_COUNT: i8 = 10;
+pub const QB_COUNT: i8 = 10;
+pub const TE_COUNT: i8 = 10;
+pub const RB_COUNT: i8 = 10;
 pub const D_COUNT: i8 = 10;
 
 lazy_static! {
-
+    pub static ref RB_WR_FLEX_PTS_PLUS: (f32, f32) = get_max_min_flex(SEASON, WEEK, "pts_plus_minus_proj", &[Pos::Rb, Pos::Wr]);
+    pub static ref RB_WR_FLEX_CIELING: (f32, f32) = get_max_min_flex(SEASON, WEEK, "cieling_proj", &[Pos::Rb, Pos::Wr]);
     // Own cum
     pub static ref OWN_CUM_CUTOFF: f32 = get_sunday_ownership_cut_off(WEEK, SEASON);
 
     // QB Stats
     pub static ref QB_RUSH_ATT_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "avg_rush_atts", "qb_proj");
-    pub static ref QB_RUSH_ATT_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "avg_rush_atts", "qb_proj");
+    pub static ref QB_RUSH_ATT: (f32, f32) =
+        get_max_min(SEASON, WEEK, "avg_rush_atts", Pos::Qb);
     pub static ref QB_AVG_RZ_OP_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "red_zone_op_pg", "qb_proj");
-    pub static ref QB_AVG_RZ_OP_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "red_zone_op_pg", "qb_proj");
-    pub static ref QB_WR_PASS_PER_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "pass_to_wr_per", "qb_proj");
-    pub static ref QB_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "vegas_total", "qb_proj");
+    pub static ref QB_AVG_RZ_OP: (f32, f32) =
+        get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Qb);
+    pub static ref QB_WR_PASS_PER: (f32, f32) =
+        get_max_min(SEASON, WEEK, "pass_to_wr_per", Pos::Qb);
     pub static ref QB_TE_PASS_PER_MEDIAN: f32 =
         get_field_median(SEASON, WEEK, "pass_to_te_per", "qb_proj", QB_COUNT);
-    pub static ref QB_PTS_PER_SAL: (f32, f32) = get_max_min(SEASON, WEEK , "pts_sal_proj", "qb_proj");
-    pub static ref QB_CIELING: (f32, f32) = get_max_min(SEASON, WEEK, "cieling_proj", "qb_proj");
-    pub static ref QB_OPP_DEF_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "pts_given_pg", "def_vs_qb");
+    pub static ref QB_PTS_PER_SAL: (f32, f32) = get_max_min(SEASON, WEEK , "pts_sal_proj", Pos::Qb);
+    pub static ref QB_CIELING: (f32, f32) = get_max_min(SEASON, WEEK, "cieling_proj", Pos::Qb);
+    pub static ref QB_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Qb);
 
     // RB Stats
     pub static ref RB_ATTS_FILLER: f32 = get_field_filler(SEASON, WEEK, "avg_atts", "rb_proj");
-    pub static ref RB_ATTS_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "avg_atts", "rb_proj");
-    pub static ref RB_SNAPS_PER_FILLER: f32 =
-        get_field_filler(SEASON, WEEK, "snaps_per", "rb_proj");
-    pub static ref RB_SNAPS_PER_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "snaps_per", "rb_proj");
-    pub static ref RB_AVG_REC_YDS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_rec_yds", "rb_proj");
+    pub static ref RB_ATTS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_atts", Pos::Rb);
+    pub static ref RB_AVG_REC_YDS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_rec_yds", Pos::Rb);
     pub static ref RB_AVG_REC_YDS_FILLER: f32 = get_field_filler(SEASON, WEEK, "avg_rec_yds", "rb_proj");
     pub static ref RB_PTS_PLUS_MINUS: (f32, f32) =
-        get_max_min(SEASON, WEEK, "pts_plus_minus_proj", "rb_proj");
-    pub static ref RB_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "vegas_total", "rb_proj");
+        get_max_min(SEASON, WEEK, "pts_plus_minus_proj", Pos::Rb);
     pub static ref RB_YEAR_CONSISTENCY_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "year_consistency", "rb_proj");
-    pub static ref RB_YEAR_CONSISTENCY_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "year_consistency", "rb_proj");
-    pub static ref RB_OPP_DEF_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "pts_given_pg", "def_vs_rb");
-
+    pub static ref RB_YEAR_CONSISTENCY: (f32, f32) =
+        get_max_min(SEASON, WEEK, "year_consistency", Pos::Rb);
+    pub static ref RB_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Rb);
     // WR Stats
     pub static ref WR_TGT_SHARE_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "rec_tgt_share", "wr_proj");
-    pub static ref WR_TGT_SHARE_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "rec_tgt_share", "wr_proj");
+    pub static ref WR_TGT_SHARE: (f32, f32) =
+        get_max_min(SEASON, WEEK, "rec_tgt_share", Pos::Wr);
     pub static ref WR_RED_ZONE_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "red_zone_op_pg", "wr_proj");
-    pub static ref WR_RED_ZONE_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "red_zone_op_pg", "wr_proj");
-    pub static ref WR_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "vegas_total", "wr_proj");
+    pub static ref WR_RED_ZONE: (f32, f32) =
+        get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Wr);
     pub static ref WR_YEAR_CONSISTENCY_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "year_consistency", "wr_proj");
-    pub static ref WR_YEAR_CONSISTENCY_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "year_consistency", "wr_proj");
+    pub static ref WR_YEAR_CONSISTENCY: (f32, f32) =
+        get_max_min(SEASON, WEEK, "year_consistency", Pos::Wr);
     pub static ref WR_YEAR_UPSIDE_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "year_upside", "wr_proj");
-    pub static ref WR_YEAR_UPSIDE_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "year_upside", "wr_proj");
+    pub static ref WR_YEAR_UPSIDE: (f32, f32) =
+        get_max_min(SEASON, WEEK, "year_upside", Pos::Wr);
+    pub static ref WR_CIELING: (f32, f32) =
+        get_max_min(SEASON, WEEK, "cieling_proj", Pos::Wr);
     pub static ref WR_SALARY_MEDIAN: f32 =
         get_field_median(SEASON, WEEK, "salary", "wr_proj", WR_COUNT);
-    pub static ref WR_OPP_DEF_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "pts_given_pg", "def_vs_wr");
-
+    pub static ref WR_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Wr);
     // TE Stats
     pub static ref TE_REC_TGT_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "rec_tgt_share", "te_proj");
-    pub static ref TE_REC_TGT_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "rec_tgt_share", "te_proj");
+    pub static ref TE_REC_TGT: (f32, f32) =
+        get_max_min(SEASON, WEEK, "rec_tgt_share", Pos::Te);
     pub static ref TE_RED_ZONE_FILLER: f32 =
         get_field_filler(SEASON, WEEK, "red_zone_op_pg", "te_proj");
-    pub static ref TE_RED_ZONE_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "red_zone_op_pg", "te_proj");
-    pub static ref TE_VEGAS_TOTAL_MAX_MIN: (f32, f32) =
-        get_max_min(SEASON, WEEK, "vegas_total", "vegas_total");
-    pub static ref TE_OPP_DEF_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "pts_given_pg", "def_vs_te");
-    // ALL Proj
+    pub static ref TE_RED_ZONE: (f32, f32) =
+        get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Te);
+    pub static ref TE_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Te);
+    pub static ref TE_PTS_SAL: (f32, f32) = get_max_min(SEASON, WEEK, "pts_sal_proj", Pos::Te);
+    // TODO need to be used for Island games
     pub static ref ALL_PTS_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "pts_proj");
     pub static ref ALL_FLOOR_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "floor_proj");
     pub static ref ALL_CIELING_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "cieling_proj");
@@ -115,11 +111,13 @@ lazy_static! {
     pub static ref ALL_PTS_PLUS_MINS_MAX_MIN: (f32, f32) =
         get_max_min_all(SEASON, WEEK, "pts_plus_minus_proj");
 
-
     // DST Stats
-    pub static ref DST_RATING_MAX_MIN: (f32, f32) = get_max_min(SEASON, WEEK, "rating", "dst_proj");
+    pub static ref DST_RATING: (f32, f32) = get_max_min(SEASON, WEEK, "rating", Pos::D);
     pub static ref DST_VEGAS_OPP_TOTAL: (f32, f32) =
         get_inverse_max_min(SEASON, WEEK, "vegas_opp_total", &Pos::D);
+    pub static ref DST_PTS_PLUS_MINUS: (f32, f32) = get_max_min(SEASON, WEEK, "pts_plus_minus_proj", Pos::D);
+
+    pub static ref ALL_VEGAS_TOTAL: (f32, f32) = get_max_min_all(SEASON, WEEK, "vegas_total");
 }
 
 pub enum Day {
@@ -147,13 +145,14 @@ impl Day {
 }
 
 /// Returns tuple of (max: f32,min: f32)
-fn get_max_min(season: i16, week: i8, field: &str, table: &str) -> (f32, f32) {
+fn get_max_min(season: i16, week: i8, field: &str, pos: Pos) -> (f32, f32) {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let mut max_statement: rusqlite::CachedStatement<'_> = conn
         .prepare_cached(
             format!(
                 "SELECT MAX({}) FROM {} WHERE week = ?1 AND season = ?2",
-                field, table
+                field,
+                pos.get_proj_table()
             )
             .as_str(),
         )
@@ -162,7 +161,8 @@ fn get_max_min(season: i16, week: i8, field: &str, table: &str) -> (f32, f32) {
         .prepare_cached(
             format!(
                 "SELECT MIN({}) FROM {} WHERE week = ?1 AND season = ?2",
-                field, table
+                field,
+                pos.get_proj_table()
             )
             .as_str(),
         )
@@ -182,6 +182,15 @@ fn get_max_min(season: i16, week: i8, field: &str, table: &str) -> (f32, f32) {
     }
 
     (max, min)
+}
+
+fn get_def_max_min(pos: &Pos) -> (f32, f32) {
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    let mut max_statement: rusqlite::CachedStatement<'_> = conn
+        .prepare_cached(format!("SELECT MAX(pts_given_pg) FROM {}", pos.get_def_table()).as_str())
+        .expect("Couldn't prepare statement..");
+    let max: f32 = max_statement.query_row((), |r| r.get(0)).unwrap();
+    (max, 0.0)
 }
 
 /// Returns the inverse of the score, remove after cummulative
@@ -262,7 +271,7 @@ fn get_field_median(season: i16, week: i8, field: &str, table: &str, limit: i8) 
 }
 
 fn get_max_min_all(season: i16, week: i8, field: &str) -> (f32, f32) {
-    let tables: [&str; 5] = ["dst_proj", "qb_proj", "rb_proj", "te_proj", "wr_proj"];
+    let tables: [Pos; 5] = [Pos::D, Pos::Qb, Pos::Rb, Pos::Te, Pos::Wr];
     let mut max: f32 = 0.0;
     let mut min: f32 = 200.0;
     for table in tables {
@@ -277,9 +286,35 @@ fn get_max_min_all(season: i16, week: i8, field: &str) -> (f32, f32) {
     (max, min)
 }
 
-// TODO could put tables in list and than iterate through that
+fn get_max_min_flex(season: i16, week: i8, field: &str, positions: &[Pos]) -> (f32, f32) {
+    let mut max: f32 = 0.0;
+    let mut min: f32 = 200.0;
+    for pos in positions {
+        let max_min: (f32, f32) = get_max_min(season, week, field, *pos);
+        if max_min.0 > max {
+            max = max_min.0
+        }
+        if max_min.1 < min {
+            min = max_min.1
+        }
+    }
+    (max, min)
+}
+
+// TODO this will not get kickers
+// These Ids should be cached in an option.
 pub fn get_slate(week: i8, season: i16, day: &Day, filter_top: bool) -> Vec<Rc<LitePlayer>> {
-    let mut players: Vec<Rc<LitePlayer>> = Vec::new();
+    if SLATE_CACHE.read().unwrap().len() > 0 {
+        return SLATE_CACHE
+            .read()
+            .unwrap()
+            .clone()
+            .into_iter()
+            .map(|lp| Rc::new(lp))
+            .collect::<Vec<Rc<LitePlayer>>>();
+    }
+
+    let mut players: Vec<LitePlayer> = Vec::new();
     let top_qb: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Qb, QB_COUNT, day);
     let top_rb: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Rb, RB_COUNT, day);
     let top_wr: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, day);
@@ -290,14 +325,19 @@ pub fn get_slate(week: i8, season: i16, day: &Day, filter_top: bool) -> Vec<Rc<L
         players.extend(get_players_by_ids(week, season, &ids))
     }
     if filter_top {
-        players = filter_top_players(players);
+        players = filter_top_players(players, day);
     }
 
+    SLATE_CACHE.write().unwrap().extend(players.clone());
+
     players
+        .into_iter()
+        .map(|lp| Rc::new(lp))
+        .collect::<Vec<Rc<LitePlayer>>>()
 }
 
-fn should_filter_top_player(lp: Rc<LitePlayer>, conn: &Connection, filter_ids: &Vec<i16>) -> bool {
-    let proj = query_proj(&Some(lp), WEEK, SEASON, conn);
+fn should_filter_top_player(lp: &LitePlayer, conn: &Connection, filter_ids: &Vec<i16>) -> bool {
+    let proj = query_proj(&Some(Rc::new(*lp)), WEEK, SEASON, conn);
     match proj {
         Proj::QbProj(qb) => {
             if !filter_ids.contains(&qb.id) {
@@ -347,20 +387,20 @@ fn should_filter_top_player(lp: Rc<LitePlayer>, conn: &Connection, filter_ids: &
     }
 }
 
-fn filter_top_players(players: Vec<Rc<LitePlayer>>) -> Vec<Rc<LitePlayer>> {
+fn filter_top_players(players: Vec<LitePlayer>, day: &Day) -> Vec<LitePlayer> {
     let conn = Connection::open(DATABASE_FILE).unwrap();
-    let mut filtered: Vec<Rc<LitePlayer>> = Vec::new();
-    let top_qbs = get_top_salary(SEASON, WEEK, &Pos::Qb, 3);
-    let top_rbs = get_top_salary(SEASON, WEEK, &Pos::Rb, 2);
+    let mut filtered: Vec<LitePlayer> = Vec::new();
+    let top_qbs = get_top_salary(SEASON, WEEK, &Pos::Qb, day, 3);
+    let top_rbs = get_top_salary(SEASON, WEEK, &Pos::Rb, day, 2);
     for player in &players {
         match player.pos {
             Pos::Qb => {
-                if !should_filter_top_player(player.clone(), &conn, &top_qbs) {
+                if !should_filter_top_player(player, &conn, &top_qbs) {
                     filtered.push(player.clone())
                 }
             }
             Pos::Rb => {
-                if !should_filter_top_player(player.clone(), &conn, &top_rbs) {
+                if !should_filter_top_player(player, &conn, &top_rbs) {
                     filtered.push(player.clone())
                 }
             }
@@ -370,7 +410,16 @@ fn filter_top_players(players: Vec<Rc<LitePlayer>>) -> Vec<Rc<LitePlayer>> {
     filtered
 }
 
-pub fn get_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<Rc<LitePlayer>> {
+pub fn get_rc_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<Rc<LitePlayer>> {
+    let conn = Connection::open(DATABASE_FILE).unwrap();
+    let mut players = Vec::new();
+    for id in ids {
+        players.push(get_rc_player_by_id(week, *id, season, &conn));
+    }
+    players
+}
+
+pub fn get_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<LitePlayer> {
     let conn = Connection::open(DATABASE_FILE).unwrap();
     let mut players = Vec::new();
     for id in ids {
@@ -379,15 +428,28 @@ pub fn get_players_by_ids(week: i8, season: i16, ids: &[i16]) -> Vec<Rc<LitePlay
     players
 }
 
-pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Rc<LitePlayer> {
+pub fn get_rc_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Rc<LitePlayer> {
     let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2 AND season = ?3";
     let mut stmt = conn.prepare_cached(query).unwrap();
     stmt.query_row(params![week, id, season], |row| {
         Ok(Rc::new(LitePlayer {
             id: row.get(0).unwrap(),
-            salary: row.get(7).unwrap(),
-            pos: Pos::from_string(row.get(6).unwrap()).unwrap(),
+            salary: row.get(8).unwrap(),
+            pos: Pos::from_string(row.get(7).unwrap()).unwrap(),
         }))
+    })
+    .unwrap()
+}
+
+pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> LitePlayer {
+    let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2 AND season = ?3";
+    let mut stmt = conn.prepare_cached(query).unwrap();
+    stmt.query_row(params![week, id, season], |row| {
+        Ok(LitePlayer {
+            id: row.get(0).unwrap(),
+            salary: row.get(8).unwrap(),
+            pos: Pos::from_string(row.get(7).unwrap()).unwrap(),
+        })
     })
     .unwrap()
 }
@@ -417,12 +479,12 @@ fn get_score_for_pos(lp: &LitePlayer, week: i8, season: i16, conn: &Connection) 
         Proj::QbProj(qb_proj) => qb_score(&qb_proj, &conn),
         Proj::RecProj(rec_proj) => {
             if rec_proj.pos == Pos::Wr {
-                wr_stud_score(&rec_proj, &conn)
+                wr_stud_score(&rec_proj, &conn, false)
             } else {
                 te_score(&rec_proj, &conn)
             }
         }
-        Proj::RbProj(rb_proj) => rb_score(&[&rb_proj], conn),
+        Proj::RbProj(rb_proj) => rb_score(&[&rb_proj], conn, false),
         Proj::DefProj(def_proj) => dst_score(&def_proj),
         Proj::KickProj(kick_proj) => score_kicker(&kick_proj),
     }
@@ -432,6 +494,9 @@ fn get_score_for_pos(lp: &LitePlayer, week: i8, season: i16, conn: &Connection) 
 pub fn get_top_players_by_pos(season: i16, week: i8, pos: &Pos, count: i8, day: &Day) -> Vec<i16> {
     let conn = &Connection::open(DATABASE_FILE).unwrap();
     let ids = get_active_players(season, week, day);
+    if ids.len() == 0 {
+        panic!("No players found for pos")
+    }
     let mut id_and_score = Vec::new();
     let players = LitePlayer::ids_to_liteplayer(&ids, conn);
     for lp in players.iter().filter(|lp| lp.pos == *pos) {
@@ -449,24 +514,25 @@ pub fn get_top_players_by_pos(season: i16, week: i8, pos: &Pos, count: i8, day: 
     result
 }
 
-pub fn get_top_salary(season: i16, week: i8, pos: &Pos, count: i8) -> Vec<i16> {
+// Needs to factor in DAY
+pub fn get_top_salary(season: i16, week: i8, pos: &Pos, day: &Day, count: i8) -> Vec<i16> {
     let conn = Connection::open(DATABASE_FILE).unwrap();
-    let mut query = conn
-        .prepare(
-            format!(
-                "SELECT id FROM {} WHERE week = ?1 AND season = ?2 ORDER BY salary DESC LIMIT ?3",
-                pos.get_proj_table()
-            )
-            .as_str(),
-        )
-        .unwrap();
-    let ids: Vec<i16> = query
-        .query_map((week, season, count), |r| r.get(0))
-        .unwrap()
-        .into_iter()
-        .map(|p| p.unwrap())
-        .collect::<Vec<i16>>();
-    return ids;
+    let lp = LitePlayer::ids_to_liteplayer(&get_active_players(season, week, day), &conn);
+    let mut pos_players = lp
+        .iter()
+        .filter(|lp| lp.pos == *pos)
+        .map(|lp| query_proj(&Some(Rc::new(*lp)), week, season, &conn))
+        .collect::<Vec<Proj>>();
+    pos_players.sort_by(|a, b| {
+        b.get_proj_salary()
+            .partial_cmp(&a.get_proj_salary())
+            .unwrap()
+    });
+    pos_players
+        .iter()
+        .map(|p| p.get_proj_id())
+        .collect::<Vec<i16>>()[0..count as usize]
+        .to_vec()
 }
 
 pub fn mean(data: &[f32]) -> Option<f32> {
@@ -577,9 +643,6 @@ pub fn get_sunday_ownership_cut_off(week: i8, season: i16) -> f32 {
             &Rc::new(LitePlayer::id_to_liteplayer(&qbs[0], &conn)),
             lineup::Slot::None,
         );
-
-    println!("{:?}", lineup);
-
     let max_own = lineup
         .build(week, season, &conn)
         .unwrap()
@@ -621,12 +684,48 @@ mod tests {
     }
 
     #[test]
+    fn test_filter_top_players() {
+        let players = get_slate(1, 2023, &Day::Sun, true);
+        players.iter().for_each(|p| assert!(p.id != 118));
+        let mut found: bool = false;
+        let no_filter_players = get_slate(1, 2023, &Day::Sun, false);
+        no_filter_players.iter().for_each(|p| {
+            if p.id == 118 {
+                found = true;
+            }
+        });
+        assert!(found);
+    }
+
+    #[test]
+    fn test_get_top_players() {
+        let conn = Connection::open(DATABASE_FILE).unwrap();
+        let player = get_top_players_by_pos(2023, 1, &Pos::Wr, 25, &Day::Sun);
+        let projs = player
+            .iter()
+            .map(|id| {
+                query_proj(
+                    &Some(Rc::new(LitePlayer::id_to_liteplayer(id, &conn))),
+                    1,
+                    2023,
+                    &conn,
+                )
+            })
+            .collect::<Vec<Proj>>();
+        projs.iter().for_each(|p| println!("{:?}", p.get_name()))
+    }
+
+    #[test]
     fn all_rb_scores() {
         let players = get_top_players_by_pos(SEASON, WEEK, &Pos::Rb, 50, &Day::Mon);
         let conn = Connection::open(DATABASE_FILE).unwrap();
         for rb in players {
             let rb_proj = query_rb_proj(rb, WEEK, SEASON, &conn).unwrap();
-            println!("{}: {} \n\n", &rb_proj.name, rb_score(&[&rb_proj], &conn));
+            println!(
+                "{}: {} \n\n",
+                &rb_proj.name,
+                rb_score(&[&rb_proj], &conn, false)
+            );
         }
     }
 
@@ -643,47 +742,8 @@ mod tests {
         println!("{}", get_normalized_score(-1.0, (0.0, -11.0)));
     }
 
-    #[test]
-    fn score_winning_lineup() {
-        let conn = Connection::open(DATABASE_FILE).unwrap();
-        let week: i8 = 1;
-        let season: i16 = 2023;
-        let lineup = Lineup {
-            qb: query_qb_proj(27, 1, 2023, &conn).expect(""),
-            rb1: query_rb_proj(53, week, season, &conn).unwrap(),
-            rb2: query_rb_proj(62, week, season, &conn).unwrap(),
-            wr1: query_rec_proj(142, week, season, &Pos::Wr, &conn).unwrap(),
-            wr2: query_rec_proj(184, week, season, &Pos::Wr, &conn).unwrap(),
-            wr3: query_rec_proj(161, week, season, &Pos::Wr, &conn).unwrap(),
-            te: query_rec_proj(139, week, season, &Pos::Te, &conn).unwrap(),
-            flex: FlexProj {
-                pos: Pos::Wr,
-                rec_proj: Some(query_rec_proj(141, week, season, &Pos::Wr, &conn).unwrap()),
-                rb_proj: None,
-            },
-            def: query_def_proj(21, week, season, &conn).unwrap(),
-            salary_used: 60000,
-        };
-        println!("{}", lineup.lineup_str());
 
-        let lineup = Lineup {
-            qb: query_qb_proj(36, 1, 2023, &conn).expect(""),
-            rb1: query_rb_proj(61, week, season, &conn).unwrap(),
-            rb2: query_rb_proj(69, week, season, &conn).unwrap(),
-            wr1: query_rec_proj(155, week, season, &Pos::Wr, &conn).unwrap(),
-            wr2: query_rec_proj(167, week, season, &Pos::Wr, &conn).unwrap(),
-            wr3: query_rec_proj(175, week, season, &Pos::Wr, &conn).unwrap(),
-            te: query_rec_proj(107, week, season, &Pos::Te, &conn).unwrap(),
-            flex: FlexProj {
-                pos: Pos::Wr,
-                rec_proj: Some(query_rec_proj(163, week, season, &Pos::Wr, &conn).unwrap()),
-                rb_proj: None,
-            },
-            def: query_def_proj(1, week, season, &conn).unwrap(),
-            salary_used: 60000,
-        };
-        println!("{}", lineup.lineup_str());
-    }
+
     #[test]
     fn test_mean() {
         let mean = mean(&[1.0, 2.0, 3.0, 4.0, 5.0]);
@@ -709,14 +769,6 @@ mod tests {
     #[test]
     fn test_max_min_all() {
         println!("{:?}", get_max_min_all(2023, 1, "floor_proj"));
-    }
-
-    #[test]
-    fn test_get_top_players() {
-        println!(
-            "{:?}",
-            get_top_players_by_pos(2023, 1, &Pos::Qb, 10, &Day::Sun)
-        );
     }
 
     #[test]

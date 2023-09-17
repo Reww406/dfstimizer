@@ -139,6 +139,16 @@ pub struct RecDefVsPos {
     pts_pg: Option<f32>,
 }
 
+/// Used for the data loader
+fn query_def_id(team: &String, conn: &Connection) -> Result<i16, rusqlite::Error> {
+    let select_player: &str = "SELECT id FROM player WHERE pos = 'D' AND team = ?1";
+    conn.query_row(
+        select_player,
+        (TEAM_NAME_TO_ABV.get(team.as_str()).unwrap(),),
+        |row| row.get(0),
+    )
+}
+
 /// Load def vs pos stats into sqlite
 pub fn load_in_def_vs_pos(path: &str, table: &str) {
     let contents: String = fs::read_to_string(path).expect("Failed to read in file");
@@ -421,22 +431,21 @@ pub fn store_ownership(rec: &ProjRecord, id: i32, season: i16, week: i8, day: &D
 }
 
 // Create player Id Record
-pub fn load_player_id(player: Player, conn: &Connection) -> i32 {
+pub fn load_player_id(player: &Player, conn: &Connection) -> i32 {
     let player_in: &str = "INSERT INTO player (name, team , pos) VALUES (?1, ?2, ?3)";
-    let player_clone = player.clone();
     conn.execute(
         player_in,
         (
-            player.name,
-            player.team,
+            &player.name,
+            &player.team,
             player.pos.to_str().expect("Failed to convert Pos to Str"),
         ),
     )
     .expect("Failed to insert Player into database");
     return get_player_id(
-        &player_clone.name,
-        &player_clone.team,
-        &player_clone.pos,
+        &player.name,
+        &player.team,
+        &player.pos,
         conn,
     )
     .expect("Just loaded player but cannot find him.");
