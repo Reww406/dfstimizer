@@ -1,4 +1,3 @@
-use std::rc::Rc;
 use std::sync::Arc;
 
 use futures::channel::mpsc;
@@ -11,15 +10,17 @@ use rusqlite::Connection;
 use crate::get_slate;
 use crate::lineup::*;
 use crate::player::*;
-use crate::Day;
 use crate::DATABASE_FILE;
+use crate::GAME_DAY;
+use crate::MIN_SAL;
+use crate::SALARY_CAP;
 use crate::SEASON;
 use crate::WEEK;
 use itertools::Itertools;
 // use std::sync::Rc;
 
-fn get_mvp_ids(players: Vec<Rc<LitePlayer>>) -> Vec<Arc<i16>> {
-    let mvp_pos = &[Pos::Qb];
+fn get_mvp_ids(players: Vec<LitePlayer>) -> Vec<Arc<i16>> {
+    let mvp_pos: &[Pos; 1] = &[Pos::Qb];
     players
         .into_iter()
         .filter(|p| mvp_pos.contains(&p.pos))
@@ -27,19 +28,21 @@ fn get_mvp_ids(players: Vec<Rc<LitePlayer>>) -> Vec<Arc<i16>> {
         .collect::<Vec<Arc<i16>>>()
 }
 
-pub fn build_island_lineups(week: i8, season: i16, day: &Day) -> Vec<IslandLineup> {
+pub fn build_island_lineups(week: i8, season: i16) -> Vec<IslandLineup> {
     let pool: ThreadPool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<IslandLineup> = Vec::new();
-    let players: Vec<Rc<LitePlayer>> = get_slate(week, season, day, false);
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    let players: Vec<LitePlayer> = get_slate(week, season, &GAME_DAY, false, &conn);
     let ids: Vec<Arc<i16>> = get_mvp_ids(players);
     let mut futures: Vec<_> = Vec::new();
     for id in ids {
         let (tx, rx) = mpsc::unbounded::<IslandLineup>();
         let future = async {
             let fut_tx_result = async move {
+                let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
                 let mut mvp_lineup: IslandLB = IslandLB::new();
-                // TODO How to pass dAy in without borrow checker crying
-                let thread_players: Vec<Rc<LitePlayer>> = get_slate(week, season, &Day::Mon, false);
+                let thread_players: Vec<LitePlayer> =
+                    get_slate(week, season, &GAME_DAY, false, &conn);
                 for player in &thread_players {
                     if player.id == *id {
                         mvp_lineup = mvp_lineup.set_slot(player, Slot::Mvp);
@@ -58,23 +61,20 @@ pub fn build_island_lineups(week: i8, season: i16, day: &Day) -> Vec<IslandLineu
         futures.push(future);
     }
     let futures_join = join_all(futures);
-    let test = executor::block_on(futures_join);
-    for future in test {
+    let complete_futures: Vec<Vec<IslandLineup>> = executor::block_on(futures_join);
+    for future in complete_futures {
         finished_lineups.extend(future);
     }
     finished_lineups.sort_by(|a, b: &IslandLineup| b.score.partial_cmp(&a.score).unwrap());
     finished_lineups
 }
 
-fn build_and_score_combos(
-    mvp_lineup: &IslandLB,
-    players: &Vec<Rc<LitePlayer>>,
-) -> Vec<IslandLineup> {
-    let amount = 10;
+fn build_and_score_combos(mvp_lineup: &IslandLB, players: &Vec<LitePlayer>) -> Vec<IslandLineup> {
+    let amount: usize = 20;
     let conn: Connection = Connection::open(DATABASE_FILE).expect("Couldn't Open DB File");
-    let mut best_lineups = Vec::new();
-    let mut lowest_score = 0.0;
-    let mut sorted = false;
+    let mut best_lineups: Vec<IslandLineup> = Vec::new();
+    let mut lowest_score: f32 = 0.0;
+    let mut sorted: bool = false;
     for combo in players
         .iter()
         .filter(|p| p.id != mvp_lineup.mvp.as_ref().unwrap().id)
@@ -89,7 +89,7 @@ fn build_and_score_combos(
         if island_lb.salary_used > SALARY_CAP || island_lb.salary_used < MIN_SAL {
             continue;
         }
-        let new_lineup = island_lb.build(WEEK, SEASON, &conn);
+        let new_lineup: IslandLineup = island_lb.build(WEEK, SEASON, &conn);
         let score: f32 = new_lineup.score;
         if best_lineups.len() == amount && sorted == false {
             best_lineups.sort_by(|a, b: &IslandLineup| b.score.partial_cmp(&a.score).unwrap());
@@ -101,7 +101,6 @@ fn build_and_score_combos(
             }
             best_lineups.push(new_lineup);
         } else if score > lowest_score {
-            // TODO Dont need to iterate over whole list
             for i in 0..best_lineups.len() {
                 if score > best_lineups[i].score {
                     best_lineups[i] = new_lineup;

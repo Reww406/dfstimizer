@@ -1,13 +1,12 @@
 use lazy_static::lazy_static;
-use std::collections::HashMap;
-use std::rc::Rc;
 use std::str::Split;
 use std::sync::RwLock;
+use std::{collections::HashMap, hash::Hash};
 
 use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
-use crate::{data_loader::*, DATABASE_FILE};
+use crate::data_loader::*;
 
 // TODO! Should populate all of these first so read writes are not blocked
 lazy_static! {
@@ -16,17 +15,132 @@ lazy_static! {
     pub static ref QB_PROJ_CACHE: RwLock<HashMap<i16, QbProj>> = RwLock::new(HashMap::new());
     pub static ref DEF_PROJ_CACHE: RwLock<HashMap<i16, DefProj>> = RwLock::new(HashMap::new());
     pub static ref KICK_PROJ_CACHE: RwLock<HashMap<i16, KickProj>> = RwLock::new(HashMap::new());
-    pub static ref DEF_VS_QB_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
-    pub static ref DEF_VS_RB_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
-    pub static ref DEF_VS_WR_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
-    pub static ref DEF_VS_TE_CACHE: RwLock<HashMap<i16, DefVsPos>> = RwLock::new(HashMap::new());
-    pub static ref DEF_ID_CACHE: RwLock<HashMap<String, i16>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_QB_CACHE: RwLock<HashMap<Team, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_RB_CACHE: RwLock<HashMap<Team, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_WR_CACHE: RwLock<HashMap<Team, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_VS_TE_CACHE: RwLock<HashMap<Team, DefVsPos>> = RwLock::new(HashMap::new());
+    pub static ref DEF_ID_CACHE: RwLock<HashMap<Team, i16>> = RwLock::new(HashMap::new());
+    pub static ref PLAYER_NAME_CACHE: RwLock<HashMap<i16, String>> = RwLock::new(HashMap::new());
     /// ID = name-pos-team
     pub static ref PLAYER_ID_CACHE: RwLock<HashMap<String, i16>> = RwLock::new(HashMap::new());
     pub static ref ID_LITEPLAYER_CACHE: RwLock<HashMap<i16, LitePlayer>> = RwLock::new(HashMap::new());
     pub static ref ID_LITEPLAYER_NO_SAL_CACHE: RwLock<HashMap<i16, LitePlayer>> = RwLock::new(HashMap::new());
     // pub static ref SLATE_CACHE: RwLock<Vec<LitePlayer>> = RwLock::new(Vec::new());
 
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Team {
+    Lac,
+    Phi,
+    Chi,
+    Mia,
+    Jax,
+    Cin,
+    Det,
+    Ind,
+    Pit,
+    Tb,
+    Min,
+    Ari,
+    Lv,
+    Den,
+    Ten,
+    Gb,
+    Sea,
+    Kc,
+    Ne,
+    Bal,
+    Sf,
+    La,
+    Nyj,
+    Buf,
+    Car,
+    Atl,
+    Hou,
+    Nyg,
+    Dal,
+    Cle,
+    No,
+    Was,
+}
+
+impl Team {
+    pub fn from_str(team_abv: &String) -> Self {
+        let no_at: &str = &team_abv.replace("@", "");
+        match no_at {
+            "LAC" => Self::Lac,
+            "PHI" => Self::Phi,
+            "CHI" => Self::Chi,
+            "MIA" => Self::Mia,
+            "JAX" => Self::Jax,
+            "CIN" => Self::Cin,
+            "DET" => Self::Det,
+            "IND" => Self::Ind,
+            "PIT" => Self::Pit,
+            "TB" => Self::Tb,
+            "MIN" => Self::Min,
+            "ARI" => Self::Ari,
+            "LV" => Self::Lv,
+            "DEN" => Self::Den,
+            "TEN" => Self::Ten,
+            "GB" => Self::Gb,
+            "SEA" => Self::Sea,
+            "KC" => Self::Kc,
+            "NE" => Self::Ne,
+            "BAL" => Self::Bal,
+            "SF" => Self::Sf,
+            "LA" => Self::La,
+            "NYJ" => Self::Nyj,
+            "BUF" => Self::Buf,
+            "CAR" => Self::Car,
+            "ATL" => Self::Atl,
+            "HOU" => Self::Hou,
+            "NYG" => Self::Nyg,
+            "DAL" => Self::Dal,
+            "CLE" => Self::Cle,
+            "NO" => Self::No,
+            "WAS" => Self::Was,
+            _ => panic!("Not a team"),
+        }
+    }
+
+    pub fn to_str(&self) -> &str {
+        match self {
+            Team::Lac => "LAC",
+            Team::Phi => "PHI",
+            Team::Ind => "IND",
+            Team::Pit => "PIT",
+            Team::Tb => "TB",
+            Team::Min => "MIN",
+            Team::Ari => "ARI",
+            Team::Lv => "LV",
+            Team::Den => "DEN",
+            Team::Ten => "TEN",
+            Team::Gb => "GB",
+            Team::Sea => "SEA",
+            Team::Kc => "KC",
+            Team::Ne => "NE",
+            Team::Bal => "BAL",
+            Team::Sf => "SF",
+            Team::La => "LA",
+            Team::Nyj => "NYJ",
+            Team::Buf => "BUF",
+            Team::Car => "CAR",
+            Team::Atl => "ATL",
+            Team::Hou => "HOU",
+            Team::Nyg => "NYG",
+            Team::Dal => "DAL",
+            Team::Cle => "CLE",
+            Team::No => "NO",
+            Team::Was => "WAS",
+            Team::Chi => "CHI",
+            Team::Mia => "MIA",
+            Team::Jax => "JAX",
+            Team::Cin => "CIN",
+            Team::Det => "DET",
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -37,12 +151,13 @@ pub struct Player {
     pub pos: Pos,
 }
 
-#[derive(Clone, Debug, Default)]
+// Change team and opp to ID
+#[derive(Clone, Debug, Default, Copy)]
 pub struct RbProj {
-    pub name: String,
+    // pub name: String,
     pub id: i16,
-    pub team: String,
-    pub opp: String,
+    pub team: Team,
+    pub opp: Team,
     pub pts_proj: f32,
     pub cieling_proj: f32,
     pub floor_proj: f32,
@@ -53,20 +168,22 @@ pub struct RbProj {
     pub avg_att: f32,
     pub avg_td: f32,
     pub avg_rush_yds: f32,
-    pub avg_rec_yds: f32,
+    pub avg_rec_tgts: f32,
     pub salary: i32,
     pub own_proj: f32,
     pub rating: f32,
     pub snaps_per: f32,
     pub year_consistency: f32,
+    pub vegas_team_total: f32,
+    pub month_consistency: f32,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Copy)]
 pub struct QbProj {
-    pub name: String,
+    // pub name: String,
     pub id: i16,
-    pub team: String,
-    pub opp: String,
+    pub team: Team,
+    pub opp: Team,
     pub pts_proj: f32,
     pub cieling_proj: f32,
     pub floor_proj: f32,
@@ -86,13 +203,17 @@ pub struct QbProj {
     pub own_proj: f32,
     pub rating: f32,
     pub red_zone_op_pg: f32,
+    pub vegas_team_total: f32,
+    pub month_consistency: f32,
+    pub yds_per_pass_att: f32,
 }
-#[derive(Clone, Debug, Default)]
+
+#[derive(Clone, Debug, Default, Copy)]
 pub struct RecProj {
-    pub name: String,
+    // pub name: String,
     pub id: i16,
-    pub team: String,
-    pub opp: String,
+    pub team: Team,
+    pub opp: Team,
     pub pos: Pos,
     pub pts_proj: f32,
     pub cieling_proj: f32,
@@ -112,14 +233,17 @@ pub struct RecProj {
     pub rating: f32,
     pub year_consistency: f32,
     pub year_upside: f32,
+    pub vegas_team_total: f32,
+    pub month_consistency: f32,
+    pub month_upside: f32,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Copy)]
 pub struct DefProj {
-    pub name: String,
+    // pub name: String,
     pub id: i16,
-    pub team: String,
-    pub opp: String,
+    pub team: Team,
+    pub opp: Team,
     pub pts_proj: f32,
     pub cieling_proj: f32,
     pub floor_proj: f32,
@@ -130,14 +254,15 @@ pub struct DefProj {
     pub own_proj: f32,
     pub rating: f32,
     pub vegas_opp_total: f32,
+    pub vegas_team_total: f32,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Copy)]
 pub struct KickProj {
-    pub name: String,
+    // pub name: String,
     pub id: i16,
-    pub team: String,
-    pub opp: String,
+    pub team: Team,
+    pub opp: Team,
     pub pts_proj: f32,
     pub cieling_proj: f32,
     pub floor_proj: f32,
@@ -149,10 +274,10 @@ pub struct KickProj {
     pub rating: f32,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Copy)]
 pub struct DefVsPos {
-    pub id: i16,
-    pub team_name: String,
+    pub team: Team,
+    // pub team_name: String,
     pub pts_given_pg: f32,
     pub pos: Pos,
 }
@@ -165,7 +290,7 @@ pub struct FlexProj {
     pub rb_proj: Option<RbProj>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Proj {
     QbProj(QbProj),
     RecProj(RecProj),
@@ -212,23 +337,14 @@ impl Proj {
             Proj::KickProj(k) => return k.salary,
         }
     }
-    pub fn print_name(&self) {
-        match self {
-            Proj::QbProj(p) => print!("{}, {} ", p.name, p.team),
-            Proj::DefProj(p) => print!("{}, {} ", p.name, p.team),
-            Proj::RecProj(p) => print!("{}, {} ", p.name, p.team),
-            Proj::RbProj(p) => print!("{}, {} ", p.name, p.team),
-            Proj::KickProj(p) => print!("{}, {} ", p.name, p.team),
-        }
-    }
 
-    pub fn get_name(&self) -> &String {
+    pub fn get_name(&self, conn: &Connection) -> String {
         match self {
-            Proj::QbProj(p) => &p.name,
-            Proj::DefProj(p) => &p.name,
-            Proj::RecProj(p) => &p.name,
-            Proj::RbProj(p) => &p.name,
-            Proj::KickProj(p) => &p.name,
+            Proj::QbProj(p) => get_player_name(p.id, conn),
+            Proj::DefProj(p) => get_player_name(p.id, conn),
+            Proj::RecProj(p) => get_player_name(p.id, conn),
+            Proj::RbProj(p) => get_player_name(p.id, conn),
+            Proj::KickProj(p) => get_player_name(p.id, conn),
         }
     }
 
@@ -260,6 +376,12 @@ pub enum Pos {
 impl Default for Pos {
     fn default() -> Self {
         Self::D
+    }
+}
+
+impl Default for Team {
+    fn default() -> Self {
+        panic!("Can't be default for team")
     }
 }
 
@@ -343,16 +465,25 @@ impl Pos {
     }
 }
 
-pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Rc<LitePlayer> {
+pub fn get_player_name(id: i16, conn: &Connection) -> String {
+    if PLAYER_NAME_CACHE.read().unwrap().get(&id).is_some() {
+        return PLAYER_NAME_CACHE.read().unwrap().get(&id).unwrap().clone();
+    }
+
+    let query = "SELECT name FROM player WHERE id = ?1";
+    let mut stmt = conn.prepare_cached(query).unwrap();
+    let player: String = stmt.query_row(params![id], |row| row.get(0)).unwrap();
+
+    PLAYER_NAME_CACHE
+        .write()
+        .unwrap()
+        .insert(id, player.clone());
+    player
+}
+
+pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> LitePlayer {
     if ID_LITEPLAYER_CACHE.read().unwrap().get(&id).is_some() {
-        return Rc::new(
-            ID_LITEPLAYER_CACHE
-                .read()
-                .unwrap()
-                .get(&id)
-                .unwrap()
-                .clone(),
-        );
+        return *ID_LITEPLAYER_CACHE.read().unwrap().get(&id).unwrap();
     }
 
     let query = "SELECT * FROM ownership WHERE week = ?1 AND id = ?2 AND season = ?3";
@@ -368,7 +499,7 @@ pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Rc
         .unwrap();
 
     ID_LITEPLAYER_CACHE.write().unwrap().insert(id, player);
-    Rc::new(player)
+    player
 }
 
 // Can we do just ID
@@ -410,12 +541,7 @@ impl LitePlayer {
 
     pub fn id_to_liteplayer(id: &i16, conn: &Connection) -> Self {
         if ID_LITEPLAYER_NO_SAL_CACHE.read().unwrap().get(id).is_some() {
-            return ID_LITEPLAYER_NO_SAL_CACHE
-                .read()
-                .unwrap()
-                .get(id)
-                .unwrap()
-                .clone();
+            return *ID_LITEPLAYER_NO_SAL_CACHE.read().unwrap().get(id).unwrap();
         }
 
         let query = "SELECT * FROM player WHERE id = ?1";
@@ -436,7 +562,7 @@ impl LitePlayer {
     }
 
     // Could make this a singleton so it's only generated once
-    pub fn player_lookup_map(players: &[Rc<LitePlayer>]) -> HashMap<i16, &Rc<LitePlayer>> {
+    pub fn player_lookup_map(players: &[LitePlayer]) -> HashMap<i16, &LitePlayer> {
         let mut lookup_map = HashMap::new();
         players.iter().for_each(|p| {
             lookup_map.insert(p.id, p);
@@ -450,19 +576,19 @@ fn add_def_to_cache(def_vs_pos: DefVsPos) {
         Pos::Qb => DEF_VS_QB_CACHE
             .write()
             .unwrap()
-            .insert(def_vs_pos.id, def_vs_pos.clone()),
+            .insert(def_vs_pos.team, def_vs_pos),
         Pos::Rb => DEF_VS_RB_CACHE
             .write()
             .unwrap()
-            .insert(def_vs_pos.id, def_vs_pos.clone()),
+            .insert(def_vs_pos.team, def_vs_pos),
         Pos::Wr => DEF_VS_WR_CACHE
             .write()
             .unwrap()
-            .insert(def_vs_pos.id, def_vs_pos.clone()),
+            .insert(def_vs_pos.team, def_vs_pos),
         Pos::Te => DEF_VS_TE_CACHE
             .write()
             .unwrap()
-            .insert(def_vs_pos.id, def_vs_pos.clone()),
+            .insert(def_vs_pos.team, def_vs_pos),
         _ => panic!("No Def Vs Pos"),
     };
 }
@@ -482,46 +608,47 @@ fn add_def_to_cache(def_vs_pos: DefVsPos) {
 //     id
 // }
 
-pub fn query_def_id(opp: &String, conn: &Connection) -> Result<i16, rusqlite::Error> {
+pub fn query_def_id(opp: &Team, conn: &Connection) -> Result<i16, rusqlite::Error> {
     if DEF_ID_CACHE.read().unwrap().get(opp).is_some() {
-        return Ok(DEF_ID_CACHE.read().unwrap().get(opp).unwrap().clone());
+        return Ok(*DEF_ID_CACHE.read().unwrap().get(opp).unwrap());
     }
 
     let select_player: &str = "SELECT id FROM player WHERE pos = 'D' AND team = ?1";
-    let no_at = opp.replace("@", "");
-    let id: i16 = conn.query_row(select_player, params![no_at], |row| row.get(0))?;
+    let id: i16 = conn.query_row(select_player, params![opp.to_str()], |row| row.get(0))?;
 
     println!("Cache miss");
-    DEF_ID_CACHE.write().unwrap().insert(opp.clone(), id);
+    DEF_ID_CACHE.write().unwrap().insert(*opp, id);
     Ok(id)
 }
 
-pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPos {
+// This should just be team to avoid ID lookup
+// and then if it's missing we get id by team!
+pub fn query_def_vs_pos(opp: Team, player_pos: &Pos, conn: &Connection) -> DefVsPos {
     let cache_hit: Option<DefVsPos> = match player_pos {
         Pos::Qb => {
-            if DEF_VS_QB_CACHE.read().unwrap().get(&id).is_some() {
-                Some(DEF_VS_QB_CACHE.read().unwrap().get(&id).unwrap().clone())
+            if DEF_VS_QB_CACHE.read().unwrap().get(&opp).is_some() {
+                Some(*DEF_VS_QB_CACHE.read().unwrap().get(&opp).unwrap())
             } else {
                 None
             }
         }
         Pos::Rb => {
-            if DEF_VS_RB_CACHE.read().unwrap().get(&id).is_some() {
-                Some(DEF_VS_RB_CACHE.read().unwrap().get(&id).unwrap().clone())
+            if DEF_VS_RB_CACHE.read().unwrap().get(&opp).is_some() {
+                Some(*DEF_VS_RB_CACHE.read().unwrap().get(&opp).unwrap())
             } else {
                 None
             }
         }
         Pos::Wr => {
-            if DEF_VS_WR_CACHE.read().unwrap().get(&id).is_some() {
-                Some(DEF_VS_WR_CACHE.read().unwrap().get(&id).unwrap().clone())
+            if DEF_VS_WR_CACHE.read().unwrap().get(&opp).is_some() {
+                Some(*DEF_VS_WR_CACHE.read().unwrap().get(&opp).unwrap())
             } else {
                 None
             }
         }
         Pos::Te => {
-            if DEF_VS_TE_CACHE.read().unwrap().get(&id).is_some() {
-                Some(DEF_VS_TE_CACHE.read().unwrap().get(&id).unwrap().clone())
+            if DEF_VS_TE_CACHE.read().unwrap().get(&opp).is_some() {
+                Some(*DEF_VS_TE_CACHE.read().unwrap().get(&opp).unwrap())
             } else {
                 None
             }
@@ -532,31 +659,26 @@ pub fn query_def_vs_pos(id: i16, player_pos: &Pos, conn: &Connection) -> DefVsPo
     if cache_hit.is_some() {
         return cache_hit.unwrap().to_owned();
     }
-
+    let id = query_def_id(&opp, conn).unwrap();
     let mut stmt = conn
-        .prepare(format!("SELECT * FROM {} WHERE id = ?1", player_pos.get_def_table()).as_str())
+        .prepare_cached(format!("SELECT * FROM {} WHERE id = ?1", player_pos.get_def_table()).as_str())
         .unwrap();
     let def_vs_pos: DefVsPos = stmt
         .query_row(params![id], |row| {
             Ok(DefVsPos {
-                id: row.get(0).unwrap(),
-                team_name: row.get(1).unwrap(),
+                team: opp,
+                // team_name: row.get(1).unwrap(),
                 pts_given_pg: row.get(2).unwrap(),
-                pos: player_pos.clone(),
+                pos: *player_pos,
             })
         })
         .unwrap();
-    add_def_to_cache(def_vs_pos.clone());
+    add_def_to_cache(def_vs_pos);
     println!("Cache miss");
     def_vs_pos
 }
 
-pub fn query_proj(
-    player: &Option<Rc<LitePlayer>>,
-    week: i8,
-    season: i16,
-    conn: &Connection,
-) -> Proj {
+pub fn query_proj(player: Option<&LitePlayer>, week: i8, season: i16, conn: &Connection) -> Proj {
     match player.as_ref().unwrap().pos {
         Pos::Qb => return Proj::QbProj(query_qb_proj_helper(player, week, season, conn)),
         Pos::Rb => return Proj::RbProj(query_rb_proj_helper(player, week, season, conn)),
@@ -572,7 +694,7 @@ pub fn query_proj(
 }
 
 pub fn query_rec_proj_helper(
-    player: &Option<Rc<LitePlayer>>,
+    player: Option<&LitePlayer>,
     week: i8,
     season: i16,
     pos: &Pos,
@@ -592,7 +714,7 @@ pub fn query_rec_proj_helper(
 }
 
 pub fn query_def_proj_helper(
-    player: &Option<Rc<LitePlayer>>,
+    player: Option<&LitePlayer>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -610,7 +732,7 @@ pub fn query_def_proj_helper(
 }
 
 pub fn query_kick_proj_helper(
-    player: &Option<Rc<LitePlayer>>,
+    player: Option<&LitePlayer>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -628,7 +750,7 @@ pub fn query_kick_proj_helper(
 }
 
 pub fn query_rb_proj_helper(
-    player: &Option<Rc<LitePlayer>>,
+    player: Option<&LitePlayer>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -646,7 +768,7 @@ pub fn query_rb_proj_helper(
 }
 
 pub fn query_qb_proj_helper(
-    player: &Option<Rc<LitePlayer>>,
+    player: Option<&LitePlayer>,
     week: i8,
     season: i16,
     conn: &Connection,
@@ -666,7 +788,7 @@ pub fn query_qb_proj_helper(
 //TODO Refactor all of these into options
 pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<KickProj> {
     if KICK_PROJ_CACHE.read().unwrap().get(&id).is_some() {
-        let proj: KickProj = KICK_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
+        let proj: KickProj = *KICK_PROJ_CACHE.read().unwrap().get(&id).unwrap();
         return Some(proj);
     }
     let mut query = conn
@@ -675,10 +797,10 @@ pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opt
     let kick_proj: Option<KickProj> = query
         .query_row((id, week, season), |row| {
             Ok(KickProj {
-                name: row.get(3)?,
+                // name: row.get(3)?,
                 id: row.get(0)?,
-                team: row.get(4)?,
-                opp: row.get(5)?,
+                team: Team::from_str(&row.get(4)?),
+                opp: Team::from_str(&row.get(5)?),
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
                 floor_proj: row.get(8)?,
@@ -698,7 +820,7 @@ pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opt
     KICK_PROJ_CACHE
         .write()
         .unwrap()
-        .insert(id, kick_proj.clone().unwrap());
+        .insert(id, kick_proj.unwrap());
     println!("Cache miss");
     kick_proj
 }
@@ -711,7 +833,7 @@ pub fn query_rec_proj(
     conn: &Connection,
 ) -> Option<RecProj> {
     if REC_PROJ_CACHE.read().unwrap().get(&id).is_some() {
-        let proj: RecProj = REC_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
+        let proj: RecProj = *REC_PROJ_CACHE.read().unwrap().get(&id).unwrap();
         return Some(proj);
     }
     let table = if pos == &Pos::Wr {
@@ -732,9 +854,9 @@ pub fn query_rec_proj(
         .query_row((id, week, season), |row| {
             Ok(RecProj {
                 id: row.get(0)?,
-                name: row.get(3)?,
-                team: row.get(4)?,
-                opp: row.get(5)?,
+                // name: row.get(3)?,
+                team: Team::from_str(&row.get(4)?),
+                opp: Team::from_str(&row.get(5)?),
                 pos: *pos,
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
@@ -754,6 +876,10 @@ pub fn query_rec_proj(
                 rating: row.get(21)?,
                 year_consistency: row.get(22)?,
                 year_upside: row.get(23)?,
+                vegas_team_total: row.get(24)?,
+                month_consistency: row.get(25)?,
+                month_upside: row.get(26)?,
+                // Day
             })
         })
         .optional()
@@ -764,14 +890,14 @@ pub fn query_rec_proj(
     REC_PROJ_CACHE
         .write()
         .unwrap()
-        .insert(id, rec_proj.clone().unwrap());
+        .insert(id, rec_proj.unwrap());
     println!("Cache miss");
     rec_proj
 }
 
 pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<RbProj> {
     if RB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
-        let proj: RbProj = RB_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
+        let proj: RbProj = *RB_PROJ_CACHE.read().unwrap().get(&id).unwrap();
         return Some(proj);
     }
     let mut query = conn
@@ -781,9 +907,9 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .query_row((id, week, season), |row| {
             Ok(RbProj {
                 id: row.get(0)?,
-                name: row.get(3)?,
-                team: row.get(4)?,
-                opp: row.get(5)?,
+                // name: row.get(3)?,
+                team: Team::from_str(&row.get(4)?),
+                opp: Team::from_str(&row.get(5)?),
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
                 floor_proj: row.get(8)?,
@@ -794,12 +920,15 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
                 avg_att: row.get(13)?,
                 avg_td: row.get(14)?,
                 avg_rush_yds: row.get(15)?,
-                avg_rec_yds: row.get(16)?,
+                avg_rec_tgts: row.get(16)?,
                 salary: row.get(17)?,
                 own_proj: row.get(18)?,
                 rating: row.get(19)?,
                 snaps_per: row.get(20)?,
                 year_consistency: row.get(21)?,
+                vegas_team_total: row.get(22)?,
+                month_consistency: row.get(23)?,
+                // Day
             })
         })
         .optional()
@@ -807,17 +936,14 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
     if rb_proj.is_none() {
         return None;
     }
-    RB_PROJ_CACHE
-        .write()
-        .unwrap()
-        .insert(id, rb_proj.clone().unwrap());
+    RB_PROJ_CACHE.write().unwrap().insert(id, rb_proj.unwrap());
     println!("Cache miss");
     rb_proj
 }
 
 pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<QbProj> {
     if QB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
-        let proj: QbProj = QB_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
+        let proj: QbProj = *QB_PROJ_CACHE.read().unwrap().get(&id).unwrap();
         return Some(proj);
     }
     let mut query = conn
@@ -827,9 +953,9 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .query_row((id, week, season), |row| {
             Ok(QbProj {
                 id: row.get(0)?,
-                name: row.get(3)?,
-                team: row.get(4)?,
-                opp: row.get(5)?,
+                // name: row.get(3)?,
+                team: Team::from_str(&row.get(4)?),
+                opp: Team::from_str(&row.get(5)?),
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
                 floor_proj: row.get(8)?,
@@ -849,6 +975,10 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
                 own_proj: row.get(22)?,
                 rating: row.get(23)?,
                 red_zone_op_pg: row.get(24)?,
+                vegas_team_total: row.get(25)?,
+                month_consistency: row.get(26)?,
+                yds_per_pass_att: row.get(27)?,
+                // Day
             })
         })
         .optional()
@@ -856,17 +986,14 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
     if qb_proj.is_none() {
         return None;
     }
-    QB_PROJ_CACHE
-        .write()
-        .unwrap()
-        .insert(id, qb_proj.clone().unwrap());
+    QB_PROJ_CACHE.write().unwrap().insert(id, qb_proj.unwrap());
     println!("Cache miss");
     qb_proj
 }
 
 pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<DefProj> {
     if DEF_PROJ_CACHE.read().unwrap().get(&id).is_some() {
-        let proj: DefProj = DEF_PROJ_CACHE.read().unwrap().get(&id).unwrap().clone();
+        let proj: DefProj = *DEF_PROJ_CACHE.read().unwrap().get(&id).unwrap();
         return Some(proj);
     }
     let mut query = conn
@@ -876,9 +1003,9 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
         .query_row((id, week, season), |row| {
             Ok(DefProj {
                 id: row.get(0)?,
-                name: row.get(3)?,
-                team: row.get(4)?,
-                opp: row.get(5)?,
+                // name: row.get(3)?,
+                team: Team::from_str(&row.get(4)?),
+                opp: Team::from_str(&row.get(5)?),
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
                 floor_proj: row.get(8)?,
@@ -889,6 +1016,8 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
                 own_proj: row.get(13)?,
                 rating: row.get(14)?,
                 vegas_opp_total: row.get(15)?,
+                // Day
+                vegas_team_total: row.get(17)?,
             })
         })
         .optional()
@@ -899,7 +1028,7 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
     DEF_PROJ_CACHE
         .write()
         .unwrap()
-        .insert(id, def_proj.clone().unwrap());
+        .insert(id, def_proj.unwrap());
     println!("Cache miss");
     def_proj
 }
@@ -939,7 +1068,7 @@ pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection)
     // Try Exact Match
     let key = format!("{}-{}-{}", name, team, pos.to_str().unwrap());
     if PLAYER_ID_CACHE.read().unwrap().get(&key).is_some() {
-        return Some(PLAYER_ID_CACHE.read().unwrap().get(&key).unwrap().clone());
+        return Some(*PLAYER_ID_CACHE.read().unwrap().get(&key).unwrap());
     }
 
     let select_player: &str = "SELECT id FROM player WHERE name = ?1 AND pos = ?2 AND team = ?3";

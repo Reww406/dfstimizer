@@ -32,12 +32,15 @@ pub fn init_tables() {
             avg_atts REAL NOT NULL,
             avg_td REAL NOT NULL,
             avg_rush_yds REAL NOT NULL,
-            avg_rec_yds REAL NOT NULL,
+            avg_rec_tgts REAL NOT NULL,
             salary INTEGER NOT NULL,
             own_proj REAL NOT NULL,
             rating REAL NOT NULL,
             snaps_per REAL NOT NULL,
             year_consistency REAL NOT NULL,
+            vegas_team_total REAL NOT NULL,
+            month_consistency REAL NOT NULL,
+            day TEXT NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
@@ -61,6 +64,8 @@ pub fn init_tables() {
             own_proj REAL NOT NULL,
             rating REAL NOT NULL,
             vegas_opp_total REAL NOT NULL,
+            day TEXT NOT NULL,
+            vegas_team_total REAL NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
@@ -83,6 +88,7 @@ pub fn init_tables() {
             salary INTEGER NOT NULL,
             own_proj REAL NOT NULL,
             rating REAL NOT NULL,
+            day TEXT NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
@@ -115,6 +121,10 @@ pub fn init_tables() {
             own_proj REAL NOT NULL,
             rating REAL NOT NULL,
             red_zone_op_pg REAL NOT NULL,
+            vegas_team_total REAL NOT NULL,
+            month_consistency REAL NOT NULL,
+            yds_per_pass_att REAL NOT NULL,
+            day TEXT NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
@@ -146,6 +156,10 @@ pub fn init_tables() {
             rating REAL NOT NULL,
             year_consistency REAL NOT NULL,
             year_upside REAL NOT NULL,
+            vegas_team_total REAL NOT NULL,
+            month_consistency REAL NOT NULL,
+            month_upside REAL NOT NULL,
+            day TEXT NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )
@@ -177,6 +191,10 @@ pub fn init_tables() {
             rating REAL NOT NULL,
             year_consistency REAL NOT NULL,
             year_upside REAL NOT NULL,
+            vegas_team_total REAL NOT NULL,
+            month_consistency REAL NOT NULL,
+            month_upside REAL NOT NULL,
+            day TEXT NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )

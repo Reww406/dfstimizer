@@ -1,7 +1,7 @@
 use crate::{player::*, Day, DATABASE_FILE};
 
 use lazy_static::lazy_static;
-use rusqlite::{params, Connection, Error};
+use rusqlite::{params, Connection};
 use serde::Deserialize;
 use std::{collections::HashMap, fs};
 
@@ -128,7 +128,8 @@ pub struct ProjRecord {
     precip_per: f32,
     year_consistency: f32,
     year_upside: f32,
-    // Load in month year stats when they exist...
+    month_consistency: f32,
+    month_upside: f32, // Load in month year stats when they exist...
 }
 // TODO get specific stats per pos
 #[derive(Debug, Deserialize, Default)]
@@ -163,7 +164,7 @@ pub fn load_in_def_vs_pos(path: &str, table: &str) {
     );
     for res in reader.deserialize() {
         let rec: RecDefVsPos = res.unwrap();
-        let def_id = query_def_id(&rec.team, &conn);
+        let def_id: Result<i16, rusqlite::Error> = query_def_id(&rec.team, &conn);
         if def_id.is_err() || rec.pts_pg.is_none() {
             continue;
         }
@@ -223,9 +224,10 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
     let qb_in: &str =
         "INSERT INTO qb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
             pts_sal_proj, vegas_total, avg_pass_atts, avg_pass_comps, avg_pass_yds, avg_pass_tds, avg_rush_atts,
-            avg_long_pass_yds, pass_to_wr_per, pass_to_te_per, wind_speed, salary, own_proj, rating, red_zone_op_pg) 
+            avg_long_pass_yds, pass_to_wr_per, pass_to_te_per, wind_speed, salary, own_proj, rating, red_zone_op_pg,
+            vegas_team_total, month_consistency, yds_per_pass_att, day) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, 
-                ?23, ?24, ?25)";
+                ?23, ?24, ?25, ?26, ?27, ?28, ?29)";
     conn.execute(
         qb_in,
         params![
@@ -254,6 +256,10 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
             rec.own_proj,
             rec.rating,
             rec.red_zone_opp_pg,
+            rec.vegas_team_total,
+            rec.month_consistency,
+            rec.yds_per_pass_att,
+            day.to_str()
         ],
     )
     .expect("Failed to insert Quarter Back into database");
@@ -265,9 +271,10 @@ fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
     store_ownership(&rec, id, season, week, day);
     let rb_in: &str =
         "INSERT INTO rb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj,
-            pts_sal_proj, vegas_total, rush_yds_share, avg_atts, avg_td, avg_rush_yds, avg_rec_yds, salary, own_proj,
-            rating, snaps_per, year_consistency) 
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22)";
+            pts_sal_proj, vegas_total, rush_yds_share, avg_atts, avg_td, avg_rush_yds, avg_rec_tgts, salary, own_proj,
+            rating, snaps_per, year_consistency, vegas_team_total, month_consistency, day) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12,?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, 
+                ?22, ?23, ?24, ?25)";
 
     conn.execute(
         rb_in,
@@ -288,12 +295,15 @@ fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
             rec.avg_rush_att,
             rec.avg_rush_td,
             rec.avg_rush_yds,
-            rec.avg_rec_yds,
+            rec.avg_tgts,
             rec.salary,
             rec.own_proj,
             rec.rating,
             rec.snaps_share,
-            rec.year_consistency
+            rec.year_consistency,
+            rec.vegas_team_total,
+            rec.month_consistency,
+            day.to_str()
         ],
     )
     .expect("Failed to insert Rb into database");
@@ -307,9 +317,10 @@ fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Con
     let rec_in: String = format!(
         "INSERT INTO {} (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
             pts_sal_proj, vegas_total, avg_recp, avg_tgts, avg_td, avg_rec_yds, avg_rush_yds, red_zone_op_pg, 
-            rec_tgt_share, salary, own_proj, rating, year_consistency, year_upside) 
+            rec_tgt_share, salary, own_proj, rating, year_consistency, year_upside, vegas_team_total, 
+            month_consistency, month_upside, day) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, 
-                ?23, ?24)",
+                ?23, ?24, ?25, ?26, ?27, ?28)",
         table
     );
     conn.execute(
@@ -338,7 +349,11 @@ fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Con
             rec.own_proj,
             rec.rating,
             rec.year_consistency,
-            rec.year_upside
+            rec.year_upside,
+            rec.vegas_team_total,
+            rec.month_consistency,
+            rec.month_upside,
+            day.to_str()
         ],
     )
     .expect("Failed to insert Wide Reciever into database");
@@ -349,37 +364,7 @@ fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Co
     let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let dst_in: &str = "INSERT INTO kick_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj,
-         pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating) 
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)";
-    conn.execute(
-        dst_in,
-        (
-            id,
-            season,
-            week,
-            &rec.player,
-            &rec.team,
-            &rec.opp,
-            rec.pts_proj,
-            rec.ceiling_proj,
-            rec.floor_proj,
-            rec.pts_plus_minus_proj,
-            rec.pts_sal_proj,
-            rec.vegas_total,
-            rec.salary,
-            rec.own_proj,
-            rec.rating,
-        ),
-    )
-    .expect("Failed to insert Defense into database");
-}
-
-fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
-    let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
-    store_ownership(&rec, id, season, week, day);
-    let dst_in: &str = "INSERT INTO dst_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, 
-        pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, vegas_opp_total) 
+         pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, day) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16)";
     conn.execute(
         dst_in,
@@ -399,8 +384,42 @@ fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Con
             rec.salary,
             rec.own_proj,
             rec.rating,
-            rec.vegas_opp_total,
+            day.to_str(),
         ),
+    )
+    .expect("Failed to insert Defense into database");
+}
+
+fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
+    let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
+    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    store_ownership(&rec, id, season, week, day);
+    let dst_in: &str = "INSERT INTO dst_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, 
+        pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, vegas_opp_total, day, 
+        vegas_team_total) 
+        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)";
+    conn.execute(
+        dst_in,
+        params![
+            id,
+            season,
+            week,
+            &rec.player,
+            &rec.team,
+            &rec.opp,
+            rec.pts_proj,
+            rec.ceiling_proj,
+            rec.floor_proj,
+            rec.pts_plus_minus_proj,
+            rec.pts_sal_proj,
+            rec.vegas_total,
+            rec.salary,
+            rec.own_proj,
+            rec.rating,
+            rec.vegas_opp_total,
+            day.to_str(),
+            rec.vegas_team_total
+        ],
     )
     .expect("Failed to insert Defense into database");
 }
@@ -442,13 +461,8 @@ pub fn load_player_id(player: &Player, conn: &Connection) -> i16 {
         ),
     )
     .expect("Failed to insert Player into database");
-    return get_player_id(
-        &player.name,
-        &player.team,
-        &player.pos,
-        conn,
-    )
-    .expect("Just loaded player but cannot find him.");
+    return get_player_id(&player.name, &player.team, &player.pos, conn)
+        .expect("Just loaded player but cannot find him.");
 }
 
 #[cfg(test)]
