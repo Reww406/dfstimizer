@@ -238,27 +238,27 @@ pub fn add_dst_to_lineups(
 #[cfg(test)]
 mod tests {
 
-    use super::*;
+    // use super::*;
     // Helper function for creating line ups
-    fn create_test_lineup(price: i32) -> Lineup {
-        let conn: Connection = Connection::open(DATABASE_FILE).expect("Failed to open DB");
-        let week = 18;
-        let season = 2022;
-        Lineup {
-            qb: query_qb_proj(26, week, season, &conn).unwrap(),
-            rb1: query_rb_proj(1, week, season, &conn).unwrap(),
-            rb2: query_rb_proj(2, week, season, &conn).unwrap(),
-            wr1: query_rec_proj(3, week, season, &Pos::Wr, &conn).unwrap(),
-            wr2: query_rec_proj(8, week, season, &Pos::Wr, &conn).unwrap(),
-            wr3: query_rec_proj(8, week, season, &Pos::Wr, &conn).unwrap(),
-            te: query_rec_proj(56, week, season, &Pos::Te, &conn).unwrap(),
-            flex: FlexProj {
-                rb_proj: Some(query_rb_proj(2, week, season, &conn).unwrap()),
-                pos: Pos::Rb,
-                rec_proj: None,
-            },
-            def: query_def_proj(17, week, season, &conn).unwrap(),
-            salary_used: price,
-        }
-    }
+    // fn create_test_lineup(price: i32) -> Lineup {
+    //     let conn: Connection = Connection::open(DATABASE_FILE).expect("Failed to open DB");
+    //     let week = 18;
+    //     let season = 2022;
+    //     Lineup {
+    //         qb: query_qb_proj(26, week, season, &conn).unwrap(),
+    //         rb1: query_rb_proj(1, week, season, &conn).unwrap(),
+    //         rb2: query_rb_proj(2, week, season, &conn).unwrap(),
+    //         wr1: query_rec_proj(3, week, season, &Pos::Wr, &conn).unwrap(),
+    //         wr2: query_rec_proj(8, week, season, &Pos::Wr, &conn).unwrap(),
+    //         wr3: query_rec_proj(8, week, season, &Pos::Wr, &conn).unwrap(),
+    //         te: query_rec_proj(56, week, season, &Pos::Te, &conn).unwrap(),
+    //         flex: FlexProj {
+    //             rb_proj: Some(query_rb_proj(2, week, season, &conn).unwrap()),
+    //             pos: Pos::Rb,
+    //             rec_proj: None,
+    //         },
+    //         def: query_def_proj(17, week, season, &conn).unwrap(),
+    //         salary_used: price,
+    //     }
+    // }
 }

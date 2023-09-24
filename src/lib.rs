@@ -612,7 +612,7 @@ mod tests {
     use itertools::Itertools;
     use num_bigint::ToBigUint;
 
-    use crate::lineup::{get_normalized_score, qb_score, rb_score, Lineup};
+    use crate::lineup::get_normalized_score;
 
     use super::*;
     // Helper function for creating line ups
@@ -641,7 +641,7 @@ mod tests {
     #[test]
     fn test_filter_top_players() {
         let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
-        let players : Vec<LitePlayer>= get_slate(1, 2023, &Day::Sun, true, &conn);
+        let players: Vec<LitePlayer> = get_slate(1, 2023, &Day::Sun, true, &conn);
         players.iter().for_each(|p| assert!(p.id != 118));
         let mut found: bool = false;
         let no_filter_players = get_slate(1, 2023, &Day::Sun, false, &conn);
@@ -657,7 +657,7 @@ mod tests {
     fn test_get_top_players() {
         let conn = Connection::open(DATABASE_FILE).unwrap();
         let player = get_top_players_by_pos(2023, 1, &Pos::Wr, 25, &Day::Sun, &conn);
-        let projs = player
+        let _ = player
             .iter()
             .map(|id| {
                 query_proj(
@@ -676,7 +676,7 @@ mod tests {
         let conn = Connection::open(DATABASE_FILE).unwrap();
         let players = get_top_players_by_pos(SEASON, WEEK, &Pos::Rb, 50, &Day::Mon, &conn);
         for rb in players {
-            let rb_proj = query_rb_proj(rb, WEEK, SEASON, &conn).unwrap();
+            let _ = query_rb_proj(rb, WEEK, SEASON, &conn).unwrap();
             // println!(
             //     "{}: {} \n\n",
             //     &rb_proj.name,
@@ -690,7 +690,7 @@ mod tests {
         let conn = Connection::open(DATABASE_FILE).unwrap();
         let players = get_top_players_by_pos(SEASON, WEEK, &Pos::Qb, 50, &Day::Sun, &conn);
         for qb in players {
-            let qb_proj = query_qb_proj(qb, WEEK, SEASON, &conn).unwrap();
+            let _ = query_qb_proj(qb, WEEK, SEASON, &conn).unwrap();
             // println!("{}: {} \n\n", &qb_proj.name, qb_score(&qb_proj, &conn));
         }
 

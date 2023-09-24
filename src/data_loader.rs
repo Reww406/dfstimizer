@@ -45,6 +45,7 @@ lazy_static! {
 // There is more fields we can grab if needed
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[allow(dead_code)]
 pub struct ProjRecord {
     rating: f32,
     player: String,

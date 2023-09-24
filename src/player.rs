@@ -176,6 +176,8 @@ pub struct RbProj {
     pub year_consistency: f32,
     pub vegas_team_total: f32,
     pub month_consistency: f32,
+    // in another datastore
+    pub opp_def_pts_given: f32,
 }
 
 #[derive(Clone, Debug, Default, Copy)]
@@ -206,6 +208,7 @@ pub struct QbProj {
     pub vegas_team_total: f32,
     pub month_consistency: f32,
     pub yds_per_pass_att: f32,
+    pub opp_def_pts_given: f32,
 }
 
 #[derive(Clone, Debug, Default, Copy)]
@@ -236,6 +239,7 @@ pub struct RecProj {
     pub vegas_team_total: f32,
     pub month_consistency: f32,
     pub month_upside: f32,
+    pub opp_def_pts_given: f32,
 }
 
 #[derive(Debug, Clone, Default, Copy)]
@@ -460,7 +464,6 @@ impl Pos {
             Pos::Te => Ok("TE"),
             Pos::Rb => Ok("RB"),
             Pos::K => Ok("K"),
-            _ => Err(()),
         }
     }
 }
@@ -621,6 +624,7 @@ pub fn query_def_id(opp: &Team, conn: &Connection) -> Result<i16, rusqlite::Erro
     Ok(id)
 }
 
+// TODO most expensive query
 // This should just be team to avoid ID lookup
 // and then if it's missing we get id by team!
 pub fn query_def_vs_pos(opp: Team, player_pos: &Pos, conn: &Connection) -> DefVsPos {
@@ -661,7 +665,9 @@ pub fn query_def_vs_pos(opp: Team, player_pos: &Pos, conn: &Connection) -> DefVs
     }
     let id = query_def_id(&opp, conn).unwrap();
     let mut stmt = conn
-        .prepare_cached(format!("SELECT * FROM {} WHERE id = ?1", player_pos.get_def_table()).as_str())
+        .prepare_cached(
+            format!("SELECT * FROM {} WHERE id = ?1", player_pos.get_def_table()).as_str(),
+        )
         .unwrap();
     let def_vs_pos: DefVsPos = stmt
         .query_row(params![id], |row| {
@@ -852,11 +858,12 @@ pub fn query_rec_proj(
         .expect("Couldn't Prepare statement");
     let rec_proj: Option<RecProj> = query
         .query_row((id, week, season), |row| {
+            let opp: Team = Team::from_str(&row.get(5)?);
             Ok(RecProj {
                 id: row.get(0)?,
                 // name: row.get(3)?,
                 team: Team::from_str(&row.get(4)?),
-                opp: Team::from_str(&row.get(5)?),
+                opp: opp, // 5
                 pos: *pos,
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
@@ -879,7 +886,8 @@ pub fn query_rec_proj(
                 vegas_team_total: row.get(24)?,
                 month_consistency: row.get(25)?,
                 month_upside: row.get(26)?,
-                // Day
+                // Day 27
+                opp_def_pts_given: query_def_vs_pos(opp, pos, &conn).pts_given_pg,
             })
         })
         .optional()
@@ -905,11 +913,12 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .expect("Couldn't Prepare statement");
     let rb_proj: Option<RbProj> = query
         .query_row((id, week, season), |row| {
+            let opp: Team = Team::from_str(&row.get(5)?);
             Ok(RbProj {
                 id: row.get(0)?,
                 // name: row.get(3)?,
                 team: Team::from_str(&row.get(4)?),
-                opp: Team::from_str(&row.get(5)?),
+                opp: opp, // 5
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
                 floor_proj: row.get(8)?,
@@ -928,7 +937,8 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
                 year_consistency: row.get(21)?,
                 vegas_team_total: row.get(22)?,
                 month_consistency: row.get(23)?,
-                // Day
+                // Day 24
+                opp_def_pts_given: query_def_vs_pos(opp, &Pos::Rb, &conn).pts_given_pg,
             })
         })
         .optional()
@@ -951,11 +961,13 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
         .expect("Couldn't prepare query");
     let qb_proj: Option<QbProj> = query
         .query_row((id, week, season), |row| {
+            let opp = Team::from_str(&row.get(5)?);
+
             Ok(QbProj {
                 id: row.get(0)?,
                 // name: row.get(3)?,
                 team: Team::from_str(&row.get(4)?),
-                opp: Team::from_str(&row.get(5)?),
+                opp: opp, // 5
                 pts_proj: row.get(6)?,
                 cieling_proj: row.get(7)?,
                 floor_proj: row.get(8)?,
@@ -978,7 +990,8 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
                 vegas_team_total: row.get(25)?,
                 month_consistency: row.get(26)?,
                 yds_per_pass_att: row.get(27)?,
-                // Day
+                // Day 28
+                opp_def_pts_given: query_def_vs_pos(opp, &Pos::Qb, &conn).pts_given_pg,
             })
         })
         .optional()
@@ -1016,7 +1029,7 @@ pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opti
                 own_proj: row.get(13)?,
                 rating: row.get(14)?,
                 vegas_opp_total: row.get(15)?,
-                // Day
+                // Day 16
                 vegas_team_total: row.get(17)?,
             })
         })
@@ -1107,8 +1120,7 @@ pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection)
 #[cfg(test)]
 mod tests {
     use super::*;
-    use csv::StringRecord;
-
+    
     #[test]
     fn test_enum_compartor() {
         let pos: Pos = Pos::from_str("QB").unwrap();

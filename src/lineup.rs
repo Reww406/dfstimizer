@@ -76,12 +76,11 @@ impl Slot {
 
 // TODO Maybe else if score on TD or Yds
 // TODO Scorning functions
-pub fn rb_score(rbs: &[&RbProj], conn: &Connection, any_flex: bool) -> f32 {
+pub fn rb_score(rbs: &[&RbProj], _: &Connection, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
     rbs.iter().for_each(|rb| {
-        let def_vs_rb: DefVsPos = query_def_vs_pos(rb.team, &Pos::Rb, &conn);
         let mut inside_score: f32 = 0.0;
-        inside_score += get_normalized_score(def_vs_rb.pts_given_pg, *RB_OPP_DEF) * 0.5;
+        inside_score += get_normalized_score(rb.opp_def_pts_given, *RB_OPP_DEF) * 0.5;
         inside_score += get_normalized_score(rb.avg_att, *RB_ATTS) * 2.0;
         inside_score += get_normalized_score(rb.avg_rec_tgts, *RB_AVG_REC_TGTS) * 0.5;
         inside_score += get_normalized_score(rb.month_consistency, *RB_MONTH_CONSISTENCY) * 1.0;
@@ -99,10 +98,9 @@ pub fn rb_score(rbs: &[&RbProj], conn: &Connection, any_flex: bool) -> f32 {
     score
 }
 
-pub fn qb_score(qb: &QbProj, conn: &Connection, any_flex: bool) -> f32 {
+pub fn qb_score(qb: &QbProj, _: &Connection, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
-    let def_vs_qb: DefVsPos = query_def_vs_pos(qb.team, &Pos::Qb, &conn);
-    score += get_normalized_score(def_vs_qb.pts_given_pg, *QB_OPP_DEF) * 0.75;
+    score += get_normalized_score(qb.opp_def_pts_given, *QB_OPP_DEF) * 0.75;
     score += get_normalized_score(qb.red_zone_op_pg, *QB_AVG_RZ_OP) * 1.0;
     score += get_normalized_score(qb.avg_pass_tds, *QB_AVG_TD) * 0.50;
 
@@ -120,10 +118,10 @@ pub fn qb_score(qb: &QbProj, conn: &Connection, any_flex: bool) -> f32 {
     new_score
 }
 
-pub fn wr_stud_score(wr: &RecProj, conn: &Connection, any_flex: bool) -> f32 {
+// Most expensive scoring
+pub fn wr_stud_score(wr: &RecProj, _: &Connection, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
-    let def_vs_wr: DefVsPos = query_def_vs_pos(wr.team, &Pos::Wr, &conn);
-    score += get_normalized_score(def_vs_wr.pts_given_pg, *WR_OPP_DEF) * 0.75;
+    score += get_normalized_score(wr.opp_def_pts_given, *WR_OPP_DEF) * 0.75;
     score += get_normalized_score(wr.rec_tgt_share, *WR_TGT_SHARE) * 2.0;
     score += get_normalized_score(wr.avg_td, *WR_AVG_TD) * 0.50;
     score += get_normalized_score(wr.red_zone_op_pg, *WR_RED_ZONE) * 0.5;
@@ -154,10 +152,9 @@ pub fn score_kicker(proj: &KickProj) -> f32 {
     get_normalized_score(pts_score, (1.0, 0.0))
 }
 
-pub fn te_score(te: &RecProj, conn: &Connection, any_flex: bool) -> f32 {
+pub fn te_score(te: &RecProj, _: &Connection, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
-    let def_vs_te: DefVsPos = query_def_vs_pos(te.team, &Pos::Te, &conn);
-    score += get_normalized_score(def_vs_te.pts_given_pg, *TE_OPP_DEF) * 0.75;
+    score += get_normalized_score(te.opp_def_pts_given, *TE_OPP_DEF) * 0.75;
     score += get_normalized_score(te.rec_tgt_share, *TE_REC_TGT) * 2.0;
     score += get_normalized_score(te.year_consistency, *TE_YEAR_CONSISTENCY) * 0.5;
     if any_flex {

@@ -31,6 +31,7 @@ fn count_player_type(players: &Vec<LitePlayer>, pos: Pos) -> i32 {
     count
 }
 
+#[allow(dead_code)]
 fn load_in_stats() {
     init_tables();
     load_in_anyflex("flex/sun-night-2.csv", 2023, 22, &Day::Sun);
@@ -63,6 +64,7 @@ fn load_in_stats() {
     load_in_def_vs_pos("def/def-vs-wr.csv", "def_vs_wr");
 }
 
+#[allow(dead_code)]
 fn parse_lineups(lineups: Vec<Lineup>, conn: &Connection) -> Option<Vec<Lineup>> {
     let mut qb_lineups: HashMap<i16, Vec<Lineup>> = HashMap::new();
     let mut best_lines: Vec<Lineup> = Vec::new();
@@ -91,6 +93,7 @@ fn parse_lineups(lineups: Vec<Lineup>, conn: &Connection) -> Option<Vec<Lineup>>
 }
 
 // keep conn for ease of swapping
+#[allow(dead_code)]
 fn parse_island_lineups(lineups: Vec<IslandLineup>, _: &Connection) -> Option<Vec<IslandLineup>> {
     let mut qb_lineups: HashMap<i16, Vec<IslandLineup>> = HashMap::new();
     let mut best_lines: Vec<IslandLineup> = Vec::new();
