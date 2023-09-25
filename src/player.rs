@@ -209,6 +209,7 @@ pub struct QbProj {
     pub month_consistency: f32,
     pub yds_per_pass_att: f32,
     pub opp_def_pts_given: f32,
+    pub avg_rush_yards: f32,
 }
 
 #[derive(Clone, Debug, Default, Copy)]
@@ -831,6 +832,15 @@ pub fn query_kick_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Opt
     kick_proj
 }
 
+pub fn get_rec_from_cache(id: i16) -> RecProj {
+    if REC_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: RecProj = *REC_PROJ_CACHE.read().unwrap().get(&id).unwrap();
+        return proj;
+    } else {
+        panic!("Rec not in cache")
+    }
+}
+
 pub fn query_rec_proj(
     id: i16,
     week: i8,
@@ -903,6 +913,15 @@ pub fn query_rec_proj(
     rec_proj
 }
 
+pub fn get_rb_from_cache(id: i16) -> RbProj {
+    if RB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: RbProj = *RB_PROJ_CACHE.read().unwrap().get(&id).unwrap();
+        return proj;
+    } else {
+        panic!("RB not in cache")
+    }
+}
+
 pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<RbProj> {
     if RB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
         let proj: RbProj = *RB_PROJ_CACHE.read().unwrap().get(&id).unwrap();
@@ -951,6 +970,15 @@ pub fn query_rb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
     rb_proj
 }
 
+pub fn get_qb_from_cache(id: i16) -> QbProj {
+    if QB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: QbProj = *QB_PROJ_CACHE.read().unwrap().get(&id).unwrap();
+        return proj;
+    } else {
+        panic!("QB not in cache..")
+    }
+}
+
 pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<QbProj> {
     if QB_PROJ_CACHE.read().unwrap().get(&id).is_some() {
         let proj: QbProj = *QB_PROJ_CACHE.read().unwrap().get(&id).unwrap();
@@ -992,6 +1020,7 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
                 yds_per_pass_att: row.get(27)?,
                 // Day 28
                 opp_def_pts_given: query_def_vs_pos(opp, &Pos::Qb, &conn).pts_given_pg,
+                avg_rush_yards: row.get(29)?,
             })
         })
         .optional()
@@ -1002,6 +1031,15 @@ pub fn query_qb_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Optio
     QB_PROJ_CACHE.write().unwrap().insert(id, qb_proj.unwrap());
     println!("Cache miss");
     qb_proj
+}
+
+pub fn get_def_from_cache(id: i16) -> DefProj {
+    if DEF_PROJ_CACHE.read().unwrap().get(&id).is_some() {
+        let proj: DefProj = *DEF_PROJ_CACHE.read().unwrap().get(&id).unwrap();
+        return proj;
+    } else {
+        panic!("Def not in cache")
+    }
 }
 
 pub fn query_def_proj(id: i16, week: i8, season: i16, conn: &Connection) -> Option<DefProj> {
@@ -1120,7 +1158,7 @@ pub fn get_player_id(name: &String, team: &String, pos: &Pos, conn: &Connection)
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_enum_compartor() {
         let pos: Pos = Pos::from_str("QB").unwrap();

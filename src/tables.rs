@@ -125,6 +125,7 @@ pub fn init_tables() {
             month_consistency REAL NOT NULL,
             yds_per_pass_att REAL NOT NULL,
             day TEXT NOT NULL,
+            avg_rush_yds REAL NOT NULL,
             FOREIGN key(id) REFERENCES player(id),
             UNIQUE(id, season, week) on CONFLICT REPLACE
         )

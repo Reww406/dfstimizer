@@ -226,9 +226,9 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
         "INSERT INTO qb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
             pts_sal_proj, vegas_total, avg_pass_atts, avg_pass_comps, avg_pass_yds, avg_pass_tds, avg_rush_atts,
             avg_long_pass_yds, pass_to_wr_per, pass_to_te_per, wind_speed, salary, own_proj, rating, red_zone_op_pg,
-            vegas_team_total, month_consistency, yds_per_pass_att, day) 
+            vegas_team_total, month_consistency, yds_per_pass_att, day, avg_rush_yds) 
         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, 
-                ?23, ?24, ?25, ?26, ?27, ?28, ?29)";
+                ?23, ?24, ?25, ?26, ?27, ?28, ?29, ?30)";
     conn.execute(
         qb_in,
         params![
@@ -260,7 +260,8 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
             rec.vegas_team_total,
             rec.month_consistency,
             rec.yds_per_pass_att,
-            day.to_str()
+            day.to_str(),
+            rec.avg_rush_yds
         ],
     )
     .expect("Failed to insert Quarter Back into database");

@@ -1,27 +1,29 @@
+use std::cmp::max;
 use std::vec;
 
+use rand::Rng;
 use rusqlite::Connection;
 
-use crate::TE_REC_TGT;
 use crate::{
     player::*, return_if_field_exits, ALL_CIELING_MAX_MIN, ALL_FLOOR_MAX_MIN, ALL_PTS_MAX_MIN,
     ALL_PTS_PLUS_MINS_MAX_MIN, ALL_PTS_SAL_MAX_MIN, ALL_TEAM_TOTAL, DATABASE_FILE,
-    DST_PTS_PLUS_MINUS, DST_VEGAS_OPP_TOTAL, QB_AVG_RZ_OP, QB_AVG_TD, QB_CIELING, QB_OPP_DEF,
-    QB_PTS_PER_SAL, RB_ATTS, RB_AVG_REC_TGTS, RB_FLOOR_PROJ, RB_MONTH_CONSISTENCY, RB_OPP_DEF,
-    RB_PTS_SAL, SALARY_CAP, TE_OPP_DEF, TE_PTS_SAL, TE_YEAR_CONSISTENCY, WR_AVG_TD, WR_CIELING,
-    WR_MONTH_UPSIDE, WR_OPP_DEF, WR_RED_ZONE, WR_TGT_SHARE,
+    DST_PTS_PLUS_MINUS, DST_VEGAS_OPP_TOTAL, QB_AVG_RUSH_YDS, QB_AVG_RZ_OP, QB_AVG_TD, QB_CIELING,
+    QB_INVERSE_SAL, QB_OPP_DEF, QB_PTS_PER_SAL, RB_ATTS, RB_AVG_REC_TGTS, RB_CEILING,
+    RB_INVERSE_SAL, RB_OPP_DEF, SALARY_CAP, TE_AVG_TD, TE_OPP_DEF, TE_PTS_SAL, TE_UPSIDE,
+    WR_AVG_TD, WR_CIELING, WR_MONTH_UPSIDE, WR_OPP_DEF, WR_RED_ZONE, WR_TGT_SHARE,
 };
+use crate::{RB_AVG_TD, TE_REC_TGT};
 
 // first name is min, next number is max
 pub const OWN_COUNT_RANGE_3: OwnBracket = OwnBracket {
     own: 2.5,
-    max_amount: 3,
+    max_amount: 2,
     min_amount: 0,
 };
 pub const OWN_COUNT_RANGE_6: OwnBracket = OwnBracket {
-    own: 4.5,
+    own: 5.0,
     max_amount: 7,
-    min_amount: 1,
+    min_amount: 2,
 };
 pub const OWN_COUNT_RANGE_12: OwnBracket = OwnBracket {
     own: 10.0,
@@ -31,7 +33,7 @@ pub const OWN_COUNT_RANGE_12: OwnBracket = OwnBracket {
 pub const OWN_COUNT_RANGE_22: OwnBracket = OwnBracket {
     own: 20.0,
     max_amount: 9,
-    min_amount: 4,
+    min_amount: 5,
 };
 pub const OWN_COUNT_RANGE_30: OwnBracket = OwnBracket {
     own: 30.0,
@@ -76,70 +78,77 @@ impl Slot {
 
 // TODO Maybe else if score on TD or Yds
 // TODO Scorning functions
-pub fn rb_score(rbs: &[&RbProj], _: &Connection, any_flex: bool) -> f32 {
+pub fn rb_score(rbs: &[&RbProj], any_flex: bool, sun_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
     rbs.iter().for_each(|rb| {
         let mut inside_score: f32 = 0.0;
-        inside_score += get_normalized_score(rb.opp_def_pts_given, *RB_OPP_DEF) * 0.5;
-        inside_score += get_normalized_score(rb.avg_att, *RB_ATTS) * 2.0;
+        inside_score += get_normalized_score(rb.opp_def_pts_given, *RB_OPP_DEF) * 0.75;
+        inside_score += get_normalized_score(rb.avg_att, *RB_ATTS) * 1.5;
         inside_score += get_normalized_score(rb.avg_rec_tgts, *RB_AVG_REC_TGTS) * 0.5;
-        inside_score += get_normalized_score(rb.month_consistency, *RB_MONTH_CONSISTENCY) * 1.0;
+        inside_score += get_normalized_score(rb.avg_td, *RB_AVG_TD) * 1.00;
+        inside_score += get_normalized_score(rb.salary as f32 * -1.0, *RB_INVERSE_SAL) * 1.0;
         if any_flex {
-            inside_score += 0.8;
-            inside_score += get_normalized_score(rb.floor_proj, *ALL_FLOOR_MAX_MIN) * 1.0;
-            inside_score += get_normalized_score(rb.pts_sal_proj, *ALL_PTS_SAL_MAX_MIN) * 3.0;
+            inside_score += 2.0;
+            // inside_score += get_normalized_score(rb.floor_proj, *ALL_FLOOR_MAX_MIN) * 1.0;
+            inside_score += get_normalized_score(rb.cieling_proj, *ALL_CIELING_MAX_MIN) * 1.85;
+            // lower score
         } else {
-            inside_score += get_normalized_score(rb.vegas_team_total, *ALL_TEAM_TOTAL) * 0.8;
-            inside_score += get_normalized_score(rb.floor_proj, *RB_FLOOR_PROJ) * 1.0;
-            inside_score += get_normalized_score(rb.pts_sal_proj, *RB_PTS_SAL) * 3.0;
+            inside_score += get_normalized_score(rb.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
+            inside_score += get_normalized_score(rb.cieling_proj, *RB_CEILING) * 1.85;
         }
-        score += get_normalized_score(inside_score, (8.8, 0.0));
+        score += get_normalized_score(inside_score, (8.60, 0.0));
+        if sun_flex {
+            score += -0.1
+        }
     });
+
     score
 }
 
-pub fn qb_score(qb: &QbProj, _: &Connection, any_flex: bool) -> f32 {
+pub fn qb_score(qb: &QbProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
     score += get_normalized_score(qb.opp_def_pts_given, *QB_OPP_DEF) * 0.75;
     score += get_normalized_score(qb.red_zone_op_pg, *QB_AVG_RZ_OP) * 1.0;
-    score += get_normalized_score(qb.avg_pass_tds, *QB_AVG_TD) * 0.50;
-
+    score += get_normalized_score(qb.avg_pass_tds, *QB_AVG_TD) * 1.50;
+    score += get_normalized_score(qb.avg_rush_yards, *QB_AVG_RUSH_YDS) * 0.5;
+    score += get_normalized_score(qb.salary as f32 * -1.0, *QB_INVERSE_SAL) * 0.5;
+    // rush yds
     if any_flex {
-        score += get_normalized_score(qb.cieling_proj, *ALL_CIELING_MAX_MIN) * 1.5;
-        score += get_normalized_score(qb.pts_sal_proj, *ALL_PTS_MAX_MIN) * 2.5;
-        score += 2.0
+        score += get_normalized_score(qb.cieling_proj, *ALL_CIELING_MAX_MIN) * 2.5;
+        score += get_normalized_score(qb.pts_sal_proj, *ALL_PTS_MAX_MIN) * 1.5;
+        score += 2.5
     } else {
-        score += get_normalized_score(qb.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
-        score += get_normalized_score(qb.cieling_proj, *QB_CIELING) * 1.5;
-        score += get_normalized_score(qb.pts_sal_proj, *QB_PTS_PER_SAL) * 2.5;
+        score += get_normalized_score(qb.vegas_team_total, *ALL_TEAM_TOTAL) * 2.5;
+        score += get_normalized_score(qb.cieling_proj, *QB_CIELING) * 2.5;
+        score += get_normalized_score(qb.pts_sal_proj, *QB_PTS_PER_SAL) * 1.5;
     }
 
-    let new_score: f32 = get_normalized_score(score, (8.25, 0.0));
+    let new_score: f32 = get_normalized_score(score, (10.75, 0.0));
     new_score
 }
 
 // Most expensive scoring
-pub fn wr_stud_score(wr: &RecProj, _: &Connection, any_flex: bool) -> f32 {
+pub fn wr_stud_score(wr: &RecProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
     score += get_normalized_score(wr.opp_def_pts_given, *WR_OPP_DEF) * 0.75;
     score += get_normalized_score(wr.rec_tgt_share, *WR_TGT_SHARE) * 2.0;
-    score += get_normalized_score(wr.avg_td, *WR_AVG_TD) * 0.50;
+    score += get_normalized_score(wr.avg_td, *WR_AVG_TD) * 1.25;
     score += get_normalized_score(wr.red_zone_op_pg, *WR_RED_ZONE) * 0.5;
     if any_flex {
         score += get_normalized_score(wr.cieling_proj, *ALL_CIELING_MAX_MIN) * 2.5;
-        score += 2.0;
+        score += 2.5;
     } else {
-        score += get_normalized_score(wr.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
+        score += get_normalized_score(wr.vegas_team_total, *ALL_TEAM_TOTAL) * 2.5;
         score += get_normalized_score(wr.cieling_proj, *WR_CIELING) * 2.5;
     }
-    score += get_normalized_score(wr.month_upside, *WR_MONTH_UPSIDE) * 0.5;
-    get_normalized_score(score, (8.75, 0.0))
+    score += get_normalized_score(wr.month_upside, *WR_MONTH_UPSIDE) * 0.85;
+    get_normalized_score(score, (10.35, 0.0))
 }
 
-fn flex_score(flex: &FlexProj, conn: &Connection) -> f32 {
+fn flex_score(flex: &FlexProj) -> f32 {
     match flex.pos {
-        Pos::Wr => return wr_stud_score(flex.rec_proj.as_ref().unwrap(), conn, false),
-        Pos::Rb => return rb_score(&[flex.rb_proj.as_ref().unwrap()], conn, false),
+        Pos::Wr => return wr_stud_score(flex.rec_proj.as_ref().unwrap(), false),
+        Pos::Rb => return rb_score(&[flex.rb_proj.as_ref().unwrap()], false, true),
         _ => {
             panic!("Wrong Flex Pos..");
         }
@@ -152,19 +161,21 @@ pub fn score_kicker(proj: &KickProj) -> f32 {
     get_normalized_score(pts_score, (1.0, 0.0))
 }
 
-pub fn te_score(te: &RecProj, _: &Connection, any_flex: bool) -> f32 {
+pub fn te_score(te: &RecProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
-    score += get_normalized_score(te.opp_def_pts_given, *TE_OPP_DEF) * 0.75;
-    score += get_normalized_score(te.rec_tgt_share, *TE_REC_TGT) * 2.0;
-    score += get_normalized_score(te.year_consistency, *TE_YEAR_CONSISTENCY) * 0.5;
+    score += get_normalized_score(te.opp_def_pts_given, *TE_OPP_DEF) * 1.50;
+    score += get_normalized_score(te.rec_tgt_share, *TE_REC_TGT) * 1.5;
+    score += get_normalized_score(te.avg_td, *TE_AVG_TD) * 0.50;
+    score += get_normalized_score(te.month_upside, *TE_UPSIDE) * 0.50;
     if any_flex {
-        score += get_normalized_score(te.pts_sal_proj, *ALL_PTS_MAX_MIN) * 3.0;
+        score += get_normalized_score(te.pts_sal_proj, *ALL_PTS_MAX_MIN) * 2.0;
         score += 2.0;
     } else {
         score += get_normalized_score(te.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
-        score += get_normalized_score(te.pts_sal_proj, *TE_PTS_SAL) * 3.0;
+        score += get_normalized_score(te.pts_sal_proj, *TE_PTS_SAL) * 2.0;
     }
-    get_normalized_score(score, (8.25, 0.0))
+    let score = get_normalized_score(score, (8.0, 0.0));
+    score
 }
 
 // Points
@@ -180,12 +191,16 @@ pub fn dst_score(def: &DefProj, any_flex: bool) -> f32 {
 }
 
 pub fn score_stacking(wrs: &[&RecProj], qb: &QbProj) -> f32 {
+    let mut score: f32 = 0.0;
     for wr in wrs {
         if wr.team == qb.team {
-            return 0.5 + (get_normalized_score(wr.rec_tgt_share, *WR_TGT_SHARE) * 0.50);
+            let bonus = 0.5 + (get_normalized_score(wr.rec_tgt_share, *WR_TGT_SHARE) * 0.50);
+            if bonus > score {
+                score = bonus;
+            }
         }
     }
-    return 0.0;
+    return score;
 }
 
 /// Takes tuple of max: f32, min: f32
@@ -235,15 +250,14 @@ impl IslandLB {
     }
 
     fn get_proj_score(proj: &Proj) -> f32 {
-        let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
         let score: f32 = match proj {
-            Proj::QbProj(qb_proj) => qb_score(qb_proj, &conn, true),
+            Proj::QbProj(qb_proj) => qb_score(qb_proj, true),
             Proj::RecProj(rec_proj) => match rec_proj.pos {
-                Pos::Wr => wr_stud_score(rec_proj, &conn, true),
-                Pos::Te => te_score(rec_proj, &conn, true),
+                Pos::Wr => wr_stud_score(rec_proj, true),
+                Pos::Te => te_score(rec_proj, true),
                 _ => panic!("Rec Proj had wrong POS."),
             },
-            Proj::RbProj(rb_proj) => rb_score(&[&rb_proj], &conn, true),
+            Proj::RbProj(rb_proj) => rb_score(&[&rb_proj], true, false),
             Proj::DefProj(def_proj) => dst_score(def_proj, true),
             Proj::KickProj(kick_proj) => score_kicker(kick_proj),
         };
@@ -381,14 +395,14 @@ pub struct Lineup {
 }
 
 impl Lineup {
-    pub fn score(&self, conn: &Connection) -> f32 {
+    pub fn score(&self) -> f32 {
         let scores: Vec<f32> = vec![
-            rb_score(&[&self.rb1, &self.rb2], &conn, false),
-            Self::wr_scores(&[&self.wr1, &self.wr2, &self.wr3], &conn),
-            te_score(&self.te, &conn, false),
+            rb_score(&[&self.rb1, &self.rb2], false, false),
+            Self::wr_scores(&[&self.wr1, &self.wr2, &self.wr3]),
+            te_score(&self.te, false),
             dst_score(&self.def, false),
-            qb_score(&self.qb, &conn, false),
-            flex_score(&self.flex, &conn),
+            qb_score(&self.qb, false),
+            flex_score(&self.flex),
             score_stacking(&[&self.wr1, &self.wr2, &self.wr3], &self.qb),
         ];
         let mut score: f32 = scores.iter().sum();
@@ -415,7 +429,8 @@ impl Lineup {
 
     fn fits_own_bracket(bracket: &OwnBracket, ownerships: &[f32; 9]) -> bool {
         let mut count: i8 = 0;
-        for own in ownerships {
+        // Filter out defense
+        for own in &ownerships[0..8] {
             if own < &bracket.own {
                 count += 1;
             }
@@ -486,6 +501,7 @@ impl Lineup {
                 panic!("Wrong POS in Flex..")
             }
         };
+        // Make sure def is returned last
         [
             self.qb.own_proj,
             self.rb1.own_proj,
@@ -499,80 +515,89 @@ impl Lineup {
         ]
     }
 
-    pub fn wr_scores(wrs: &[&RecProj], conn: &Connection) -> f32 {
+    pub fn wr_scores(wrs: &[&RecProj]) -> f32 {
         let mut score: f32 = 0.0;
         wrs.iter().for_each(|wr| {
-            score += wr_stud_score(wr, &conn, false);
+            score += wr_stud_score(wr, false);
         });
         score
     }
-
     pub fn lineup_str(&self, conn: &Connection) -> String {
         format!(
             "\nSalary: {} Score: {} Cum Own: {}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
             self.salary_used,
-            self.score(&conn),
+            self.score(),
             self.get_cum_ownership(),
             format!(
-                "QB: {} Team: {} Score: {}",
+                "QB: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.qb.id, conn),
                 self.qb.team.to_str(),
-                qb_score(&self.qb, &conn, false)
+                qb_score(&self.qb, false),
+                self.qb.own_proj
             ),
             format!(
-                "RB1: {} Team: {} Score: {}",
+                "RB1: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.rb1.id, conn),
                 self.rb1.team.to_str(),
-                rb_score(&[&self.rb1], &conn, false)
+                rb_score(&[&self.rb1], false, false),
+                self.rb1.own_proj
             ),
             format!(
-                "RB2: {} Team: {} Score: {}",
+                "RB2: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.rb2.id, conn),
                 self.rb2.team.to_str(),
-                rb_score(&[&self.rb2], &conn, false)
+                rb_score(&[&self.rb2], false, false),
+                self.rb2.own_proj
             ),
             format!(
-                "WR1: {} Team: {} Score: {}",
+                "WR1: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.wr1.id, conn),
                 self.wr1.team.to_str(),
-                Self::wr_scores(&[&self.wr1], &conn)
+                Self::wr_scores(&[&self.wr1]),
+                self.wr1.own_proj
             ),
             format!(
-                "WR2: {} Team: {} Score: {}",
+                "WR2: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.wr2.id, conn),
                 self.wr2.team.to_str(),
-                Self::wr_scores(&[&self.wr2], &conn)
+                Self::wr_scores(&[&self.wr2]),
+                self.wr2.own_proj
             ),
             format!(
-                "WR3: {} Team: {} Score: {}",
+                "WR3: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.wr3.id, conn),
                 self.wr3.team.to_str(),
-                Self::wr_scores(&[&self.wr3], &conn)
+                Self::wr_scores(&[&self.wr3]),
+                self.wr3.own_proj
             ),
             format!(
-                "DST: {} Team: {} Score: {}",
+                "DST: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.def.id, conn),
                 self.def.team.to_str(),
-                dst_score(&self.def, false)
+                dst_score(&self.def, false),
+                self.def.own_proj
             ),
             format!(
-                "TE: {} Team: {} Score: {}",
+                "TE: {} Team: {} Score: {} Own: {}",
                 get_player_name(self.te.id, conn),
                 self.te.team.to_str(),
-                te_score(&self.te, &conn, false)
+                te_score(&self.te, false),
+                self.te.own_proj
             ),
             match self.flex.pos {
                 Pos::Wr => format!(
-                    "FWR: {} Team: {} Score: {}",
+                    "FWR: {} Team: {} Score: {} Own: {}",
                     get_player_name(self.flex.rec_proj.as_ref().expect("").id, conn),
                     self.flex.rec_proj.as_ref().expect("").team.to_str(),
-                    flex_score(&self.flex, &conn)
+                    flex_score(&self.flex),
+                    self.flex.rec_proj.as_ref().expect("").own_proj
                 ),
                 Pos::Rb => format!(
-                    "FRB: {} Team: {} Score: {}",
+                    "FRB: {} Team: {} Score: {} Own: {}",
                     get_player_name(self.flex.rb_proj.as_ref().expect("").id, conn),
                     self.flex.rb_proj.as_ref().expect("").team.to_str(),
-                    flex_score(&self.flex, &conn)
+                    flex_score(&self.flex),
+                    self.flex.rb_proj.as_ref().expect("").own_proj
                 ),
                 _ => panic!("Wrong POS For Flex"),
             }
@@ -658,41 +683,30 @@ impl LineupBuilder {
     }
 
     // Will pull actual data from Sqlite
-    pub fn build(
-        self,
-        week: i8,
-        season: i16,
-        conn: &Connection,
-    ) -> Result<Lineup, Box<dyn std::error::Error>> {
+    pub fn build(self, week: i8, season: i16) -> Result<Lineup, Box<dyn std::error::Error>> {
         let flex: FlexProj = if self.flex.as_ref().unwrap().pos == Pos::Wr {
             FlexProj {
                 pos: Pos::Wr,
-                rec_proj: Some(
-                    query_rec_proj(self.flex.as_ref().unwrap().id, week, season, &Pos::Wr, conn)
-                        .ok_or("Could not find flex wr")?,
-                ),
+                rec_proj: Some(get_rec_from_cache(self.flex.unwrap().id)),
                 rb_proj: None,
             }
         } else {
             FlexProj {
                 pos: Pos::Rb,
                 rec_proj: None,
-                rb_proj: Some(
-                    query_rb_proj(self.flex.as_ref().unwrap().id, week, season, conn)
-                        .ok_or("Could not find flex rb")?,
-                ),
+                rb_proj: Some(get_rb_from_cache(self.flex.unwrap().id)),
             }
         };
 
-        let qb: QbProj = query_qb_proj_helper(self.qb.as_ref(), week, season, conn);
-        let rb1: RbProj = query_rb_proj_helper(self.rb1.as_ref(), week, season, conn);
-        let rb2: RbProj = query_rb_proj_helper(self.rb2.as_ref(), week, season, conn);
-        let wr1: RecProj = query_rec_proj_helper(self.wr1.as_ref(), week, season, &Pos::Wr, conn);
-        let wr2: RecProj = query_rec_proj_helper(self.wr2.as_ref(), week, season, &Pos::Wr, conn);
-        let wr3: RecProj = query_rec_proj_helper(self.wr3.as_ref(), week, season, &Pos::Wr, conn);
-        let te: RecProj = query_rec_proj_helper(self.te.as_ref(), week, season, &Pos::Te, conn);
+        let qb: QbProj = get_qb_from_cache(self.qb.unwrap().id);
+        let rb1: RbProj = get_rb_from_cache(self.rb1.unwrap().id);
+        let rb2: RbProj = get_rb_from_cache(self.rb2.unwrap().id);
+        let wr1: RecProj = get_rec_from_cache(self.wr1.unwrap().id);
+        let wr2: RecProj = get_rec_from_cache(self.wr2.unwrap().id);
+        let wr3: RecProj = get_rec_from_cache(self.wr3.unwrap().id);
+        let te: RecProj = get_rec_from_cache(self.te.unwrap().id);
         let flex: FlexProj = flex;
-        let def: DefProj = query_def_proj_helper(self.def.as_ref(), week, season, conn);
+        let def: DefProj = get_def_from_cache(self.def.unwrap().id);
         Ok(Lineup {
             qb,
             rb1,
@@ -722,8 +736,8 @@ mod tests {
             // rb.vegas_total = ALL_VEGAS_TOTAL.0;
             rb.avg_att = RB_ATTS.0;
             rb.avg_rec_tgts = RB_AVG_REC_TGTS.0;
-            rb.pts_plus_minus_proj = RB_PTS_SAL.0;
-            println!("High Score {}", rb_score(&[&rb], &conn, false));
+            rb.pts_plus_minus_proj = RB_CEILING.0;
+            println!("High Score {}", rb_score(&[&rb], false, false));
         }
     }
 
@@ -736,7 +750,7 @@ mod tests {
             wr.rec_tgt_share = WR_TGT_SHARE.0;
             wr.red_zone_op_pg = WR_RED_ZONE.0;
             wr.cieling_proj = WR_CIELING.0;
-            println!("High Score {}", wr_stud_score(&wr, &conn, false));
+            println!("High Score {}", wr_stud_score(&wr, false));
         }
     }
 
@@ -748,7 +762,7 @@ mod tests {
             // te.vegas_total = ALL_VEGAS_TOTAL.0;
             te.rec_tgt_share = TE_REC_TGT.0;
             te.pts_sal_proj = TE_PTS_SAL.0;
-            println!("High Score {}", te_score(&te, &conn, false));
+            println!("High Score {}", te_score(&te, false));
         }
     }
 
@@ -774,8 +788,15 @@ mod tests {
             qb.red_zone_op_pg = QB_AVG_RZ_OP.0;
             qb.cieling_proj = QB_CIELING.0;
             qb.pts_sal_proj = QB_PTS_PER_SAL.0;
-            println!("High Score {}", qb_score(&qb, &conn, false));
+            println!("High Score {}", qb_score(&qb, false));
         }
+    }
+
+    #[test]
+    fn test_inverse_salary() {
+        let sal1 = get_normalized_score(7200.0 * -1.0, *RB_INVERSE_SAL);
+        let sal2 = get_normalized_score(4500.0 * -1.0, *RB_INVERSE_SAL);
+        println!("{} {}", sal1, sal2);
     }
 
     #[test]
@@ -787,6 +808,12 @@ mod tests {
 
         assert!(score_stacking(&[&on_team, &on_team, &on_team], &qb) > 1.0);
         assert!(score_stacking(&[&off_team, &off_team, &off_team], &qb) == 0.0);
+    }
+
+    #[test]
+    fn test_own_arr() {
+        let own = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        println!("{:?}", &own[0..8]);
     }
 
     #[test]

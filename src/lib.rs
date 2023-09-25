@@ -17,7 +17,7 @@ pub mod tables;
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
 pub const SEASON: i16 = 2023;
 pub const WEEK: i8 = 3;
-pub const GAME_DAY: Day = Day::Sun;
+pub const GAME_DAY: Day = Day::Mon;
 
 pub const OWNERSHIP_CUTOFF_PER: f32 = 0.10;
 
@@ -27,83 +27,63 @@ pub const FILTER_TOP_RB: i8 = 0;
 pub const SALARY_CAP: i32 = 60000;
 pub const MIN_SAL: i32 = 59400;
 
-pub const WR_COUNT: i8 = 10;
-pub const QB_COUNT: i8 = 10;
+// pub const WR_COUNT: i8 = 40;
+// pub const QB_COUNT: i8 = 12;
+// pub const TE_COUNT: i8 = 14;
+// pub const RB_COUNT: i8 = 25;
+// pub const D_COUNT: i8 = 14;
+pub const WR_COUNT: i8 = 13;
+pub const QB_COUNT: i8 = 4;
 pub const TE_COUNT: i8 = 10;
-pub const RB_COUNT: i8 = 10;
-pub const D_COUNT: i8 = 10;
+pub const RB_COUNT: i8 = 7;
+pub const D_COUNT: i8 = 4;
 
-// TODO Should we make week and season not paramters?
 lazy_static! {
-    pub static ref RB_WR_FLEX_PTS_SAL: (f32, f32) = get_max_min_flex(SEASON, WEEK, "pts_sal_proj", &[Pos::Rb, Pos::Wr]);
-    pub static ref RB_WR_FLEX_CIELING: (f32, f32) = get_max_min_flex(SEASON, WEEK, "cieling_proj", &[Pos::Rb, Pos::Wr]);
-    // Own cum
-    pub static ref OWN_CUM_CUTOFF: f32 = get_sunday_ownership_cut_off(WEEK, SEASON);
 
     // QB Stats
-    pub static ref QB_RUSH_ATT: (f32, f32) =
-        get_max_min(SEASON, WEEK, "avg_rush_atts", Pos::Qb);
-    pub static ref QB_AVG_RZ_OP: (f32, f32) =
-        get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Qb);
-    pub static ref QB_WR_PASS_PER: (f32, f32) =
-        get_max_min(SEASON, WEEK, "pass_to_wr_per", Pos::Qb);
+    pub static ref QB_AVG_RUSH_YDS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_rush_yds", Pos::Qb);
+    pub static ref QB_AVG_RZ_OP: (f32, f32) =  get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Qb);
+    pub static ref QB_WR_PASS_PER: (f32, f32) = get_max_min(SEASON, WEEK, "pass_to_wr_per", Pos::Qb);
     pub static ref QB_PTS_PER_SAL: (f32, f32) = get_max_min(SEASON, WEEK , "pts_sal_proj", Pos::Qb);
     pub static ref QB_CIELING: (f32, f32) = get_max_min(SEASON, WEEK, "cieling_proj", Pos::Qb);
     pub static ref QB_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Qb);
     pub static ref QB_AVG_TD: (f32, f32) = get_max_min(SEASON, WEEK, "avg_pass_tds", Pos::Qb);
+    pub static ref QB_INVERSE_SAL: (f32, f32) = get_inverse_max_min(SEASON, WEEK, "salary", &Pos::Qb);
 
     // RB Stats
-    pub static ref RB_ATTS_FILLER: f32 = get_field_filler(SEASON, WEEK, "avg_atts", "rb_proj");
     pub static ref RB_ATTS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_atts", Pos::Rb);
+    pub static ref RB_AVG_TD: (f32, f32) = get_max_min(SEASON, WEEK, "avg_td", Pos::Rb);
     pub static ref RB_AVG_REC_TGTS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_rec_tgts", Pos::Rb);
-    // pub static ref RB_AVG_YDS_SHARE: (f32, f32) = get_max_min(SEASON, WEEK, "rush_yds_share", Pos::Rb);
-    // pub static ref RB_AVG_TD: (f32, f32) = get_max_min(SEASON, WEEK, "avg_td", Pos::Rb);
-    pub static ref RB_FLOOR_PROJ: (f32, f32) = get_max_min(SEASON, WEEK, "floor_proj", Pos::Rb);
-
-    pub static ref RB_PTS_SAL: (f32, f32) =
-        get_max_min(SEASON, WEEK, "pts_sal_proj", Pos::Rb);
-    pub static ref RB_MONTH_CONSISTENCY: (f32, f32) =
-        get_max_min(SEASON, WEEK, "month_consistency", Pos::Rb);
+    pub static ref RB_CEILING: (f32, f32) = get_max_min(SEASON, WEEK, "cieling_proj", Pos::Rb);
     pub static ref RB_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Rb);
+    pub static ref RB_INVERSE_SAL: (f32, f32) = get_inverse_max_min(SEASON, WEEK, "salary", &Pos::Rb);
+
     // WR Stats
-    pub static ref WR_TGT_SHARE_FILLER: f32 =
-        get_field_filler(SEASON, WEEK, "rec_tgt_share", "wr_proj");
-    pub static ref WR_TGT_SHARE: (f32, f32) =
-        get_max_min(SEASON, WEEK, "rec_tgt_share", Pos::Wr);
-    pub static ref WR_RED_ZONE: (f32, f32) =
-        get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Wr);
-    pub static ref WR_YEAR_CONSISTENCY: (f32, f32) =
-        get_max_min(SEASON, WEEK, "year_consistency", Pos::Wr);
-    pub static ref WR_MONTH_UPSIDE: (f32, f32) =
-        get_max_min(SEASON, WEEK, "month_upside", Pos::Wr);
-    pub static ref WR_CIELING: (f32, f32) =
-        get_max_min(SEASON, WEEK, "cieling_proj", Pos::Wr);
-    pub static ref WR_SALARY_MEDIAN: f32 =
-        get_field_median(SEASON, WEEK, "salary", "wr_proj", WR_COUNT);
+    pub static ref WR_TGT_SHARE: (f32, f32) = get_max_min(SEASON, WEEK, "rec_tgt_share", Pos::Wr);
+    pub static ref WR_RED_ZONE: (f32, f32) = get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Wr);
+    pub static ref WR_MONTH_UPSIDE: (f32, f32) = get_max_min(SEASON, WEEK, "month_upside", Pos::Wr);
+    pub static ref WR_CIELING: (f32, f32) = get_max_min(SEASON, WEEK, "cieling_proj", Pos::Wr);
     pub static ref WR_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Wr);
     pub static ref WR_AVG_TD: (f32, f32) = get_max_min(SEASON, WEEK, "avg_td", Pos::Wr);
+
     // TE Stats
-    pub static ref TE_YEAR_CONSISTENCY: (f32, f32) = get_max_min(SEASON, WEEK, "year_consistency", Pos::Te);
-    pub static ref TE_REC_TGT_FILLER: f32 =
-        get_field_filler(SEASON, WEEK, "rec_tgt_share", "te_proj");
-    pub static ref TE_REC_TGT: (f32, f32) =
-        get_max_min(SEASON, WEEK, "rec_tgt_share", Pos::Te);
-    pub static ref TE_RED_ZONE: (f32, f32) =
-        get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Te);
+    pub static ref TE_REC_TGT: (f32, f32) = get_max_min(SEASON, WEEK, "rec_tgt_share", Pos::Te);
+    pub static ref TE_RED_ZONE: (f32, f32) = get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Te);
     pub static ref TE_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Te);
     pub static ref TE_PTS_SAL: (f32, f32) = get_max_min(SEASON, WEEK, "pts_sal_proj", Pos::Te);
+    pub static ref TE_AVG_TD: (f32, f32)  = get_max_min(SEASON, WEEK, "avg_td", Pos::Te);
+    pub static ref TE_UPSIDE: (f32, f32)  = get_max_min(SEASON, WEEK, "month_upside", Pos::Te);
 
+    // Any Flex
     pub static ref ALL_PTS_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "pts_proj");
     pub static ref ALL_FLOOR_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "floor_proj");
     pub static ref ALL_CIELING_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "cieling_proj");
     pub static ref ALL_PTS_SAL_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "pts_sal_proj");
-    pub static ref ALL_PTS_PLUS_MINS_MAX_MIN: (f32, f32) =
-        get_max_min_all(SEASON, WEEK, "pts_plus_minus_proj");
+    pub static ref ALL_PTS_PLUS_MINS_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "pts_plus_minus_proj");
 
     // DST Stats
     pub static ref DST_RATING: (f32, f32) = get_max_min(SEASON, WEEK, "rating", Pos::D);
-    pub static ref DST_VEGAS_OPP_TOTAL: (f32, f32) =
-        get_inverse_max_min(SEASON, WEEK, "vegas_opp_total", &Pos::D);
+    pub static ref DST_VEGAS_OPP_TOTAL: (f32, f32) = get_inverse_max_min(SEASON, WEEK, "vegas_opp_total", &Pos::D);
     pub static ref DST_PTS_PLUS_MINUS: (f32, f32) = get_max_min(SEASON, WEEK, "pts_plus_minus_proj", Pos::D);
 
     pub static ref ALL_TEAM_TOTAL: (f32, f32) = get_max_min_all(SEASON, WEEK, "vegas_team_total");
@@ -170,7 +150,6 @@ fn get_max_min(season: i16, week: i8, field: &str, pos: Pos) -> (f32, f32) {
     } else {
         min = 0.0;
     }
-
     (max, min)
 }
 
@@ -423,15 +402,15 @@ struct IdAndScore {
 fn get_score_for_pos(lp: &LitePlayer, week: i8, season: i16, conn: &Connection) -> f32 {
     let proj: Proj = query_proj(Some(lp), week, season, &conn);
     match proj {
-        Proj::QbProj(qb_proj) => qb_score(&qb_proj, &conn, false),
+        Proj::QbProj(qb_proj) => qb_score(&qb_proj, false),
         Proj::RecProj(rec_proj) => {
             if rec_proj.pos == Pos::Wr {
-                wr_stud_score(&rec_proj, &conn, false)
+                wr_stud_score(&rec_proj, false)
             } else {
-                te_score(&rec_proj, &conn, false)
+                te_score(&rec_proj, false)
             }
         }
-        Proj::RbProj(rb_proj) => rb_score(&[&rb_proj], conn, false),
+        Proj::RbProj(rb_proj) => rb_score(&[&rb_proj], false, false),
         Proj::DefProj(def_proj) => dst_score(&def_proj, false),
         Proj::KickProj(kick_proj) => score_kicker(&kick_proj),
     }
@@ -598,10 +577,7 @@ pub fn get_sunday_ownership_cut_off(week: i8, season: i16) -> f32 {
             &LitePlayer::id_to_liteplayer(&qbs[0], &conn),
             lineup::Slot::None,
         );
-    let max_own: f32 = lineup
-        .build(week, season, &conn)
-        .unwrap()
-        .get_cum_ownership();
+    let max_own: f32 = lineup.build(week, season).unwrap().get_cum_ownership();
 
     max_own - (max_own * OWNERSHIP_CUTOFF_PER)
 }

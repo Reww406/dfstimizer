@@ -31,9 +31,10 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
         let future = async {
             let fut_tx_result = async move {
                 let start: Instant = Instant::now();
-                let conn = Connection::open(DATABASE_FILE).unwrap();
+                let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
                 let thread_players: Vec<LitePlayer> =
                     get_slate(week, season, &GAME_DAY, true, &conn);
+                drop(conn);
                 let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
                 thread_players
                     .iter()
@@ -78,13 +79,11 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
                     filterd_lineups,
                     week,
                     season,
-                    &conn,
                 );
                 if lineup.is_some() {
                     tx.unbounded_send(lineup.unwrap())
                         .expect("Failed to send lineup")
                 }
-                drop(conn);
                 println!("Finished Thread {:?}", start.elapsed());
             };
             pool.spawn_ok(fut_tx_result);
@@ -99,7 +98,7 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
     for future in done_futures {
         finished_lineups.extend(future);
     }
-    finished_lineups.sort_by(|a, b: &Lineup| b.score(&conn).partial_cmp(&a.score(&conn)).unwrap());
+    finished_lineups.sort_by(|a, b: &Lineup| b.score().partial_cmp(&a.score()).unwrap());
     finished_lineups
 }
 
@@ -180,7 +179,6 @@ pub fn add_flex_find_top_num(
     lineups: Vec<LineupBuilder>,
     week: i8,
     season: i16,
-    conn: &Connection,
 ) -> Option<Lineup> {
     let mut best_lineup: Option<Lineup> = None;
     let mut highest_score: f32 = 0.0;
@@ -202,10 +200,10 @@ pub fn add_flex_find_top_num(
             .for_each(|flex| {
                 let finished_lineup = lineup
                     .set_pos(&flex, Slot::Flex)
-                    .build(week, season, &conn)
+                    .build(week, season)
                     .expect("Failed to build lineup..");
                 if finished_lineup.fits_own_brackets() {
-                    let score: f32 = finished_lineup.score(conn);
+                    let score: f32 = finished_lineup.score();
                     if best_lineup.is_none() {
                         best_lineup = Some(finished_lineup);
                         highest_score = score;
