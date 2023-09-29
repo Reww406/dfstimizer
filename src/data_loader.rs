@@ -42,6 +42,15 @@ lazy_static! {
     ]);
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FantasyStats {
+    player: Option<String>,
+    team: String,
+    position: Option<String>,
+    fantasy_pts: f32,
+}
+
 // There is more fields we can grab if needed
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -195,6 +204,48 @@ pub fn load_in_proj(path: &str, season: i16, week: i8, pos: &Pos, day: &Day) {
         }
     }
 }
+/// Load in any flex projects for Monday, Thu
+pub fn load_in_fan_pts(path: &str, season: i16, week: i8) {
+    let contents: String = fs::read_to_string(path).expect("Failed to read in stats file");
+    let mut reader: csv::Reader<&[u8]> = csv::ReaderBuilder::new()
+        .has_headers(true)
+        .flexible(true)
+        .from_reader(contents.as_bytes());
+    let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
+    for res in reader.deserialize() {
+        let rec: FantasyStats = res.unwrap();
+        let mut id: i16 = 0;
+        // if team and pos than D
+        // if just pos than QB
+        let team = &Team::from_str(&rec.team);
+        if rec.player.is_none() && rec.position.is_none() {
+            id = get_def_id(team, &conn).unwrap();
+        } else if rec.position.is_none() {
+            let id_opt = get_player_id(&rec.player.as_ref().unwrap(), team, &Pos::Qb, &conn);
+            if id_opt.is_none() {
+                println!("Cant find player: {:?}", &rec.player.unwrap());
+                continue;
+            }
+            id = id_opt.unwrap();
+        } else {
+            let id_opt = get_player_id(
+                &rec.player.as_ref().unwrap(),
+                team,
+                &Pos::from_string(rec.position.unwrap()).unwrap(),
+                &conn,
+            );
+            if id_opt.is_none() {
+                println!("Cant find player: {:?}", &rec.player.unwrap());
+                continue;
+            }
+            id = id_opt.unwrap();
+        }
+        let stats_in: &str = "INSERT INTO fan_pts (id, week, season, pts) 
+        VALUES (?1, ?2, ?3, ?4)";
+        conn.execute(stats_in, params![id, week, season, &rec.fantasy_pts])
+            .expect("Failed to insert Quarter Back into database");
+    }
+}
 
 /// Load in any flex projects for Monday, Thu
 pub fn load_in_anyflex(path: &str, season: i16, week: i8, day: &Day) {
@@ -220,7 +271,8 @@ pub fn load_in_anyflex(path: &str, season: i16, week: i8, day: &Day) {
 
 fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 =
+        get_player_id_create_if_missing(&rec.player, &Team::from_str(&rec.team), &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let qb_in: &str =
         "INSERT INTO qb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj, 
@@ -269,7 +321,8 @@ fn store_qb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
 
 fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos not set")).unwrap();
-    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 =
+        get_player_id_create_if_missing(&rec.player, &Team::from_str(&rec.team), &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let rb_in: &str =
         "INSERT INTO rb_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, pts_plus_minus_proj,
@@ -313,7 +366,8 @@ fn store_rb_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Conn
 
 fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 =
+        get_player_id_create_if_missing(&rec.player, &Team::from_str(&rec.team), &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let table: &str = if pos == Pos::Wr { "wr_proj" } else { "te_proj" };
     let rec_in: String = format!(
@@ -363,7 +417,8 @@ fn store_rec_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Con
 
 fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    let id: i16 =
+        get_player_id_create_if_missing(&rec.player, &Team::from_str(&rec.team), &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let dst_in: &str = "INSERT INTO kick_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj,
          pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, day) 
@@ -394,7 +449,9 @@ fn store_kick_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Co
 
 fn store_dst_proj(rec: &ProjRecord, season: i16, week: i8, day: &Day, conn: &Connection) {
     let pos: Pos = Pos::from_str(&rec.pos.as_ref().expect("Pos missing")).unwrap();
-    let id: i16 = get_player_id_create_if_missing(&rec.player, &rec.team, &pos, conn);
+    println!("{}", &rec.player);
+    let id: i16 =
+        get_player_id_create_if_missing(&rec.player, &Team::from_str(&rec.team), &pos, conn);
     store_ownership(&rec, id, season, week, day);
     let dst_in: &str = "INSERT INTO dst_proj (id, season, week, name, team, opp, pts_proj, cieling_proj, floor_proj, 
         pts_plus_minus_proj, pts_sal_proj, vegas_total, salary, own_proj, rating, vegas_opp_total, day, 
@@ -458,7 +515,7 @@ pub fn load_player_id(player: &Player, conn: &Connection) -> i16 {
         player_in,
         (
             &player.name,
-            &player.team,
+            &player.team.to_str(),
             player.pos.to_str().expect("Failed to convert Pos to Str"),
         ),
     )
@@ -476,7 +533,7 @@ mod tests {
         let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
         let id: i16 = get_player_id(
             &String::from("Isaiah Hodgins"),
-            &String::from("NYG"),
+            &Team::from_str(&String::from("NYG")),
             &Pos::Wr,
             &conn,
         )

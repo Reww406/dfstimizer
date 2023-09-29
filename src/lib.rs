@@ -17,26 +17,26 @@ pub mod tables;
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
 pub const SEASON: i16 = 2023;
 pub const WEEK: i8 = 3;
-pub const GAME_DAY: Day = Day::Mon;
+pub const GAME_DAY: Day = Day::Sun;
 
 pub const OWNERSHIP_CUTOFF_PER: f32 = 0.10;
 
 pub const FILTER_TOP_QB: i8 = 0;
 pub const FILTER_TOP_RB: i8 = 0;
 
-pub const SALARY_CAP: i32 = 60000;
-pub const MIN_SAL: i32 = 59400;
+pub const SALARY_CAP: i32 = 50000;
+pub const MIN_SAL: i32 = 49000;
 
 // pub const WR_COUNT: i8 = 40;
 // pub const QB_COUNT: i8 = 12;
 // pub const TE_COUNT: i8 = 14;
 // pub const RB_COUNT: i8 = 25;
 // pub const D_COUNT: i8 = 14;
-pub const WR_COUNT: i8 = 13;
-pub const QB_COUNT: i8 = 4;
+pub const WR_COUNT: i8 = 10;
+pub const QB_COUNT: i8 = 10;
 pub const TE_COUNT: i8 = 10;
-pub const RB_COUNT: i8 = 7;
-pub const D_COUNT: i8 = 4;
+pub const RB_COUNT: i8 = 10;
+pub const D_COUNT: i8 = 10;
 
 lazy_static! {
 
@@ -44,7 +44,7 @@ lazy_static! {
     pub static ref QB_AVG_RUSH_YDS: (f32, f32) = get_max_min(SEASON, WEEK, "avg_rush_yds", Pos::Qb);
     pub static ref QB_AVG_RZ_OP: (f32, f32) =  get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Qb);
     pub static ref QB_WR_PASS_PER: (f32, f32) = get_max_min(SEASON, WEEK, "pass_to_wr_per", Pos::Qb);
-    pub static ref QB_PTS_PER_SAL: (f32, f32) = get_max_min(SEASON, WEEK , "pts_sal_proj", Pos::Qb);
+    pub static ref QB_PTS_PLUS_MINUS: (f32, f32) = get_max_min(SEASON, WEEK , "pts_plus_minus_proj", Pos::Qb);
     pub static ref QB_CIELING: (f32, f32) = get_max_min(SEASON, WEEK, "cieling_proj", Pos::Qb);
     pub static ref QB_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Qb);
     pub static ref QB_AVG_TD: (f32, f32) = get_max_min(SEASON, WEEK, "avg_pass_tds", Pos::Qb);
@@ -70,9 +70,10 @@ lazy_static! {
     pub static ref TE_REC_TGT: (f32, f32) = get_max_min(SEASON, WEEK, "rec_tgt_share", Pos::Te);
     pub static ref TE_RED_ZONE: (f32, f32) = get_max_min(SEASON, WEEK, "red_zone_op_pg", Pos::Te);
     pub static ref TE_OPP_DEF: (f32, f32) = get_def_max_min(&Pos::Te);
-    pub static ref TE_PTS_SAL: (f32, f32) = get_max_min(SEASON, WEEK, "pts_sal_proj", Pos::Te);
+    pub static ref TE_CIELING: (f32, f32) = get_max_min(SEASON, WEEK, "cieling_proj", Pos::Te);
     pub static ref TE_AVG_TD: (f32, f32)  = get_max_min(SEASON, WEEK, "avg_td", Pos::Te);
     pub static ref TE_UPSIDE: (f32, f32)  = get_max_min(SEASON, WEEK, "month_upside", Pos::Te);
+    pub static ref TE_INVERSE_SAL: (f32, f32) = get_inverse_max_min(SEASON, WEEK, "salary", &Pos::Te);
 
     // Any Flex
     pub static ref ALL_PTS_MAX_MIN: (f32, f32) = get_max_min_all(SEASON, WEEK, "pts_proj");
@@ -281,15 +282,18 @@ pub fn get_slate(
     let mut players: Vec<LitePlayer> = Vec::new();
     let top_qb: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Qb, QB_COUNT, day, conn);
     let top_rb: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Rb, RB_COUNT, day, conn);
+    println!("Top RB: {:?}", top_rb);
     let top_wr: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, day, conn);
     let top_te: Vec<i16> = get_top_players_by_pos(season, week, &Pos::Te, TE_COUNT, day, conn);
+    println!("Top TE: {:?}", top_te);
     let top_d: Vec<i16> = get_top_players_by_pos(season, week, &Pos::D, D_COUNT, day, conn);
+    println!("Top D: {:?}", top_d);
     let top_ids: [Vec<i16>; 5] = [top_qb, top_rb, top_d, top_te, top_wr];
     for ids in top_ids {
         players.extend(get_players_by_ids(week, season, &ids))
     }
     if filter_top {
-        players = filter_top_players(players, day);
+        players = filter_top_salary_players(players, day);
     }
     players
 }
@@ -349,7 +353,7 @@ fn should_filter_top_player(lp: &LitePlayer, conn: &Connection, filter_ids: &Vec
     }
 }
 
-fn filter_top_players(players: Vec<LitePlayer>, day: &Day) -> Vec<LitePlayer> {
+fn filter_top_salary_players(players: Vec<LitePlayer>, day: &Day) -> Vec<LitePlayer> {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let mut filtered: Vec<LitePlayer> = Vec::new();
     let top_qbs: Vec<i16> = get_top_salary(SEASON, WEEK, &Pos::Qb, day, FILTER_TOP_QB);
@@ -394,6 +398,7 @@ pub fn get_active_players(season: i16, week: i8, day: &Day, conn: &Connection) -
     return ids;
 }
 
+#[derive(Debug)]
 struct IdAndScore {
     id: i16,
     score: f32,
@@ -415,8 +420,6 @@ fn get_score_for_pos(lp: &LitePlayer, week: i8, season: i16, conn: &Connection) 
         Proj::KickProj(kick_proj) => score_kicker(&kick_proj),
     }
 }
-
-/// Takes all players for week/day and filters using our scoring
 pub fn get_top_players_by_pos(
     season: i16,
     week: i8,
@@ -426,11 +429,68 @@ pub fn get_top_players_by_pos(
     conn: &Connection,
 ) -> Vec<i16> {
     let ids: Vec<i16> = get_active_players(season, week, day, conn);
+    let mut top_players: Vec<i16> = Vec::new();
     if ids.len() == 0 {
         panic!("No players found for pos")
     }
+    let mut players: Vec<LitePlayer> = LitePlayer::from_ids_with_salary(&ids, week, season, conn);
+    players.sort_by(|a, b: &LitePlayer| b.salary.partial_cmp(&a.salary).unwrap());
+    let player_middle = players.len() / 2;
+    let count_half: i8 = count / 2;
+    if count % 2 == 0 {
+        top_players.extend(filter_top_players(
+            season,
+            week,
+            pos,
+            count_half, // Will take min of size
+            day,
+            &players[0..player_middle],
+            conn,
+        ));
+        top_players.extend(filter_top_players(
+            season,
+            week,
+            pos,
+            count_half,
+            day,
+            &players[player_middle..players.len()],
+            conn,
+        ));
+    } else {
+        top_players.extend(filter_top_players(
+            season,
+            week,
+            pos,
+            count_half + 1, // Will take min of size
+            day,
+            &players[0..player_middle],
+            conn,
+        ));
+        top_players.extend(filter_top_players(
+            season,
+            week,
+            pos,
+            count_half,
+            day,
+            &players[player_middle..players.len()],
+            conn,
+        ));
+    }
+    return top_players;
+}
+
+/// Takes all players for week/day and filters using our scoring
+pub fn filter_top_players(
+    season: i16,
+    week: i8,
+    pos: &Pos,
+    count: i8,
+    day: &Day,
+    players: &[LitePlayer],
+    conn: &Connection,
+) -> Vec<i16> {
     let mut id_and_score: Vec<IdAndScore> = Vec::new();
-    let players: Vec<LitePlayer> = LitePlayer::ids_to_liteplayer(&ids, conn);
+    // let players: Vec<LitePlayer> = LitePlayer::ids_to_liteplayer(&ids, conn);
     for lp in players.iter().filter(|lp| lp.pos == *pos) {
         let score: f32 = get_score_for_pos(lp, week, season, conn);
         id_and_score.push(IdAndScore { id: lp.id, score })
@@ -439,6 +499,7 @@ pub fn get_top_players_by_pos(
     id_and_score.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap());
     let mut index: usize = 0;
     let mut result: Vec<i16> = Vec::new();
+    // println!("{}: {:?}\n", pos.to_str().unwrap(), &id_and_score[0..10]);
     while index < take {
         result.push(id_and_score.get(index).unwrap().id);
         index += 1;
@@ -454,7 +515,7 @@ pub fn get_top_salary(season: i16, week: i8, pos: &Pos, day: &Day, count: i8) ->
 
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let lp: Vec<LitePlayer> =
-        LitePlayer::ids_to_liteplayer(&get_active_players(season, week, day, &conn), &conn);
+        LitePlayer::from_liteplayers(&get_active_players(season, week, day, &conn), &conn);
     let mut pos_players: Vec<Proj> = lp
         .iter()
         .filter(|lp| lp.pos == *pos)
@@ -506,7 +567,7 @@ pub fn total_comb(len: usize, sample: usize) -> u32 {
 
 pub fn sort_ownership(ids: &[i16], week: i8, season: i16) -> Vec<i16> {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
-    let lps: Vec<LitePlayer> = LitePlayer::ids_to_liteplayer(ids, &conn);
+    let lps: Vec<LitePlayer> = LitePlayer::from_liteplayers(ids, &conn);
     let mut projs: Vec<Proj> = Vec::new();
     for lp in &lps {
         projs.push(query_proj(Some(lp), week, season, &conn));
@@ -549,34 +610,22 @@ pub fn get_sunday_ownership_cut_off(week: i8, season: i16) -> f32 {
 
     for i in 0..3 {
         lineup = lineup.clone().set_pos(
-            &LitePlayer::id_to_liteplayer(&wrs[i], &conn),
+            &LitePlayer::from_id(&wrs[i], &conn),
             lineup::Slot::int_to_slot(i as i8 + 1),
         );
     }
     for i in 0..2 {
         lineup = lineup.clone().set_pos(
-            &LitePlayer::id_to_liteplayer(&rbs[i], &conn),
+            &LitePlayer::from_id(&rbs[i], &conn),
             lineup::Slot::int_to_slot(i as i8 + 1),
         );
     }
     lineup = lineup
         .clone()
-        .set_pos(
-            &LitePlayer::id_to_liteplayer(&tes[0], &conn),
-            lineup::Slot::None,
-        )
-        .set_pos(
-            &LitePlayer::id_to_liteplayer(&defs[0], &conn),
-            lineup::Slot::None,
-        )
-        .set_pos(
-            &LitePlayer::id_to_liteplayer(&wrs[3], &conn),
-            lineup::Slot::Flex,
-        )
-        .set_pos(
-            &LitePlayer::id_to_liteplayer(&qbs[0], &conn),
-            lineup::Slot::None,
-        );
+        .set_pos(&LitePlayer::from_id(&tes[0], &conn), lineup::Slot::None)
+        .set_pos(&LitePlayer::from_id(&defs[0], &conn), lineup::Slot::None)
+        .set_pos(&LitePlayer::from_id(&wrs[3], &conn), lineup::Slot::Flex)
+        .set_pos(&LitePlayer::from_id(&qbs[0], &conn), lineup::Slot::None);
     let max_own: f32 = lineup.build(week, season).unwrap().get_cum_ownership();
 
     max_own - (max_own * OWNERSHIP_CUTOFF_PER)
@@ -592,6 +641,16 @@ mod tests {
 
     use super::*;
     // Helper function for creating line ups
+
+    #[test]
+    fn test_even_split() {
+        let even = 9;
+        if even % 2 == 0 {
+            println!("{}", even / 2)
+        } else {
+            println!("{}", even / 2)
+        }
+    }
 
     #[test]
     fn get_max_sunday_ownership_test() {
@@ -635,14 +694,7 @@ mod tests {
         let player = get_top_players_by_pos(2023, 1, &Pos::Wr, 25, &Day::Sun, &conn);
         let _ = player
             .iter()
-            .map(|id| {
-                query_proj(
-                    Some(&LitePlayer::id_to_liteplayer(id, &conn)),
-                    1,
-                    2023,
-                    &conn,
-                )
-            })
+            .map(|id| query_proj(Some(&LitePlayer::from_id(id, &conn)), 1, 2023, &conn))
             .collect::<Vec<Proj>>();
         // projs.iter().for_each(|p| println!("{:?}", p.get_name()))
     }

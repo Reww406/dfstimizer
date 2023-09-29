@@ -6,6 +6,7 @@ use futures::StreamExt;
 use itertools::Itertools;
 use rusqlite::Connection;
 
+use crate::filter_top_salary_players;
 use crate::get_slate;
 use crate::get_top_players_by_pos;
 use crate::lineup::*;
@@ -69,14 +70,14 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
                         .collect_vec(),
                     te_lineups,
                 );
-                let filterd_lineups: Vec<LineupBuilder> = filter_low_salary_cap(dst_lineups, 49500);
+                // let filterd_lineups: Vec<LineupBuilder> = filter_low_salary_cap(dst_lineups, 39500);
                 let flex_pos: [Pos; 2] = [Pos::Wr, Pos::Rb];
                 let lineup: Option<Lineup> = add_flex_find_top_num(
                     &thread_players
                         .into_iter()
                         .filter(|p| flex_pos.contains(&p.pos))
                         .collect_vec(),
-                    filterd_lineups,
+                    dst_lineups,
                     week,
                     season,
                 );

@@ -266,9 +266,20 @@ pub fn init_tables() {
         )
     ";
 
-    let tables: [&str; 13] = [
+    let stats: &str = "
+        CREATE TABLE IF NOT EXISTS fan_pts (
+            id INTEGER NOT NULL,
+            week INTEGER NOT NULL,
+            season INTEGER NOT NULL,
+            pts REAL NOT NULL,
+            UNIQUE(id, week, season) on CONFLICT REPLACE,
+            FOREIGN key(id) REFERENCES player(id)
+        )
+    ";
+
+    let tables: [&str; 14] = [
         player, qb_proj, wr_proj, dst_proj, te_proj, rb_proj, ownership, kick_proj, def_vs_qb,
-        def_vs_rb, def_vs_te, def_vs_wr, max_score,
+        def_vs_rb, def_vs_te, def_vs_wr, max_score, stats,
     ];
     for table in tables {
         conn.execute(table, ()).expect("Could not create table");
