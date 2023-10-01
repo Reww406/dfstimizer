@@ -16,7 +16,7 @@ pub mod tables;
 
 pub const DATABASE_FILE: &str = "./dfs_nfl.db3";
 pub const SEASON: i16 = 2023;
-pub const WEEK: i8 = 3;
+pub const WEEK: i8 = 2;
 pub const GAME_DAY: Day = Day::Sun;
 
 pub const OWNERSHIP_CUTOFF_PER: f32 = 0.10;
@@ -32,11 +32,11 @@ pub const MIN_SAL: i32 = 49000;
 // pub const TE_COUNT: i8 = 14;
 // pub const RB_COUNT: i8 = 25;
 // pub const D_COUNT: i8 = 14;
-pub const WR_COUNT: i8 = 10;
-pub const QB_COUNT: i8 = 10;
+pub const WR_COUNT: i8 = 14;
+pub const QB_COUNT: i8 = 8;
 pub const TE_COUNT: i8 = 10;
 pub const RB_COUNT: i8 = 10;
-pub const D_COUNT: i8 = 10;
+pub const D_COUNT: i8 = 8;
 
 lazy_static! {
 
@@ -435,7 +435,7 @@ pub fn get_top_players_by_pos(
     }
     let mut players: Vec<LitePlayer> = LitePlayer::from_ids_with_salary(&ids, week, season, conn);
     players.sort_by(|a, b: &LitePlayer| b.salary.partial_cmp(&a.salary).unwrap());
-    let player_middle = players.len() / 2;
+    let player_middle = players.len() / 3;
     let count_half: i8 = count / 2;
     if count % 2 == 0 {
         top_players.extend(filter_top_players(

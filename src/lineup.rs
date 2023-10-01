@@ -82,20 +82,20 @@ pub fn rb_score(rbs: &[&RbProj], any_flex: bool, sun_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
     rbs.iter().for_each(|rb| {
         let mut inside_score: f32 = 0.0;
-        inside_score += get_normalized_score(rb.opp_def_pts_given, *RB_OPP_DEF) * 1.0;
-        inside_score += get_normalized_score(rb.avg_att, *RB_ATTS) * 1.5;
+        inside_score += get_normalized_score(rb.opp_def_pts_given, *RB_OPP_DEF) * 0.5;
+        inside_score += get_normalized_score(rb.avg_att, *RB_ATTS) * 1.75;
         inside_score += get_normalized_score(rb.avg_rec_tgts, *RB_AVG_REC_TGTS) * 0.5;
         inside_score += get_normalized_score(rb.avg_td, *RB_AVG_TD) * 1.5;
-        inside_score += get_normalized_score(rb.salary as f32 * -1.0, *RB_INVERSE_SAL) * 2.5;
+        inside_score += get_normalized_score(rb.salary as f32 * -1.0, *RB_INVERSE_SAL) * 1.0;
         if any_flex {
             inside_score += 2.0;
             inside_score += get_normalized_score(rb.cieling_proj, *ALL_CIELING_MAX_MIN) * 2.0;
             // lower score
         } else {
-            inside_score += get_normalized_score(rb.vegas_team_total, *ALL_TEAM_TOTAL) * 1.0;
+            inside_score += get_normalized_score(rb.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
             inside_score += get_normalized_score(rb.cieling_proj, *RB_CEILING) * 2.0;
         }
-        score += get_normalized_score(inside_score, (9.1, 0.0));
+        score += get_normalized_score(inside_score, (9.25, 0.0));
         if sun_flex {
             score += -0.1
         }
@@ -106,11 +106,11 @@ pub fn rb_score(rbs: &[&RbProj], any_flex: bool, sun_flex: bool) -> f32 {
 
 pub fn qb_score(qb: &QbProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
-    score += get_normalized_score(qb.opp_def_pts_given, *QB_OPP_DEF) * 1.00;
-    score += get_normalized_score(qb.red_zone_op_pg, *QB_AVG_RZ_OP) * 2.0;
-    // score += get_normalized_score(qb.avg_pass_tds, *QB_AVG_TD) * 1.0;
+    score += get_normalized_score(qb.opp_def_pts_given, *QB_OPP_DEF) * 1.0;
+    score += get_normalized_score(qb.red_zone_op_pg, *QB_AVG_RZ_OP) * 0.75;
+    score += get_normalized_score(qb.avg_pass_tds, *QB_AVG_TD) * 1.0;
     score += get_normalized_score(qb.avg_rush_yards, *QB_AVG_RUSH_YDS) * 0.75;
-    score += get_normalized_score(qb.salary as f32 * -1.0, *QB_INVERSE_SAL) * 2.0;
+    score += get_normalized_score(qb.salary as f32 * -1.0, *QB_INVERSE_SAL) * 1.0;
     // rush yds
     if any_flex {
         // score += get_normalized_score(qb.cieling_proj, *ALL_CIELING_MAX_MIN) * 3.5;

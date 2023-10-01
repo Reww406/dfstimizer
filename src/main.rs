@@ -61,6 +61,9 @@ fn load_in_stats() {
     load_in_fan_pts("fantasy_points/dst-3-stats.csv", 2023, 3);
     load_in_fan_pts("fantasy_points/qb-3-stats.csv", 2023, 3);
     load_in_fan_pts("fantasy_points/rec-rb-3-stats.csv", 2023, 3);
+    load_in_fan_pts("fantasy_points/dst-2-stats.csv", 2023, 2);
+    load_in_fan_pts("fantasy_points/qb-2-stats.csv", 2023, 2);
+    load_in_fan_pts("fantasy_points/rec-rush-2-stats.csv", 2023, 2);
 }
 
 #[allow(dead_code)]
@@ -154,7 +157,7 @@ fn historic_lineups_scores(
 fn main() -> Result<(), Error> {
     let start: Instant = Instant::now();
     let conn = Connection::open(DATABASE_FILE).unwrap();
-    // load_in_stats();
+    load_in_stats();
     let players: Vec<LitePlayer> = get_slate(WEEK, SEASON, &GAME_DAY, true, &conn);
     let qb: u32 = count_player_type(&players, Pos::Qb) as u32;
     let wr_count: u32 = count_player_type(&players, Pos::Wr) as u32;
@@ -181,7 +184,7 @@ fn main() -> Result<(), Error> {
     lineups.sort_by(|a, b: &Lineup| b.score().partial_cmp(&a.score()).unwrap());
     println!(
         "Lineups over 200: {} total {:?}",
-        historic_lineups_scores(&lineups, WEEK, SEASON, 210.0, &conn),
+        historic_lineups_scores(&lineups, WEEK, SEASON, 160.0, &conn),
         &lineups.len()
     );
 
