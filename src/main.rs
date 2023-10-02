@@ -39,25 +39,30 @@ fn load_in_stats() {
     // load_in_anyflex("flex/flex-1.csv", 2023, 1, &Day::Thu);
     // load_in_anyflex("flex/flex-3-thu.csv", 2023, 3, &Day::Thu);
     // load_in_anyflex("flex/monday-1.csv", 2023, 1, &Day::Mon);
-    // load_in_proj("sun-proj/d-1.csv", 2023, 1, &Pos::D, &Day::Sun);
-    // load_in_proj("sun-proj/qb-1.csv", 2023, 1, &Pos::Qb, &Day::Sun);
-    // load_in_proj("sun-proj/rb-1.csv", 2023, 1, &Pos::Rb, &Day::Sun);
-    // load_in_proj("sun-proj/te-1.csv", 2023, 1, &Pos::Te, &Day::Sun);
-    // load_in_proj("sun-proj/wr-1.csv", 2023, 1, &Pos::Wr, &Day::Sun);
-    // load_in_proj("sun-proj/d-2.csv", 2023, 2, &Pos::D, &Day::Sun);
-    // load_in_proj("sun-proj/qb-2.csv", 2023, 2, &Pos::Qb, &Day::Sun);
-    // load_in_proj("sun-proj/rb-2.csv", 2023, 2, &Pos::Rb, &Day::Sun);
-    // load_in_proj("sun-proj/te-2.csv", 2023, 2, &Pos::Te, &Day::Sun);
-    // load_in_proj("sun-proj/wr-2.csv", 2023, 2, &Pos::Wr, &Day::Sun);
-    // load_in_proj("sun-proj/d-3.csv", 2023, 3, &Pos::D, &Day::Sun);
-    // load_in_proj("sun-proj/qb-3.csv", 2023, 3, &Pos::Qb, &Day::Sun);
-    // load_in_proj("sun-proj/rb-3.csv", 2023, 3, &Pos::Rb, &Day::Sun);
-    // load_in_proj("sun-proj/te-3.csv", 2023, 3, &Pos::Te, &Day::Sun);
-    // load_in_proj("sun-proj/wr-3.csv", 2023, 3, &Pos::Wr, &Day::Sun);
-    // load_in_def_vs_pos("def/def-vs-qb.csv", "def_vs_qb");
-    // load_in_def_vs_pos("def/def-vs-rb.csv", "def_vs_rb");
-    // load_in_def_vs_pos("def/def-vs-te.csv", "def_vs_te");
-    // load_in_def_vs_pos("def/def-vs-wr.csv", "def_vs_wr");
+    load_in_proj("sun-proj/d-1.csv", 2023, 1, &Pos::D, &Day::Sun);
+    load_in_proj("sun-proj/qb-1.csv", 2023, 1, &Pos::Qb, &Day::Sun);
+    load_in_proj("sun-proj/rb-1.csv", 2023, 1, &Pos::Rb, &Day::Sun);
+    load_in_proj("sun-proj/te-1.csv", 2023, 1, &Pos::Te, &Day::Sun);
+    load_in_proj("sun-proj/wr-1.csv", 2023, 1, &Pos::Wr, &Day::Sun);
+    load_in_proj("sun-proj/d-2.csv", 2023, 2, &Pos::D, &Day::Sun);
+    load_in_proj("sun-proj/qb-2.csv", 2023, 2, &Pos::Qb, &Day::Sun);
+    load_in_proj("sun-proj/rb-2.csv", 2023, 2, &Pos::Rb, &Day::Sun);
+    load_in_proj("sun-proj/te-2.csv", 2023, 2, &Pos::Te, &Day::Sun);
+    load_in_proj("sun-proj/wr-2.csv", 2023, 2, &Pos::Wr, &Day::Sun);
+    load_in_proj("sun-proj/d-3.csv", 2023, 3, &Pos::D, &Day::Sun);
+    load_in_proj("sun-proj/qb-3.csv", 2023, 3, &Pos::Qb, &Day::Sun);
+    load_in_proj("sun-proj/rb-3.csv", 2023, 3, &Pos::Rb, &Day::Sun);
+    load_in_proj("sun-proj/te-3.csv", 2023, 3, &Pos::Te, &Day::Sun);
+    load_in_proj("sun-proj/wr-3.csv", 2023, 3, &Pos::Wr, &Day::Sun);
+    load_in_proj("sun-proj/d-4.csv", 2023, 4, &Pos::D, &Day::Sun);
+    load_in_proj("sun-proj/qb-4.csv", 2023, 4, &Pos::Qb, &Day::Sun);
+    load_in_proj("sun-proj/rb-4.csv", 2023, 4, &Pos::Rb, &Day::Sun);
+    load_in_proj("sun-proj/te-4.csv", 2023, 4, &Pos::Te, &Day::Sun);
+    load_in_proj("sun-proj/wr-4.csv", 2023, 4, &Pos::Wr, &Day::Sun);
+    load_in_def_vs_pos("def/def-vs-qb.csv", "def_vs_qb");
+    load_in_def_vs_pos("def/def-vs-rb.csv", "def_vs_rb");
+    load_in_def_vs_pos("def/def-vs-te.csv", "def_vs_te");
+    load_in_def_vs_pos("def/def-vs-wr.csv", "def_vs_wr");
     load_in_fan_pts("fantasy_points/dst-3-stats.csv", 2023, 3);
     load_in_fan_pts("fantasy_points/qb-3-stats.csv", 2023, 3);
     load_in_fan_pts("fantasy_points/rec-rb-3-stats.csv", 2023, 3);
@@ -70,7 +75,7 @@ fn load_in_stats() {
 fn parse_lineups(lineups: Vec<Lineup>) -> Option<Vec<Lineup>> {
     let mut qb_lineups: HashMap<i16, Vec<Lineup>> = HashMap::new();
     let mut best_lines: Vec<Lineup> = Vec::new();
-    let amount_of_qb_per = 15;
+    let amount_of_qb_per = 20;
     lineups.into_iter().for_each(|l| {
         let qb_id: i16 = l.qb.id;
         if qb_lineups.get(&qb_id).is_some() {
@@ -157,7 +162,7 @@ fn historic_lineups_scores(
 fn main() -> Result<(), Error> {
     let start: Instant = Instant::now();
     let conn = Connection::open(DATABASE_FILE).unwrap();
-    load_in_stats();
+    // load_in_stats();
     let players: Vec<LitePlayer> = get_slate(WEEK, SEASON, &GAME_DAY, true, &conn);
     let qb: u32 = count_player_type(&players, Pos::Qb) as u32;
     let wr_count: u32 = count_player_type(&players, Pos::Wr) as u32;
@@ -175,22 +180,22 @@ fn main() -> Result<(), Error> {
     let mut lineups: Vec<Lineup> = build_all_possible_lineups(WEEK, SEASON);
     // let lineups: Vec<IslandLineup> = build_island_lineups(WEEK, SEASON);
 
-    // let mut file = File::create(format!(
-    //     "lineups/lineups-{}-{}.txt",
-    //     WEEK,
-    //     &GAME_DAY.to_str()
-    // ))
-    // .unwrap();
+    let mut file = File::create(format!(
+        "lineups/lineups-{}-{}.txt",
+        WEEK,
+        &GAME_DAY.to_str()
+    ))
+    .unwrap();
     lineups.sort_by(|a, b: &Lineup| b.score().partial_cmp(&a.score()).unwrap());
-    println!(
-        "Lineups over 200: {} total {:?}",
-        historic_lineups_scores(&lineups, WEEK, SEASON, 160.0, &conn),
-        &lineups.len()
-    );
+    // println!(
+    //     "Lineups over 200: {} total {:?}",
+    //     historic_lineups_scores(&lineups, WEEK, SEASON, 160.0, &conn),
+    //     &lineups.len()
+    // );
 
-    // for lineup in parse_lineups(lineups).unwrap() {
-    //     file.write_all(lineup.lineup_str(&conn).as_bytes())?;
-    // }
+    for lineup in parse_lineups(lineups).unwrap() {
+        file.write_all(lineup.lineup_str(&conn).as_bytes())?;
+    }
 
     println!("Elapsed Time: {:?}", start.elapsed());
     Ok(())

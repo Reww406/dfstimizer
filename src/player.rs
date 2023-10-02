@@ -537,7 +537,7 @@ impl LitePlayer {
         }
     }
     /// WARNING This liteplayer has no salary
-    pub fn from_liteplayers(ids: &[i16], conn: &Connection) -> Vec<Self> {
+    pub fn from_ids(ids: &[i16], conn: &Connection) -> Vec<Self> {
         let mut players: Vec<LitePlayer> = Vec::new();
         for id in ids {
             players.push(LitePlayer::from_id(id, conn));

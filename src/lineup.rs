@@ -8,9 +8,10 @@ use crate::{
     player::*, return_if_field_exits, ALL_CIELING_MAX_MIN, ALL_FLOOR_MAX_MIN, ALL_PTS_MAX_MIN,
     ALL_PTS_PLUS_MINS_MAX_MIN, ALL_PTS_SAL_MAX_MIN, ALL_TEAM_TOTAL, DATABASE_FILE,
     DST_PTS_PLUS_MINUS, DST_VEGAS_OPP_TOTAL, QB_AVG_RUSH_YDS, QB_AVG_RZ_OP, QB_AVG_TD, QB_CIELING,
-    QB_INVERSE_SAL, QB_OPP_DEF, QB_PTS_PLUS_MINUS, RB_ATTS, RB_AVG_REC_TGTS, RB_CEILING,
-    RB_INVERSE_SAL, RB_OPP_DEF, SALARY_CAP, TE_AVG_TD, TE_CIELING, TE_INVERSE_SAL, TE_OPP_DEF,
-    TE_UPSIDE, WR_AVG_TD, WR_CIELING, WR_MONTH_UPSIDE, WR_OPP_DEF, WR_RED_ZONE, WR_TGT_SHARE,
+    QB_INVERSE_SAL, QB_OPP_DEF, QB_PTS_PLUS_MINUS, QB_PTS_SAL, RB_ATTS, RB_AVG_REC_TGTS,
+    RB_CEILING, RB_INVERSE_SAL, RB_OPP_DEF, RB_PTS_SAL, SALARY_CAP, TE_AVG_TD, TE_CIELING,
+    TE_INVERSE_SAL, TE_OPP_DEF, TE_PTS_SAL, TE_UPSIDE, WR_AVG_TD, WR_CIELING, WR_MONTH_UPSIDE,
+    WR_OPP_DEF, WR_PTS_SAL, WR_RED_ZONE, WR_TGT_SHARE,
 };
 use crate::{RB_AVG_TD, TE_REC_TGT};
 
@@ -22,18 +23,18 @@ pub const OWN_COUNT_RANGE_3: OwnBracket = OwnBracket {
 };
 pub const OWN_COUNT_RANGE_6: OwnBracket = OwnBracket {
     own: 5.0,
-    max_amount: 7,
+    max_amount: 4,
     min_amount: 1,
 };
 pub const OWN_COUNT_RANGE_12: OwnBracket = OwnBracket {
     own: 12.0,
-    max_amount: 8,
-    min_amount: 4,
+    max_amount: 6,
+    min_amount: 3,
 };
 pub const OWN_COUNT_RANGE_22: OwnBracket = OwnBracket {
     own: 22.0,
     max_amount: 9,
-    min_amount: 5,
+    min_amount: 6,
 };
 pub const OWN_COUNT_RANGE_30: OwnBracket = OwnBracket {
     own: 30.0,
@@ -78,27 +79,30 @@ impl Slot {
 
 // TODO Maybe else if score on TD or Yds
 // TODO Scorning functions
-pub fn rb_score(rbs: &[&RbProj], any_flex: bool, sun_flex: bool) -> f32 {
+// TODO performance could precaclulate score for each player and store in cache..
+pub fn rb_score(rbs: &[&RbProj], any_flex: bool, _: bool) -> f32 {
     let mut score: f32 = 0.0;
     rbs.iter().for_each(|rb| {
         let mut inside_score: f32 = 0.0;
         inside_score += get_normalized_score(rb.opp_def_pts_given, *RB_OPP_DEF) * 0.5;
-        inside_score += get_normalized_score(rb.avg_att, *RB_ATTS) * 1.75;
+        inside_score += get_normalized_score(rb.avg_att, *RB_ATTS) * 0.5;
         inside_score += get_normalized_score(rb.avg_rec_tgts, *RB_AVG_REC_TGTS) * 0.5;
-        inside_score += get_normalized_score(rb.avg_td, *RB_AVG_TD) * 1.5;
-        inside_score += get_normalized_score(rb.salary as f32 * -1.0, *RB_INVERSE_SAL) * 1.0;
+        inside_score += get_normalized_score(rb.avg_td, *RB_AVG_TD) * 1.0;
+        inside_score += get_normalized_score(rb.salary as f32 * -1.0, *RB_INVERSE_SAL) * 3.0;
         if any_flex {
             inside_score += 2.0;
             inside_score += get_normalized_score(rb.cieling_proj, *ALL_CIELING_MAX_MIN) * 2.0;
             // lower score
         } else {
             inside_score += get_normalized_score(rb.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
-            inside_score += get_normalized_score(rb.cieling_proj, *RB_CEILING) * 2.0;
+            // inside_score += get_normalized_score(rb.pts_sal_proj, *RB_PTS_SAL) * 1.0;
+            inside_score += get_normalized_score(rb.cieling_proj, *ALL_CIELING_MAX_MIN) * 3.0;
         }
+        if rb.own_proj < 5.5 {
+            inside_score = 0.0
+        }
+
         score += get_normalized_score(inside_score, (9.25, 0.0));
-        if sun_flex {
-            score += -0.1
-        }
     });
 
     score
@@ -106,22 +110,25 @@ pub fn rb_score(rbs: &[&RbProj], any_flex: bool, sun_flex: bool) -> f32 {
 
 pub fn qb_score(qb: &QbProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
-    score += get_normalized_score(qb.opp_def_pts_given, *QB_OPP_DEF) * 1.0;
-    score += get_normalized_score(qb.red_zone_op_pg, *QB_AVG_RZ_OP) * 0.75;
-    score += get_normalized_score(qb.avg_pass_tds, *QB_AVG_TD) * 1.0;
-    score += get_normalized_score(qb.avg_rush_yards, *QB_AVG_RUSH_YDS) * 0.75;
-    score += get_normalized_score(qb.salary as f32 * -1.0, *QB_INVERSE_SAL) * 1.0;
+    // score += get_normalized_score(qb.opp_def_pts_given, *QB_OPP_DEF) * 1.0;
+    score += get_normalized_score(qb.red_zone_op_pg, *QB_AVG_RZ_OP) * 1.00;
+    score += get_normalized_score(qb.avg_pass_tds, *QB_AVG_TD) * 1.00;
+    score += get_normalized_score(qb.avg_rush_yards, *QB_AVG_RUSH_YDS) * 0.5;
+    score += get_normalized_score(qb.salary as f32 * -1.0, *QB_INVERSE_SAL) * 1.2;
     // rush yds
     if any_flex {
         // score += get_normalized_score(qb.cieling_proj, *ALL_CIELING_MAX_MIN) * 3.5;
         score += 2.5
     } else {
-        score += get_normalized_score(qb.vegas_team_total, *ALL_TEAM_TOTAL) * 2.5;
-        score += get_normalized_score(qb.cieling_proj, *QB_CIELING) * 1.0;
-        // score += get_normalized_score(qb.pts_plus_minus_proj, *QB_PTS_PLUS_MINUS);
+        score += get_normalized_score(qb.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
+        score += get_normalized_score(qb.cieling_proj, *QB_CIELING) * 2.0;
+        // score += get_normalized_score(qb.pts_sal_proj, *QB_PTS_SAL) * 1.0;
+    }
+    if qb.own_proj < 2.5 {
+        score = 0.0
     }
 
-    let new_score: f32 = get_normalized_score(score, (10.75, 0.0));
+    let new_score: f32 = get_normalized_score(score, (8.25, 0.0));
     new_score
 }
 
@@ -129,18 +136,26 @@ pub fn qb_score(qb: &QbProj, any_flex: bool) -> f32 {
 pub fn wr_stud_score(wr: &RecProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
     score += get_normalized_score(wr.opp_def_pts_given, *WR_OPP_DEF) * 0.75;
-    score += get_normalized_score(wr.rec_tgt_share, *WR_TGT_SHARE) * 2.0;
-    score += get_normalized_score(wr.avg_td, *WR_AVG_TD) * 1.25;
-    score += get_normalized_score(wr.red_zone_op_pg, *WR_RED_ZONE) * 0.5;
+    score += get_normalized_score(wr.rec_tgt_share, *WR_TGT_SHARE) * 0.5;
+    score += get_normalized_score(wr.avg_td, *WR_AVG_TD) * 1.5;
+    score += get_normalized_score(wr.red_zone_op_pg, *WR_RED_ZONE) * 0.75;
     if any_flex {
         // score += get_normalized_score(wr.cieling_proj, *ALL_CIELING_MAX_MIN) * 2.5;
         score += 2.5;
     } else {
         score += get_normalized_score(wr.vegas_team_total, *ALL_TEAM_TOTAL) * 2.5;
-        score += get_normalized_score(wr.cieling_proj, *WR_CIELING) * 3.0;
+        score += get_normalized_score(wr.pts_sal_proj, *WR_PTS_SAL) * 2.5;
+        score += get_normalized_score(wr.cieling_proj, *WR_CIELING) * 3.5;
     }
-    score += get_normalized_score(wr.month_upside, *WR_MONTH_UPSIDE) * 1.0;
-    get_normalized_score(score, (10.35, 0.0)) + 0.10
+    score += get_normalized_score(wr.month_upside, *WR_MONTH_UPSIDE) * 0.5;
+    if wr.own_proj < 8.0 {
+        score += 0.05
+    }
+
+    if wr.own_proj < 3.5 {
+        score = 0.0
+    }
+    get_normalized_score(score, (11.35, 0.0)) + 0.05
 }
 
 fn flex_score(flex: &FlexProj) -> f32 {
@@ -161,7 +176,7 @@ pub fn score_kicker(proj: &KickProj) -> f32 {
 
 pub fn te_score(te: &RecProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
-    score += get_normalized_score(te.opp_def_pts_given, *TE_OPP_DEF) * 1.0;
+    // score += get_normalized_score(te.opp_def_pts_given, *TE_OPP_DEF) * 0.25;
     // score += get_normalized_score(te.rec_tgt_share, *TE_REC_TGT) * 1.5;
     score += get_normalized_score(te.avg_td, *TE_AVG_TD) * 1.0;
     score += get_normalized_score(te.month_upside, *TE_UPSIDE) * 0.50;
@@ -170,9 +185,13 @@ pub fn te_score(te: &RecProj, any_flex: bool) -> f32 {
         // score += get_normalized_score(te.pts_sal_proj, *ALL_PTS_MAX_MIN) * 2.0;
         score += 2.0;
     } else {
-        score += get_normalized_score(te.vegas_team_total, *ALL_TEAM_TOTAL) * 2.0;
-        score += get_normalized_score(te.cieling_proj, *TE_CIELING) * 0.5;
+        score += get_normalized_score(te.vegas_team_total, *ALL_TEAM_TOTAL) * 1.0;
+        score += get_normalized_score(te.pts_sal_proj, *TE_PTS_SAL) * 2.0;
     }
+    if te.own_proj < 5.0 {
+        return 0.0;
+    }
+
     let score = get_normalized_score(score, (8.0, 0.0));
     score
 }
@@ -180,6 +199,10 @@ pub fn te_score(te: &RecProj, any_flex: bool) -> f32 {
 // Points
 pub fn dst_score(def: &DefProj, any_flex: bool) -> f32 {
     let mut score: f32 = 0.0;
+    if def.own_proj < 1.0 {
+        return 0.0;
+    }
+
     score += get_normalized_score(def.vegas_opp_total * -1.0, *DST_VEGAS_OPP_TOTAL) * 1.0;
     if any_flex {
         score += get_normalized_score(def.pts_plus_minus_proj, *ALL_PTS_PLUS_MINS_MAX_MIN) * 1.0;
