@@ -32,7 +32,7 @@ pub fn build_island_lineups(week: i8, season: i16) -> Vec<IslandLineup> {
     let pool: ThreadPool = ThreadPool::new().unwrap();
     let mut finished_lineups: Vec<IslandLineup> = Vec::new();
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
-    let players: Vec<LitePlayer> = get_slate(week, season, &GAME_DAY, false, &conn);
+    let players: Vec<LitePlayer> = get_slate(week, season, &GAME_DAY, &conn);
     let ids: Vec<Arc<i16>> = get_mvp_ids(players);
     let mut futures: Vec<_> = Vec::new();
     for id in ids {
@@ -42,7 +42,7 @@ pub fn build_island_lineups(week: i8, season: i16) -> Vec<IslandLineup> {
                 let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
                 let mut mvp_lineup: IslandLB = IslandLB::new();
                 let thread_players: Vec<LitePlayer> =
-                    get_slate(week, season, &GAME_DAY, false, &conn);
+                    get_slate(week, season, &GAME_DAY, &conn);
                 for player in &thread_players {
                     if player.id == *id {
                         mvp_lineup = mvp_lineup.set_slot(player, Slot::Mvp);

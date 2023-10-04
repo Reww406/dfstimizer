@@ -106,7 +106,7 @@ fn parse_island_lineups(lineups: Vec<IslandLineup>) -> Option<Vec<IslandLineup>>
     let mut best_lines: Vec<IslandLineup> = Vec::new();
     let amount_of_qb_per = 15;
     lineups.into_iter().for_each(|l| {
-        let qb_id: i16 = l.mvp.get_proj_id();
+        let qb_id: i16 = l.mvp.get_id();
         if qb_lineups.get(&qb_id).is_some() {
             if !qb_lineups.get(&qb_id).unwrap().contains(&l) {
                 qb_lineups.get_mut(&qb_id).unwrap().push(l.clone());
@@ -163,7 +163,7 @@ fn main() -> Result<(), Error> {
     let start: Instant = Instant::now();
     let conn = Connection::open(DATABASE_FILE).unwrap();
     // load_in_stats();
-    let players: Vec<LitePlayer> = get_slate(WEEK, SEASON, &GAME_DAY, true, &conn);
+    let players: Vec<LitePlayer> = get_slate(WEEK, SEASON, &GAME_DAY, &conn);
     let qb: u32 = count_player_type(&players, Pos::Qb) as u32;
     let wr_count: u32 = count_player_type(&players, Pos::Wr) as u32;
     let wr: u32 = total_comb(wr_count.try_into().unwrap(), 3);

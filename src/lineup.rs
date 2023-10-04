@@ -77,6 +77,34 @@ impl Slot {
     }
 }
 
+pub fn score_player(
+    id: i16,
+    pos: &Pos,
+    week: i8,
+    season: i16,
+    conn: &Connection,
+    any_flex: bool,
+) -> f32 {
+    match pos {
+        Pos::Qb => qb_score(&query_qb_proj(id, week, season, conn).unwrap(), any_flex),
+        Pos::Rb => rb_score(
+            &[&query_rb_proj(id, week, season, conn).unwrap()],
+            any_flex,
+            false,
+        ),
+        Pos::Wr => wr_stud_score(
+            &query_rec_proj(id, week, season, pos, conn).unwrap(),
+            any_flex,
+        ),
+        Pos::Te => te_score(
+            &query_rec_proj(id, week, season, pos, conn).unwrap(),
+            any_flex,
+        ),
+        Pos::D => dst_score(&query_def_proj(id, week, season, conn).unwrap(), any_flex),
+        Pos::K => score_kicker(&query_kick_proj(id, week, season, conn).unwrap()),
+    }
+}
+
 // TODO Maybe else if score on TD or Yds
 // TODO Scorning functions
 // TODO performance could precaclulate score for each player and store in cache..
@@ -339,20 +367,20 @@ impl IslandLineup {
             self.salary_used,
             self.score,
             self.mvp.get_name(conn),
-            self.mvp.get_proj_pos().to_str().expect(""),
-            self.mvp.get_proj_own(),
+            self.mvp.get_pos().to_str().expect(""),
+            self.mvp.get_own(),
             self.first.get_name(conn),
-            self.first.get_proj_pos().to_str().expect(""),
-            self.first.get_proj_own(),
+            self.first.get_pos().to_str().expect(""),
+            self.first.get_own(),
             self.second.get_name(conn),
-            self.second.get_proj_pos().to_str().expect(""),
-            self.second.get_proj_own(),
+            self.second.get_pos().to_str().expect(""),
+            self.second.get_own(),
             self.third.get_name(conn),
-            self.third.get_proj_pos().to_str().expect(""),
-            self.third.get_proj_own(),
+            self.third.get_pos().to_str().expect(""),
+            self.third.get_own(),
             self.fourth.get_name(conn),
-            self.fourth.get_proj_pos().to_str().expect(""),
-            self.fourth.get_proj_own()
+            self.fourth.get_pos().to_str().expect(""),
+            self.fourth.get_own()
         )
     }
 
@@ -372,12 +400,12 @@ impl PartialEq for IslandLineup {
         let ids: Vec<i16> = self
             .get_as_arr()
             .iter()
-            .map(|x| x.get_proj_id())
+            .map(|x| x.get_id())
             .collect::<Vec<i16>>();
         let other_ids: Vec<i16> = other
             .get_as_arr()
             .iter()
-            .map(|x| x.get_proj_id())
+            .map(|x| x.get_id())
             .collect::<Vec<i16>>();
         for id in ids {
             if !other_ids.contains(&id) {
@@ -417,6 +445,7 @@ pub struct Lineup {
 }
 
 impl Lineup {
+    // TODO transfer to lite player need to add team
     pub fn score(&self) -> f32 {
         let scores: Vec<f32> = vec![
             rb_score(&[&self.rb1, &self.rb2], false, false),
@@ -446,34 +475,6 @@ impl Lineup {
             score += get_past_score(week, id, season, conn);
         }
         score
-    }
-
-    pub fn fits_own_brackets(&self) -> bool {
-        let ownerships: [f32; 9] = self.get_ownership_arr();
-        for bracket in &OWN_BRACKETS {
-            if !Self::fits_own_bracket(bracket, &ownerships) {
-                return false;
-            }
-        }
-        true
-    }
-
-    fn fits_own_bracket(bracket: &OwnBracket, ownerships: &[f32; 9]) -> bool {
-        let mut count: i8 = 0;
-
-        // Filter out defense
-        for own in &ownerships[0..8] {
-            if own < &bracket.own {
-                count += 1;
-            }
-        }
-        if count > bracket.max_amount {
-            return false;
-        }
-        if count < bracket.min_amount {
-            return false;
-        }
-        true
     }
 
     pub fn get_cum_ownership(&self) -> f32 {
@@ -652,6 +653,84 @@ pub struct LineupBuilder {
 }
 
 impl LineupBuilder {
+    pub fn score_stacking(wrs: &[&LitePlayer], qb: &LitePlayer) -> f32 {
+        let mut score: f32 = 0.0;
+        for wr in wrs {
+            if wr.team == qb.team {
+                // TODO Could add reciever target share to liteplayer
+                let bonus = 0.3;
+                if bonus > score {
+                    score = bonus;
+                }
+            }
+        }
+        return score;
+    }
+
+    pub fn score(&self) -> f32 {
+        let mut score: f32 = self.array_of_players().iter().map(|p| p.score).sum();
+
+        // Filter bad lineups
+        if self.qb.unwrap().opp == self.def.unwrap().team {
+            score = 0.0;
+        }
+        if self.rb1.unwrap().opp == self.rb2.unwrap().team {
+            score = 0.0;
+        }
+        score
+    }
+
+    pub fn get_ownership_arr(&self) -> [f32; 9] {
+        // Make sure def is returned last
+        [
+            self.qb.unwrap().own_proj,
+            self.rb1.unwrap().own_proj,
+            self.rb2.unwrap().own_proj,
+            self.wr1.unwrap().own_proj,
+            self.wr2.unwrap().own_proj,
+            self.wr3.unwrap().own_proj,
+            self.te.unwrap().own_proj,
+            self.flex.unwrap().own_proj,
+            self.def.unwrap().own_proj,
+        ]
+    }
+    // pub fn historic_score(&self, week: i8, season: i16, conn: &Connection) -> f32 {
+    //     let ids: [i16; 9] = self.get_id_array();
+    //     let mut score: f32 = 0.0;
+    //     for id in ids {
+    //         score += get_past_score(week, id, season, conn);
+    //     }
+    //     score
+    // }
+
+    pub fn fits_own_brackets(&self) -> bool {
+        let ownerships: [f32; 9] = self.get_ownership_arr();
+        for bracket in &OWN_BRACKETS {
+            if !Self::fits_own_bracket(bracket, &ownerships) {
+                return false;
+            }
+        }
+        true
+    }
+
+    fn fits_own_bracket(bracket: &OwnBracket, ownerships: &[f32; 9]) -> bool {
+        let mut count: i8 = 0;
+
+        // Filter out defense
+        for own in &ownerships[0..8] {
+            if own < &bracket.own {
+                count += 1;
+            }
+        }
+        if count > bracket.max_amount {
+            return false;
+        }
+        if count < bracket.min_amount {
+            return false;
+        }
+        true
+    }
+
     pub fn new() -> Self {
         LineupBuilder {
             qb: None,
@@ -848,28 +927,28 @@ mod tests {
         println!("{:?}", &own[0..8]);
     }
 
-    #[test]
-    fn test_ownership_bracket() {
-        let conn = Connection::open(DATABASE_FILE).unwrap();
-        let week: i8 = 1;
-        let season: i16 = 2023;
-        let lineup = Lineup {
-            qb: query_qb_proj(115, 1, 2023, &conn).expect(""), // 0.3
-            rb1: query_rb_proj(156, week, season, &conn).unwrap(), //
-            rb2: query_rb_proj(43, week, season, &conn).unwrap(),
-            wr1: query_rec_proj(228, week, season, &Pos::Wr, &conn).unwrap(),
-            wr2: query_rec_proj(204, week, season, &Pos::Wr, &conn).unwrap(),
-            wr3: query_rec_proj(16, week, season, &Pos::Wr, &conn).unwrap(),
-            te: query_rec_proj(23, week, season, &Pos::Te, &conn).unwrap(),
-            flex: FlexProj {
-                pos: Pos::Wr,
-                rec_proj: Some(query_rec_proj(35, week, season, &Pos::Wr, &conn).unwrap()),
-                rb_proj: None,
-            },
-            def: query_def_proj(17, week, season, &conn).unwrap(),
-            salary_used: 60000,
-        };
-        println!("{:?}", lineup.get_ownership_arr());
-        println!("{}", lineup.fits_own_brackets());
-    }
+    // #[test]
+    // fn test_ownership_bracket() {
+    //     let conn = Connection::open(DATABASE_FILE).unwrap();
+    //     let week: i8 = 1;
+    //     let season: i16 = 2023;
+    //     let lineup = Lineup {
+    //         qb: query_qb_proj(115, 1, 2023, &conn).expect(""), // 0.3
+    //         rb1: query_rb_proj(156, week, season, &conn).unwrap(), //
+    //         rb2: query_rb_proj(43, week, season, &conn).unwrap(),
+    //         wr1: query_rec_proj(228, week, season, &Pos::Wr, &conn).unwrap(),
+    //         wr2: query_rec_proj(204, week, season, &Pos::Wr, &conn).unwrap(),
+    //         wr3: query_rec_proj(16, week, season, &Pos::Wr, &conn).unwrap(),
+    //         te: query_rec_proj(23, week, season, &Pos::Te, &conn).unwrap(),
+    //         flex: FlexProj {
+    //             pos: Pos::Wr,
+    //             rec_proj: Some(query_rec_proj(35, week, season, &Pos::Wr, &conn).unwrap()),
+    //             rb_proj: None,
+    //         },
+    //         def: query_def_proj(17, week, season, &conn).unwrap(),
+    //         salary_used: 60000,
+    //     };
+    //     println!("{:?}", lineup.get_ownership_arr());
+    //     println!("{}", lineup.fits_own_brackets());
+    // }
 }

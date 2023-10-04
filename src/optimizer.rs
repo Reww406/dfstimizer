@@ -6,7 +6,6 @@ use futures::StreamExt;
 use itertools::Itertools;
 use rusqlite::Connection;
 
-use crate::filter_top_salary_players;
 use crate::get_slate;
 use crate::get_top_players_by_pos;
 use crate::lineup::*;
@@ -24,7 +23,10 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
     let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
     let mut finished_lineups: Vec<Lineup> = Vec::new();
     let wr_ids: Vec<i16> =
-        get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, &GAME_DAY, &conn);
+        get_top_players_by_pos(season, week, &Pos::Wr, WR_COUNT, &GAME_DAY, &conn)
+            .into_iter()
+            .map(|wr| wr.id)
+            .collect_vec();
     println!("Cooking up LINEUPS!! {} WRs", wr_ids.len());
     let mut futures: Vec<_> = Vec::new();
     for wr_id in wr_ids.into_iter().combinations(3) {
@@ -33,8 +35,7 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
             let fut_tx_result = async move {
                 let start: Instant = Instant::now();
                 let conn: Connection = Connection::open(DATABASE_FILE).unwrap();
-                let thread_players: Vec<LitePlayer> =
-                    get_slate(week, season, &GAME_DAY, true, &conn);
+                let thread_players: Vec<LitePlayer> = get_slate(week, season, &GAME_DAY, &conn);
                 drop(conn);
                 let mut qb_lineups: Vec<LineupBuilder> = Vec::new();
                 thread_players
@@ -72,7 +73,7 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
                 );
                 // let filterd_lineups: Vec<LineupBuilder> = filter_low_salary_cap(dst_lineups, 39500);
                 let flex_pos: [Pos; 2] = [Pos::Wr, Pos::Rb];
-                let lineup: Option<Lineup> = add_flex_find_top_num(
+                let lineup: Option<LineupBuilder> = add_flex_find_top_num(
                     &thread_players
                         .into_iter()
                         .filter(|p| flex_pos.contains(&p.pos))
@@ -82,7 +83,7 @@ pub fn build_all_possible_lineups(week: i8, season: i16) -> Vec<Lineup> {
                     season,
                 );
                 if lineup.is_some() {
-                    tx.unbounded_send(lineup.unwrap())
+                    tx.unbounded_send(lineup.unwrap().build(week, season).expect(""))
                         .expect("Failed to send lineup")
                 }
                 println!("Finished Thread {:?}", start.elapsed());
@@ -180,8 +181,8 @@ pub fn add_flex_find_top_num(
     lineups: Vec<LineupBuilder>,
     week: i8,
     season: i16,
-) -> Option<Lineup> {
-    let mut best_lineup: Option<Lineup> = None;
+) -> Option<LineupBuilder> {
+    let mut best_lineup: Option<LineupBuilder> = None;
     let mut highest_score: f32 = 0.0;
     for lineup in &lineups {
         let exiting_players: [&i16; 5] = [
@@ -199,10 +200,7 @@ pub fn add_flex_find_top_num(
                     && (p.salary as i32 + lineup.salary_used) > MIN_SAL
             })
             .for_each(|flex| {
-                let finished_lineup = lineup
-                    .set_pos(&flex, Slot::Flex)
-                    .build(week, season)
-                    .expect("Failed to build lineup..");
+                let finished_lineup = lineup.set_pos(&flex, Slot::Flex);
                 if finished_lineup.fits_own_brackets() {
                     let score: f32 = finished_lineup.score();
                     if best_lineup.is_none() {

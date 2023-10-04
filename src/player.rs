@@ -7,6 +7,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 use serde::{Deserialize, Serialize};
 
 use crate::data_loader::*;
+use crate::lineup::score_player;
 
 // TODO! Should populate all of these first so read writes are not blocked
 lazy_static! {
@@ -29,7 +30,7 @@ lazy_static! {
 
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum Team {
     Lac,
     Phi,
@@ -309,7 +310,7 @@ pub enum Proj {
 }
 
 impl Proj {
-    pub fn get_proj_pos(&self) -> Pos {
+    pub fn get_pos(&self) -> Pos {
         match self {
             Proj::QbProj(_) => return Pos::Qb,
             Proj::DefProj(_) => return Pos::D,
@@ -318,7 +319,28 @@ impl Proj {
             Proj::KickProj(_) => return Pos::K,
         }
     }
-    pub fn get_proj_own(&self) -> f32 {
+
+    pub fn get_opp(&self) -> Team {
+        match self {
+            Proj::QbProj(qb) => return qb.opp,
+            Proj::DefProj(def) => return def.opp,
+            Proj::RecProj(rec) => return rec.opp,
+            Proj::RbProj(rb) => return rb.opp,
+            Proj::KickProj(k) => return k.opp,
+        }
+    }
+
+    pub fn get_team(&self) -> Team {
+        match self {
+            Proj::QbProj(qb) => return qb.team,
+            Proj::DefProj(def) => return def.team,
+            Proj::RecProj(rec) => return rec.team,
+            Proj::RbProj(rb) => return rb.team,
+            Proj::KickProj(k) => return k.team,
+        }
+    }
+
+    pub fn get_own(&self) -> f32 {
         match self {
             Proj::QbProj(qb) => return qb.own_proj,
             Proj::DefProj(def) => return def.own_proj,
@@ -327,7 +349,7 @@ impl Proj {
             Proj::KickProj(k) => return k.own_proj,
         }
     }
-    pub fn get_proj_id(&self) -> i16 {
+    pub fn get_id(&self) -> i16 {
         match self {
             Proj::QbProj(qb) => return qb.id,
             Proj::DefProj(def) => return def.id,
@@ -337,7 +359,7 @@ impl Proj {
         }
     }
 
-    pub fn get_proj_salary(&self) -> i32 {
+    pub fn get_sal(&self) -> i32 {
         match self {
             Proj::QbProj(qb) => return qb.salary,
             Proj::DefProj(def) => return def.salary,
@@ -498,7 +520,13 @@ pub fn get_past_score(week: i8, id: i16, season: i16, conn: &Connection) -> f32 
     score
 }
 
-pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> LitePlayer {
+pub fn get_player_by_id(
+    week: i8,
+    id: i16,
+    season: i16,
+    any_flex: bool,
+    conn: &Connection,
+) -> LitePlayer {
     if ID_LITEPLAYER_CACHE.read().unwrap().get(&id).is_some() {
         return *ID_LITEPLAYER_CACHE.read().unwrap().get(&id).unwrap();
     }
@@ -507,10 +535,29 @@ pub fn get_player_by_id(week: i8, id: i16, season: i16, conn: &Connection) -> Li
     let mut stmt = conn.prepare_cached(query).unwrap();
     let player: LitePlayer = stmt
         .query_row(params![week, id, season], |row| {
+            let proj: Proj = query_proj_helper(
+                row.get(0).unwrap(),
+                &Pos::from_string(row.get(7).unwrap()).unwrap(),
+                week,
+                season,
+                conn,
+            );
+
             Ok(LitePlayer {
                 id: row.get(0).unwrap(),
                 salary: row.get(8).unwrap(),
                 pos: Pos::from_string(row.get(7).unwrap()).unwrap(),
+                score: score_player(
+                    row.get(0).unwrap(),
+                    &Pos::from_string(row.get(7).unwrap()).unwrap(),
+                    week,
+                    season,
+                    conn,
+                    any_flex,
+                ),
+                own_proj: proj.get_own(),
+                team: proj.get_team(),
+                opp: proj.get_opp(),
             })
         })
         .unwrap();
@@ -525,6 +572,10 @@ pub struct LitePlayer {
     pub id: i16,
     pub pos: Pos,
     pub salary: i16,
+    pub score: f32,
+    pub own_proj: f32,
+    pub team: Team,
+    pub opp: Team,
 }
 
 // Id 0, player 1, team 2, opp 3, pos 4, salary 5, own 6
@@ -534,52 +585,11 @@ impl LitePlayer {
             id: 1,
             pos: Pos::Rb,
             salary: 15000,
+            score: 10.0,
+            own_proj: 5.0,
+            team: Team::Ari,
+            opp: Team::Atl,
         }
-    }
-    /// WARNING This liteplayer has no salary
-    pub fn from_ids(ids: &[i16], conn: &Connection) -> Vec<Self> {
-        let mut players: Vec<LitePlayer> = Vec::new();
-        for id in ids {
-            players.push(LitePlayer::from_id(id, conn));
-        }
-        players
-    }
-    pub fn from_ids_with_salary(
-        ids: &[i16],
-        week: i8,
-        season: i16,
-        conn: &Connection,
-    ) -> Vec<Self> {
-        let mut players: Vec<LitePlayer> = Vec::new();
-        for id in ids {
-            let mut player = LitePlayer::from_id(id, conn);
-            let sal: i16 = query_proj(Some(&player), week, season, conn).get_proj_salary() as i16;
-            player.salary = sal;
-            players.push(player);
-        }
-        players
-    }
-
-    pub fn from_id(id: &i16, conn: &Connection) -> Self {
-        if ID_LITEPLAYER_NO_SAL_CACHE.read().unwrap().get(id).is_some() {
-            return *ID_LITEPLAYER_NO_SAL_CACHE.read().unwrap().get(id).unwrap();
-        }
-
-        let query = "SELECT * FROM player WHERE id = ?1";
-        let player: LitePlayer = conn
-            .query_row(query, params![id], |row| {
-                Ok(LitePlayer {
-                    id: *id,
-                    pos: Pos::from_string(row.get(3).unwrap()).expect("Pos is not valid."),
-                    salary: 0,
-                })
-            })
-            .unwrap();
-        ID_LITEPLAYER_NO_SAL_CACHE
-            .write()
-            .unwrap()
-            .insert(*id, player);
-        player
     }
 
     // Could make this a singleton so it's only generated once
@@ -683,6 +693,19 @@ pub fn query_def_vs_pos(opp: Team, player_pos: &Pos, conn: &Connection) -> DefVs
         .unwrap();
     add_def_to_cache(def_vs_pos);
     def_vs_pos
+}
+
+pub fn query_proj_helper(id: i16, pos: &Pos, week: i8, season: i16, conn: &Connection) -> Proj {
+    let lp: LitePlayer = LitePlayer {
+        id,
+        pos: pos.clone(),
+        salary: 0,
+        score: 0.0,
+        own_proj: 0.0,
+        team: Team::Ari,
+        opp: Team::Atl,
+    };
+    query_proj(Some(&lp), week, season, conn)
 }
 
 pub fn query_proj(player: Option<&LitePlayer>, week: i8, season: i16, conn: &Connection) -> Proj {
